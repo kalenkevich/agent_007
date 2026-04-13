@@ -5,6 +5,7 @@ import type { ModelConfig } from "../../config/config.js";
 import { contentToGenAIContent } from "./gen_ai_convert_utils.js";
 import { StreamingResponseAggregator } from "./gemini_streaming_utils.js";
 import { createLlmResponse } from "./gemini_response_utils.js";
+import { logger } from "../../logger.js";
 
 export interface RunConfig {
   stream?: boolean;
@@ -24,6 +25,11 @@ export class Gemini {
     request: LlmRequest,
     config?: RunConfig,
   ): AsyncGenerator<LlmResponse, void, unknown> {
+    logger.debug(
+      "[Gemini Model] Running model with request:",
+      JSON.stringify(request, null, 2),
+    );  
+
     if (config?.stream) {
       yield* this.runStream(request, config);
       return;
@@ -35,6 +41,11 @@ export class Gemini {
         request,
         config,
       }),
+    );
+
+    logger.debug(
+      "[Gemini Model] response received:",
+      JSON.stringify(response, null, 2),
     );
 
     yield createLlmResponse(response);
@@ -55,14 +66,26 @@ export class Gemini {
 
     for await (const response of stream) {
       for await (const llmResponse of aggregator.processResponse(response)) {
+        logger.debug(
+          "[Gemini Model] yielding streaming response",
+          JSON.stringify(llmResponse, null, 2),
+        );
+
         yield llmResponse;
       }
     }
 
     const finalResponse = aggregator.close();
     if (finalResponse) {
+      logger.debug(
+        "[Gemini Model] yielding final streaming response",
+        JSON.stringify(finalResponse, null, 2),
+      );
+
       yield finalResponse;
     }
+
+    logger.debug("[Gemini Model] stream finished");
   }
 }
 

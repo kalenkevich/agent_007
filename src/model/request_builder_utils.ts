@@ -26,10 +26,7 @@ export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
 
   return {
     contents: [...historyContent, content],
-    tools: {
-      ...buildToolsMap(tools),
-      ...buildSkillsTools(skills),
-    },
+    tools: [...buildTools(tools), ...buildSkillsTools(skills)],
     systemInstructions: buildSystemInstruction(
       agentName,
       description,
@@ -38,7 +35,7 @@ export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
   };
 }
 
-export function buildToolsMap(tools?: Tool[]): FunctionDeclaration[] {
+export function buildTools(tools?: Tool[]): FunctionDeclaration[] {
   if (!tools) return [];
 
   return tools.map((t) => t.toFunctionDeclaration());

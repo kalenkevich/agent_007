@@ -35,7 +35,7 @@ export async function runNoninteractiveCommand(options: RunCommandOptions) {
         console.log("\n--- Agent Started ---");
         break;
       case AgentEventType.MESSAGE:
-        if (event.parts) {
+        if (event.role === "agent" && event.parts) {
           for (const part of event.parts) {
             if ("text" in part && part.text) {
               process.stdout.write(part.text);

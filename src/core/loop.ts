@@ -7,6 +7,7 @@ import type { Config } from "../config/config.js";
 import { AdaptiveLlmModel } from "../model/adaptive_model.js";
 import { randomUUID } from "node:crypto";
 import { AgentEventType, type ErrorEvent } from "../agent/agent_event.js";
+import { logger } from "../logger.js";
 
 export enum AgentLoopType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -35,9 +36,14 @@ export class CoreAgentLoop extends EventEmitter {
       model: new AdaptiveLlmModel(this.config.model),
     });
     this.initialized = true;
+    logger.debug("[CoreAgentLoop] initialized");
   }
 
   async run(userInput: UserInput) {
+    logger.debug(
+      "[CoreAgentLoop] run called with input:",
+      JSON.stringify(userInput, null, 2),
+    );
     await this.currentRun?.wait();
     this.currentRun = new Run();
     this.currentRun.start();
@@ -51,6 +57,7 @@ export class CoreAgentLoop extends EventEmitter {
         this.emit(AgentLoopType.AGENT_EVENT, event);
       }
     } catch (e: unknown) {
+      logger.error("[CoreAgentLoop] run error:", e);
       const error = e as Error;
       const errorEvent: ErrorEvent = {
         id: randomUUID(),

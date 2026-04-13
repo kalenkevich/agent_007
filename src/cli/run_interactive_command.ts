@@ -24,6 +24,8 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
 
   console.log(`Using model: ${config.model.modelName}`);
 
+  const rl = createInterface({ input, output });
+
   const loop = new CoreAgentLoop(config);
 
   loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
@@ -32,10 +34,10 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         console.log("\n--- Agent Started ---");
         break;
       case AgentEventType.MESSAGE:
-        if (event.parts) {
+        if (event.role === "agent" && event.parts) {
           for (const part of event.parts) {
             if ("text" in part && part.text) {
-              process.stdout.write(part.text);
+              rl.write(part.text);
             }
           }
         }
@@ -57,8 +59,6 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         break;
     }
   });
-
-  const rl = createInterface({ input, output });
 
   try {
     if (prompt) {

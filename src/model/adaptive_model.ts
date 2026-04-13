@@ -3,6 +3,7 @@ import type { LlmRequest } from "./request.js";
 import type { LlmResponse } from "./response.js";
 import type { ModelConfig } from "../config/config.js";
 import { resolveLlmModel } from "./registry.js";
+import { logger } from "../logger.js";
 
 export class AdaptiveLlmModel implements LlmModel {
   private currentModel!: LlmModel;
@@ -27,7 +28,9 @@ export class AdaptiveLlmModel implements LlmModel {
     }
 
     try {
-      yield* this.currentModel.run(request, config);
-    } catch (e: unknown) {}
+      yield * this.currentModel.run(request, config);
+    } catch (e: unknown) {
+      logger.error("[AdaptiveLlmModel] error:", e);
+    }
   }
 }

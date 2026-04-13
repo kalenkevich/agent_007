@@ -17,6 +17,9 @@ const options = {
     type: "boolean" as const,
     short: "h",
   },
+  debug: {
+    type: "boolean" as const,
+  },
 };
 
 const USAGE = `
@@ -30,6 +33,7 @@ Options:
   -p, --prompt <string>  The task for the agent
   -m, --model <string>   Override the default model
   -h, --help             Show this help message
+  --debug                Enable debug mode (writes to debug.log)
 `;
 
 async function main() {
@@ -42,6 +46,11 @@ async function main() {
     if (values.help) {
       console.log(USAGE);
       return;
+    }
+
+    if (values.debug) {
+      console.log("Debug mode: enabled");
+      process.env.DEBUG_LOGGER = "true";
     }
 
     const command = positionals[0];

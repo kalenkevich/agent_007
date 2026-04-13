@@ -15,6 +15,7 @@ import {
   getContentFromAgentEvent,
   llmResponseToAgentEvents,
 } from "./agent_event_utils.js";
+import { logger } from "../logger.js";
 
 export interface CliAgentOptions {
   name: string;
@@ -75,6 +76,8 @@ export class CliAgent implements Agent {
 
     const userContent = toContentParts(userInput);
 
+    logger.debug("[CliAgent] runInternal started");
+
     this.abortController = new AbortController();
     this.streamId = randomUUID();
 
@@ -90,18 +93,21 @@ export class CliAgent implements Agent {
         parts: userContent,
         role: "user",
       },
-      historyContent: this.historyContent,
+      historyContent: this.historyContent.slice(0, -1),
       tools: this.tools,
       skills: this.skills,
       description: this.description,
       instructions: this.instructions,
     });
 
+    logger.debug("[CliAgent] calling model.run");
+
     for await (const modelResponse of this.model.run(llmRequest, {
       stream: true,
       abortSignal: this.abortController?.signal,
     })) {
       for (const agentEvent of llmResponseToAgentEvents(modelResponse)) {
+        logger.debug("[CliAgent] yielding event:", agentEvent.type);
         yield this.createEvent(agentEvent.type!, agentEvent);
       }
     }
