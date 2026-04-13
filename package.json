@@ -1,19 +1,29 @@
 {
   "name": "agent_007",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.0.1",
+  "author": "Alexey Kalenkevich",
+  "description": "Yet another AI agent coding harness.",
+  "type": "module",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "agent007": "./dist/cli_entrypoint.js"
+  },
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "tsc",
     "test": "vitest --project unit --project integration --project e2e",
     "test:unit": "vitest --project unit",
     "test:integration": "vitest --project integration",
     "test:e2e": "vitest --project e2e"
   },
   "keywords": [],
-  "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@google/genai": "^1.49.0",
     "zod": "^4.3.6"

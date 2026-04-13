@@ -1,13 +1,13 @@
 import {
-  Content,
-  ContentPart,
+  type Content,
+  type ContentPart,
   isTextContentPart,
   isThoughtContentPart,
   isMediaContentPart,
   isFunctionCallContentPart,
   isFunctionResponseContentPart,
-} from "../../content";
-import {
+} from "../../content.js";
+import type {
   Part as GenAIContentPart,
   Content as GenAIContent,
 } from "@google/genai";

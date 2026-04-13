@@ -1,5 +1,5 @@
-import { FunctionDeclaration } from "../tools/tool";
-import { Type } from "../tools/schema";
+import type { FunctionDeclaration } from "../tools/tool.js";
+import { Type } from "../tools/schema.js";
 
 export interface SkillFrontmatter {
   name: string;

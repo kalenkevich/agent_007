@@ -1,16 +1,20 @@
 import { randomUUID } from "node:crypto";
-import { Agent } from "./agent";
-import { LlmModel } from "../model/model";
-import { Tool } from "../tools/tool";
-import { Skill } from "../skills/skill";
-import { AgentEvent, AgentEventType } from "./agent_event";
-import { Content } from "../content";
-import { UserInput, isUserCommand, toContentParts } from "../user_input";
-import { buildLlmRequest } from "../model/request_builder_utils";
+import type { Agent } from "./agent.js";
+import type { LlmModel } from "../model/model.js";
+import type { Tool } from "../tools/tool.js";
+import type { Skill } from "../skills/skill.js";
+import { type AgentEvent, AgentEventType } from "./agent_event.js";
+import type { Content } from "../content.js";
+import {
+  type UserInput,
+  isUserCommand,
+  toContentParts,
+} from "../user_input.js";
+import { buildLlmRequest } from "../model/request_builder_utils.js";
 import {
   getContentFromAgentEvent,
   llmResponseToAgentEvents,
-} from "./agent_event_utils";
+} from "./agent_event_utils.js";
 
 export interface CliAgentOptions {
   name: string;

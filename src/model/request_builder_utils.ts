@@ -1,7 +1,7 @@
-import { LlmRequest } from "./request";
-import { Content } from "../content";
-import { Tool, FunctionDeclaration } from "../tools/tool";
-import { Skill, toFunctionDeclaration } from "../skills/skill";
+import type { LlmRequest } from "./request.js";
+import type { Content } from "../content.js";
+import type { Tool, FunctionDeclaration } from "../tools/tool.js";
+import { type Skill, toFunctionDeclaration } from "../skills/skill.js";
 
 interface BuildLlmRequestOptions {
   agentName: string;

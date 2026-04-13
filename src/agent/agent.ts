@@ -1,8 +1,8 @@
-import { UserInput } from "../user_input";
-import { LlmModel } from "../model/model";
-import { Tool } from "../tools/tool";
-import { Skill } from "../skills/skill";
-import { AgentEvent } from "./agent_event";
+import { type UserInput } from "../user_input.js";
+import { type LlmModel } from "../model/model.js";
+import { type Tool } from "../tools/tool.js";
+import { type Skill } from "../skills/skill.js";
+import { type AgentEvent } from "./agent_event.js";
 
 export interface Agent {
   id: string;

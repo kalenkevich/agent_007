@@ -1,6 +1,6 @@
 import { GenerateContentResponse, FinishReason } from "@google/genai";
-import { LlmResponse } from "../response";
-import { genAIContentToContent } from "./gen_ai_convert_utils";
+import type { LlmResponse } from "../response.js";
+import { genAIContentToContent } from "./gen_ai_convert_utils.js";
 
 export function createLlmResponse(
   response: GenerateContentResponse,

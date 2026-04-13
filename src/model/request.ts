@@ -1,5 +1,5 @@
-import { Content } from "../content";
-import { FunctionDeclaration } from "../tools/tool";
+import type { Content } from "../content.js";
+import type { FunctionDeclaration } from "../tools/tool.js";
 
 export interface LlmRequest {
   model?: string;

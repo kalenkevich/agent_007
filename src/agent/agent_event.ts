@@ -1,4 +1,4 @@
-import { ContentPart } from "../content";
+import type { ContentPart } from "../content.js";
 
 export enum AgentEventType {
   START = "START",

@@ -17,8 +17,16 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "allowSyntheticDefaultImports": true,
+    "strictPropertyInitialization": true,
+    "verbatimModuleSyntax": true,
     "rootDir": "src",
-    "outDir": "dist/types"
+    "outDir": "dist"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

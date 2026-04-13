@@ -1,5 +1,5 @@
-import { LlmRequest } from './request';
-import { LlmResponse } from './response';
+import type { LlmRequest } from "./request.js";
+import type { LlmResponse } from "./response.js";
 
 export interface LlmModelConfig {
   stream?: boolean;
@@ -9,5 +9,8 @@ export interface LlmModelConfig {
 export interface LlmModel {
   modelName: string;
 
-  run(request: LlmRequest, config?: LlmModelConfig): AsyncGenerator<LlmResponse, void, unknown>;
+  run(
+    request: LlmRequest,
+    config?: LlmModelConfig,
+  ): AsyncGenerator<LlmResponse, void, unknown>;
 }

@@ -1,13 +1,12 @@
 import {
-  AgentEvent,
+  type AgentEvent,
   AgentEventType,
   isUsageEvent,
   isAgentStartEvent,
   isAgentEndEvent,
-  MessageEvent,
-} from "./agent_event";
-import { LlmResponse } from "../model/response";
-import { Content } from "../content";
+} from "./agent_event.js";
+import type { LlmResponse } from "../model/response.js";
+import type { Content } from "../content.js";
 
 export function getContentFromAgentEvent(
   agentEvent: AgentEvent,

@@ -1,5 +1,5 @@
-import { LlmModel } from "./model";
-import { Gemini } from "./google/gemini_model";
+import type { LlmModel } from "./model.js";
+import { Gemini } from "./google/gemini_model.js";
 
 type LlmModelClass = {
   new (params: { modelName: string; apiKey: string }): LlmModel;

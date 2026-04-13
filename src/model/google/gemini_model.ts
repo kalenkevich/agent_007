@@ -1,9 +1,10 @@
-import { GoogleGenAI, GenerateContentParameters } from "@google/genai";
-import { LlmRequest } from "../request";
-import { LlmResponse } from "../response";
-import { ModelConfig } from "../../config/config";
-import { contentToGenAIContent } from "./gen_ai_convert_utils";
-import { StreamingResponseAggregator } from "./gemini_streaming_utils";
+import { GoogleGenAI, type GenerateContentParameters } from "@google/genai";
+import type { LlmRequest } from "../request.js";
+import type { LlmResponse } from "../response.js";
+import type { ModelConfig } from "../../config/config.js";
+import { contentToGenAIContent } from "./gen_ai_convert_utils.js";
+import { StreamingResponseAggregator } from "./gemini_streaming_utils.js";
+import { createLlmResponse } from "./gemini_response_utils.js";
 
 export interface RunConfig {
   stream?: boolean;
@@ -35,6 +36,8 @@ export class Gemini {
         config,
       }),
     );
+
+    yield createLlmResponse(response);
   }
 
   private async *runStream(

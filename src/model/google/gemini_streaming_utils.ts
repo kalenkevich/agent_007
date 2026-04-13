@@ -1,16 +1,10 @@
-/**
- * @license
- * Copyright 2026 Google LLC
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { GenerateContentResponse, FinishReason } from "@google/genai";
 import { generateClientFunctionCallId } from "../../core/functions.js";
-import { LlmResponse, UsageMetadata } from "../response.js";
+import type { LlmResponse, UsageMetadata } from "../response.js";
 import {
-  ContentPart,
-  PartialArg,
-  FunctionCallContentPart,
+  type ContentPart,
+  type PartialArg,
+  type FunctionCallContentPart,
   isTextContentPart,
   isThoughtContentPart,
   isFunctionCallContentPart,

@@ -1,4 +1,4 @@
-import { Config } from "./config";
+import type { Config } from "./config.js";
 
 export async function loadConfig(): Promise<Config> {
   const geminiApiKey =

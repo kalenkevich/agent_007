@@ -1,10 +1,10 @@
 import { EventEmitter } from 'node:events';
-import { Agent } from '../agent/agent';
-import { UserInput } from "../user_input";
-import { CliAgent } from '../agent/cli_agent';
-import { Run } from './run';
-import {Config} from '../config/config';
-import {AdaptiveLlmModel} from '../model/adaptive_model';
+import type { Agent } from "../agent/agent.js";
+import type { UserInput } from "../user_input.js";
+import { CliAgent } from "../agent/cli_agent.js";
+import { Run } from "./run.js";
+import type { Config } from "../config/config.js";
+import { AdaptiveLlmModel } from "../model/adaptive_model.js";
 
 export enum AgentLoopType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -45,7 +45,7 @@ export class CoreAgentLoop extends EventEmitter {
         this.emit(AgentLoopType.AGENT_EVENT, event);
       }
     } catch (e: unknown) {
-      const error = e as Error;
+      // const error = e as Error;
     } finally {
       this.currentRun.finish();
       this.currentRun = undefined;
