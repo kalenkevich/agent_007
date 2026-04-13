@@ -1,74 +1,8 @@
-[DEBUG] [2026-04-13T22:43:15.422Z] [DEBUG] [CoreAgentLoop] run called with input: "hello"
-[DEBUG] [2026-04-13T22:43:15.426Z] [DEBUG] [CoreAgentLoop] initialized
-[DEBUG] [2026-04-13T22:43:15.427Z] [DEBUG] [CliAgent] runInternal started
-[DEBUG] [2026-04-13T22:43:15.428Z] [DEBUG] [CliAgent] calling model.run
-[DEBUG] [2026-04-13T22:43:15.428Z] [DEBUG] [Gemini Model] Running model with request: {
-  "contents": [
-    {
-      "parts": [
-        {
-          "type": "text",
-          "text": "hello"
-        }
-      ],
-      "role": "user"
-    }
-  ],
-  "tools": [],
-  "systemInstructions": "You are an agent. Your internal name is \"cli_agent\".\n\nThe description about you is \"cli_agent\"\n\ncli_agent"
-}
-[ERROR] [2026-04-13T22:43:15.546Z] [ERROR] [AdaptiveLlmModel] error: ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Method doesn't allow unregistered callers (callers without established identity). Please use API Key or other form of API consumer identity to call this API.\",\n    \"status\": \"PERMISSION_DENIED\"\n  }\n}\n","code":403,"status":"Forbidden"}}
-    at throwErrorIfNotOK (file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13341:30)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13059:13
-    at async Models.generateContentStream (file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:14538:24)
-    at async Gemini.runStream (file:///Users/kalenkevich/projects/agent_007/dist/model/google/gemini_model.js:27:24)
-    at async Gemini.run (file:///Users/kalenkevich/projects/agent_007/dist/model/google/gemini_model.js:14:13)
-    at async AdaptiveLlmModel.run (file:///Users/kalenkevich/projects/agent_007/dist/model/adaptive_model.js:18:13)
-    at async CliAgent.runInternal (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:60:26)
-    at async CliAgent.run (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:24:26)
-    at async CoreAgentLoop.run (file:///Users/kalenkevich/projects/agent_007/dist/core/loop.js:39:30) {
-  status: 403
-}
-[DEBUG] [2026-04-13T22:45:43.549Z] [DEBUG] [CoreAgentLoop] run called with input: "hello"
-[DEBUG] [2026-04-13T22:45:43.551Z] [DEBUG] [CoreAgentLoop] initialized
-[DEBUG] [2026-04-13T22:45:43.551Z] [DEBUG] [CliAgent] runInternal started
-[DEBUG] [2026-04-13T22:45:43.552Z] [DEBUG] [CliAgent] calling model.run
-[DEBUG] [2026-04-13T22:45:43.552Z] [DEBUG] [Gemini Model] Running model with request: {
-  "contents": [
-    {
-      "parts": [
-        {
-          "type": "text",
-          "text": "hello"
-        }
-      ],
-      "role": "user"
-    }
-  ],
-  "tools": [],
-  "systemInstructions": "You are an agent. Your internal name is \"cli_agent\".\n\nThe description about you is \"cli_agent\"\n\ncli_agent"
-}
-[ERROR] [2026-04-13T22:45:43.651Z] [ERROR] [Gemini Model] stream error: ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Method doesn't allow unregistered callers (callers without established identity). Please use API Key or other form of API consumer identity to call this API.\",\n    \"status\": \"PERMISSION_DENIED\"\n  }\n}\n","code":403,"status":"Forbidden"}}
-    at throwErrorIfNotOK (file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13341:30)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13059:13
-    at async Models.generateContentStream (file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:14538:24)
-    at async Gemini.runStream (file:///Users/kalenkevich/projects/agent_007/dist/model/google/gemini_model.js:37:28)
-    at async Gemini.run (file:///Users/kalenkevich/projects/agent_007/dist/model/google/gemini_model.js:14:13)
-    at async AdaptiveLlmModel.run (file:///Users/kalenkevich/projects/agent_007/dist/model/adaptive_model.js:18:13)
-    at async CliAgent.runInternal (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:60:26)
-    at async CliAgent.run (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:24:26)
-    at async CoreAgentLoop.run (file:///Users/kalenkevich/projects/agent_007/dist/core/loop.js:39:30) {
-  status: 403
-}
-[DEBUG] [2026-04-13T22:45:43.652Z] [DEBUG] [CliAgent] yielding event: ERROR
-[DEBUG] [2026-04-13T22:45:43.653Z] [DEBUG] [Gemini Model] stream finished
-[DEBUG] [2026-04-13T22:46:14.055Z] [DEBUG] [CoreAgentLoop] run called with input: "Hello"
-[DEBUG] [2026-04-13T22:46:14.060Z] [DEBUG] [CoreAgentLoop] initialized
-[DEBUG] [2026-04-13T22:46:14.060Z] [DEBUG] [CliAgent] runInternal started
-[DEBUG] [2026-04-13T22:46:14.060Z] [DEBUG] [CliAgent] calling model.run
-[DEBUG] [2026-04-13T22:46:14.061Z] [DEBUG] [Gemini Model] Running model with request: {
+[DEBUG] [2026-04-13T22:52:49.819Z] [DEBUG] [CoreAgentLoop] run called with input: "Hello"
+[DEBUG] [2026-04-13T22:52:49.824Z] [DEBUG] [CoreAgentLoop] initialized
+[DEBUG] [2026-04-13T22:52:49.825Z] [DEBUG] [CliAgent] runInternal started
+[DEBUG] [2026-04-13T22:52:49.826Z] [DEBUG] [CliAgent] calling model.run
+[DEBUG] [2026-04-13T22:52:49.826Z] [DEBUG] [Gemini Model] Running model with request: {
   "contents": [
     {
       "parts": [
@@ -83,7 +17,7 @@
   "tools": [],
   "systemInstructions": "You are an agent. Your internal name is \"cli_agent\".\n\nThe description about you is \"cli_agent\"\n\ncli_agent"
 }
-[ERROR] [2026-04-13T22:46:14.180Z] [ERROR] [Gemini Model] stream error: ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Method doesn't allow unregistered callers (callers without established identity). Please use API Key or other form of API consumer identity to call this API.\",\n    \"status\": \"PERMISSION_DENIED\"\n  }\n}\n","code":403,"status":"Forbidden"}}
+[ERROR] [2026-04-13T22:52:50.155Z] [ERROR] [Gemini Model] stream error: ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.DebugInfo\",\n        \"detail\": \"Invalid API key: test_key_456\"\n      }\n    ]\n  }\n}\n","code":400,"status":"Bad Request"}}
     at throwErrorIfNotOK (file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13341:30)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
     at async file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13059:13
@@ -94,33 +28,21 @@
     at async CliAgent.runInternal (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:60:26)
     at async CliAgent.run (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:24:26)
     at async CoreAgentLoop.run (file:///Users/kalenkevich/projects/agent_007/dist/core/loop.js:39:30) {
-  status: 403
+  status: 400
 }
-[DEBUG] [2026-04-13T22:46:14.181Z] [DEBUG] [CliAgent] yielding event: ERROR
-[DEBUG] [2026-04-13T22:46:14.182Z] [DEBUG] [Gemini Model] stream finished
-[DEBUG] [2026-04-13T22:46:22.041Z] [DEBUG] [CoreAgentLoop] run called with input: "exit;"
-[DEBUG] [2026-04-13T22:46:22.042Z] [DEBUG] [CliAgent] runInternal started
-[DEBUG] [2026-04-13T22:46:22.042Z] [DEBUG] [CliAgent] calling model.run
-[DEBUG] [2026-04-13T22:46:22.043Z] [DEBUG] [Gemini Model] Running model with request: {
+[DEBUG] [2026-04-13T22:52:50.157Z] [DEBUG] [CliAgent] yielding event: ERROR
+[DEBUG] [2026-04-13T22:52:50.158Z] [DEBUG] [Gemini Model] stream finished
+[DEBUG] [2026-04-13T23:01:58.770Z] [DEBUG] [CoreAgentLoop] run called with input: "Hello"
+[DEBUG] [2026-04-13T23:01:58.776Z] [DEBUG] [CoreAgentLoop] initialized
+[DEBUG] [2026-04-13T23:01:58.777Z] [DEBUG] [CliAgent] runInternal started
+[DEBUG] [2026-04-13T23:01:58.778Z] [DEBUG] [CliAgent] calling model.run
+[DEBUG] [2026-04-13T23:01:58.779Z] [DEBUG] [Gemini Model] Running model with request: {
   "contents": [
     {
-      "role": "user",
       "parts": [
         {
           "type": "text",
           "text": "Hello"
-        }
-      ]
-    },
-    {
-      "role": "agent",
-      "parts": []
-    },
-    {
-      "parts": [
-        {
-          "type": "text",
-          "text": "exit;"
         }
       ],
       "role": "user"
@@ -129,18 +51,74 @@
   "tools": [],
   "systemInstructions": "You are an agent. Your internal name is \"cli_agent\".\n\nThe description about you is \"cli_agent\"\n\ncli_agent"
 }
-[ERROR] [2026-04-13T22:46:22.133Z] [ERROR] [Gemini Model] stream error: ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Method doesn't allow unregistered callers (callers without established identity). Please use API Key or other form of API consumer identity to call this API.\",\n    \"status\": \"PERMISSION_DENIED\"\n  }\n}\n","code":403,"status":"Forbidden"}}
-    at throwErrorIfNotOK (file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13341:30)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:13059:13
-    at async Models.generateContentStream (file:///Users/kalenkevich/projects/agent_007/node_modules/@google/genai/dist/node/index.mjs:14538:24)
-    at async Gemini.runStream (file:///Users/kalenkevich/projects/agent_007/dist/model/google/gemini_model.js:37:28)
-    at async Gemini.run (file:///Users/kalenkevich/projects/agent_007/dist/model/google/gemini_model.js:14:13)
-    at async AdaptiveLlmModel.run (file:///Users/kalenkevich/projects/agent_007/dist/model/adaptive_model.js:18:13)
-    at async CliAgent.runInternal (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:60:26)
-    at async CliAgent.run (file:///Users/kalenkevich/projects/agent_007/dist/agent/cli_agent.js:24:26)
-    at async CoreAgentLoop.run (file:///Users/kalenkevich/projects/agent_007/dist/core/loop.js:39:30) {
-  status: 403
+[DEBUG] [2026-04-13T23:02:03.086Z] [DEBUG] [Gemini Model] yielding streaming response {
+  "usageMetadata": {
+    "inputTokens": 32,
+    "outputTokens": 6
+  },
+  "content": {
+    "role": "agent",
+    "parts": [
+      {
+        "type": "text",
+        "text": "Hello! How can I help"
+      }
+    ]
+  },
+  "partial": true
 }
-[DEBUG] [2026-04-13T22:46:22.134Z] [DEBUG] [CliAgent] yielding event: ERROR
-[DEBUG] [2026-04-13T22:46:22.135Z] [DEBUG] [Gemini Model] stream finished
+[DEBUG] [2026-04-13T23:02:03.087Z] [DEBUG] [CliAgent] yielding event: MESSAGE
+[DEBUG] [2026-04-13T23:02:03.088Z] [DEBUG] [Gemini Model] yielding streaming response {
+  "usageMetadata": {
+    "inputTokens": 32,
+    "outputTokens": 9
+  },
+  "content": {
+    "role": "agent",
+    "parts": [
+      {
+        "type": "text",
+        "text": " you today?"
+      }
+    ]
+  },
+  "partial": true
+}
+[DEBUG] [2026-04-13T23:02:03.088Z] [DEBUG] [CliAgent] yielding event: MESSAGE
+[DEBUG] [2026-04-13T23:02:03.089Z] [DEBUG] [Gemini Model] yielding streaming response {
+  "usageMetadata": {
+    "inputTokens": 32,
+    "outputTokens": 9
+  },
+  "content": {
+    "role": "agent",
+    "parts": [
+      {
+        "type": "text",
+        "text": ""
+      }
+    ]
+  },
+  "finishReason": "STOP",
+  "partial": true
+}
+[DEBUG] [2026-04-13T23:02:03.089Z] [DEBUG] [CliAgent] yielding event: MESSAGE
+[DEBUG] [2026-04-13T23:02:03.091Z] [DEBUG] [Gemini Model] yielding final streaming response {
+  "content": {
+    "role": "agent",
+    "parts": [
+      {
+        "type": "text",
+        "text": "Hello! How can I help you today?"
+      }
+    ]
+  },
+  "usageMetadata": {
+    "inputTokens": 32,
+    "outputTokens": 9
+  },
+  "finishReason": "STOP",
+  "partial": false
+}
+[DEBUG] [2026-04-13T23:02:03.091Z] [DEBUG] [CliAgent] yielding event: MESSAGE
+[DEBUG] [2026-04-13T23:02:03.092Z] [DEBUG] [Gemini Model] stream finished

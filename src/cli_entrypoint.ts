@@ -3,6 +3,9 @@
 import { parseArgs } from "node:util";
 import { runNoninteractiveCommand } from "./cli/run_noninteractive_command.js";
 import { runInteractiveCommand } from "./cli/run_interactive_command.js";
+import { createInterface } from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { configStore } from "./config/config_store.js";
 
 const options = {
   prompt: {
@@ -36,6 +39,33 @@ Options:
   --debug                Enable debug mode (writes to debug.log)
 `;
 
+async function ensureApiKey() {
+  let geminiApiKey =
+    process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
+  geminiApiKey = geminiApiKey.trim();
+
+  if (!geminiApiKey) {
+    geminiApiKey = (await configStore.getApiKey()) || "";
+  }
+
+  if (!geminiApiKey) {
+    const rl = createInterface({ input, output });
+    try {
+      const answer = await rl.question("Please enter your Gemini API key: ");
+      geminiApiKey = answer.trim();
+      if (geminiApiKey) {
+        await configStore.setApiKey(geminiApiKey);
+      }
+    } finally {
+      rl.close();
+    }
+  }
+
+  if (geminiApiKey) {
+    process.env.GEMINI_API_KEY = geminiApiKey;
+  }
+}
+
 async function main() {
   try {
     const { values, positionals } = parseArgs({
@@ -52,6 +82,8 @@ async function main() {
       console.log("Debug mode: enabled");
       process.env.DEBUG_LOGGER = "true";
     }
+
+    await ensureApiKey();
 
     const command = positionals[0];
 
@@ -85,3 +117,4 @@ async function main() {
 }
 
 main();
+
