@@ -2,7 +2,8 @@ import { GoogleGenAI, GenerateContentParameters } from "@google/genai";
 import { LlmRequest } from "../request";
 import { LlmResponse } from "../response";
 import { ModelConfig } from "../../config/config";
-import { contentToGenAIContent } from "./gemini_request_utils";
+import { contentToGenAIContent } from "./gen_ai_convert_utils";
+import { StreamingResponseAggregator } from "./gemini_streaming_utils";
 
 export interface RunConfig {
   stream?: boolean;
@@ -10,14 +11,12 @@ export interface RunConfig {
 }
 
 export class Gemini {
-  private readonly modelName: string;
+  public readonly modelName: string;
   private readonly client: GoogleGenAI;
 
   constructor(config: ModelConfig) {
     this.modelName = config.modelName;
-    this.client = new GoogleGenAI({
-      apiKey: config.apiKey,
-    });
+    this.client = new GoogleGenAI(config);
   }
 
   async *run(
@@ -42,13 +41,25 @@ export class Gemini {
     request: LlmRequest,
     config?: RunConfig,
   ): AsyncGenerator<LlmResponse, void, unknown> {
-    const response = await this.client.models.generateContentStream(
+    const aggregator = new StreamingResponseAggregator();
+    const stream = await this.client.models.generateContentStream(
       toGenAiRequest({
         model: this.modelName,
         request,
         config,
       }),
     );
+
+    for await (const response of stream) {
+      for await (const llmResponse of aggregator.processResponse(response)) {
+        yield llmResponse;
+      }
+    }
+
+    const finalResponse = aggregator.close();
+    if (finalResponse) {
+      yield finalResponse;
+    }
   }
 }
 
@@ -67,7 +78,9 @@ function toGenAiRequest({
     contents: request.contents.map((c) => contentToGenAIContent(c)),
     config: {
       ...(config || {}),
-      tools: [{ functionDeclarations: request.tools }],
+      tools: request.tools
+        ? [{ functionDeclarations: request.tools }]
+        : undefined,
       systemInstruction: request.systemInstructions,
     },
   };
