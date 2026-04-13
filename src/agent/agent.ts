@@ -1,4 +1,4 @@
-import { UserInput } from "../user_input/user_input";
+import { UserInput } from "../user_input";
 import { LlmModel } from "../model/model";
 import { Tool } from "../tools/tool";
 import { Skill } from "../skills/skill";

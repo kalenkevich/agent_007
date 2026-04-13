@@ -5,11 +5,7 @@ import { Tool } from "../tools/tool";
 import { Skill } from "../skills/skill";
 import { AgentEvent, AgentEventType } from "./agent_event";
 import { Content } from "../content";
-import {
-  UserInput,
-  isUserCommand,
-  toContentParts,
-} from "../user_input/user_input";
+import { UserInput, isUserCommand, toContentParts } from "../user_input";
 import { buildLlmRequest } from "../model/request_builder_utils";
 import {
   getContentFromAgentEvent,

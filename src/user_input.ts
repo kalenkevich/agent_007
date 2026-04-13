@@ -1,5 +1,5 @@
-import { ModelConfig } from "../config/config";
-import { Content, ContentPart } from "../content";
+import { ModelConfig } from "./config/config";
+import { Content, ContentPart } from "./content";
 
 export type UserCommand = SetModelCommand;
 

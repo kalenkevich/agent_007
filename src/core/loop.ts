@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { Agent } from '../agent/agent';
-import { UserInput } from '../user_input/user_input';
+import { UserInput } from "../user_input";
 import { CliAgent } from '../agent/cli_agent';
 import { Run } from './run';
 import {Config} from '../config/config';
