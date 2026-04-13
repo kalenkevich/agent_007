@@ -1,30 +1,28 @@
 import { randomUUID } from "node:crypto";
-import type { Agent } from "./agent.js";
-import type { LlmModel } from "../model/model.js";
-import type { Tool } from "../tools/tool.js";
-import type { Skill } from "../skills/skill.js";
+import type { Agent } from "../agent.js";
+import type { LlmModel } from "../../model/model.js";
+import type { Tool } from "../../tools/tool.js";
+import type { Skill } from "../../skills/skill.js";
 import {
   type AgentEvent,
   AgentEventType,
   AgentEndReason,
-} from "./agent_event.js";
-import type { Content } from "../content.js";
+} from "../agent_event.js";
+import type { Content } from "../../content.js";
 import {
   type UserInput,
   isUserCommand,
   toContentParts,
-} from "../user_input.js";
-import { buildLlmRequest } from "../model/request_builder_utils.js";
+} from "../../user_input.js";
+import { buildLlmRequest } from "../../model/request_builder_utils.js";
 import {
   getContentFromAgentEvent,
   llmResponseToAgentEvents,
-} from "./agent_event_utils.js";
-import { logger } from "../logger.js";
+} from "../agent_event_utils.js";
+import { logger } from "../../logger.js";
+import { CLI_AGENT_SYSTEM_PROMPT } from "./system_prompt.js";
 
 export interface CliAgentOptions {
-  name: string;
-  description: string;
-  instructions: string;
   model: LlmModel;
   tools?: Tool[];
   skills?: Skill[];
@@ -46,9 +44,9 @@ export class CliAgent implements Agent {
   private abortController?: AbortController;
 
   constructor(options: CliAgentOptions) {
-    this.name = options.name;
-    this.description = options.description;
-    this.instructions = options.instructions;
+    this.name = "Agent 007";
+    this.description = "Agent 007";
+    this.instructions = CLI_AGENT_SYSTEM_PROMPT;
     this.model = options.model;
     this.tools = options.tools;
     this.skills = options.skills;

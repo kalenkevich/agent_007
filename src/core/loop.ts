@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import type { Agent } from "../agent/agent.js";
 import type { UserInput } from "../user_input.js";
-import { CliAgent } from "../agent/cli_agent.js";
+import { CliAgent } from "../agent/cli_agent/cli_agent.js";
 import { Run } from "./run.js";
 import type { Config } from "../config/config.js";
 import { AdaptiveLlmModel } from "../model/adaptive_model.js";
@@ -30,9 +30,6 @@ export class CoreAgentLoop extends EventEmitter {
     }
 
     this.agent = new CliAgent({
-      name: "cli_agent",
-      description: "cli_agent",
-      instructions: "cli_agent",
       model: new AdaptiveLlmModel(this.config.model),
     });
     this.initialized = true;
