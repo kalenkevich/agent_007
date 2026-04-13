@@ -5,6 +5,8 @@ import { CliAgent } from "../agent/cli_agent.js";
 import { Run } from "./run.js";
 import type { Config } from "../config/config.js";
 import { AdaptiveLlmModel } from "../model/adaptive_model.js";
+import { randomUUID } from "node:crypto";
+import { AgentEventType, type ErrorEvent } from "../agent/agent_event.js";
 
 export enum AgentLoopType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -27,25 +29,40 @@ export class CoreAgentLoop extends EventEmitter {
     }
 
     this.agent = new CliAgent({
-      name: 'cli_agent',
-      description: 'cli_agent',
-      instructions: 'cli_agent',
+      name: "cli_agent",
+      description: "cli_agent",
+      instructions: "cli_agent",
       model: new AdaptiveLlmModel(this.config.model),
     });
+    this.initialized = true;
   }
 
   async run(userInput: UserInput) {
-    this.init();
-
     await this.currentRun?.wait();
     this.currentRun = new Run();
+    this.currentRun.start();
 
+    await this.init();
+
+    let streamId = "unknown";
     try {
       for await (const event of this.agent!.run(userInput)) {
+        streamId = event.streamId;
         this.emit(AgentLoopType.AGENT_EVENT, event);
       }
     } catch (e: unknown) {
-      // const error = e as Error;
+      const error = e as Error;
+      const errorEvent: ErrorEvent = {
+        id: randomUUID(),
+        streamId: streamId,
+        timestamp: new Date().toISOString(),
+        role: "agent",
+        type: AgentEventType.ERROR,
+        statusCode: 500,
+        errorMessage: error.message || String(error),
+        fatal: true,
+      };
+      this.emit(AgentLoopType.AGENT_EVENT, errorEvent);
     } finally {
       this.currentRun.finish();
       this.currentRun = undefined;
@@ -56,5 +73,5 @@ export class CoreAgentLoop extends EventEmitter {
     if (this.currentRun) {
       this.agent?.abort();
     }
-  }  
+  }
 }

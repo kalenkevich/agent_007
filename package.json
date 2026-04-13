@@ -13,10 +13,11 @@
     }
   },
   "bin": {
-    "agent007": "./dist/cli_entrypoint.js"
+    "agent_007": "./dist/cli_entrypoint.js"
   },
   "scripts": {
     "build": "tsc",
+    "start": "node ./dist/cli_entrypoint.js",
     "test": "vitest --project unit --project integration --project e2e",
     "test:unit": "vitest --project unit",
     "test:integration": "vitest --project integration",
