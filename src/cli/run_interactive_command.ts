@@ -3,6 +3,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { loadConfig } from "../config/config_loader.js";
 import { CoreAgentLoop, AgentLoopType } from "../core/loop.js";
 import { AgentEventType, type AgentEvent } from "../agent/agent_event.js";
+import { TerminalLoader } from "./loader.js";
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -28,28 +29,48 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
 
   const loop = new CoreAgentLoop(config);
 
+  const loader = new TerminalLoader();
+  let hasStreamed = false;
   loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
     switch (event.type) {
       case AgentEventType.START:
-        console.log("\n--- Agent Started ---");
+        loader.startLoading();
+        hasStreamed = false;
         break;
       case AgentEventType.MESSAGE:
         if (event.role === "agent" && event.parts) {
-          for (const part of event.parts) {
-            if ("text" in part && part.text) {
-              rl.write(part.text);
+          if (event.partial === true) {
+            hasStreamed = true;
+            loader.stopLoading();
+            for (const part of event.parts) {
+              if ("text" in part && part.text) {
+                rl.write(part.text);
+              }
             }
+          } else {
+            if (hasStreamed) {
+              rl.write("\n");
+              break;
+            }
+            loader.stopLoading();
+            for (const part of event.parts) {
+              if ("text" in part && part.text) {
+                rl.write(part.text);
+              }
+            }
+            rl.write("\n");
           }
         }
         break;
       case AgentEventType.END:
-        console.log("\n--- Agent Ended ---");
-        console.log(`Reason: ${event.reason}`);
+        loader.stopLoading();
         break;
       case AgentEventType.ERROR:
+        loader.stopLoading();
         console.error(`\nAgent Error: ${event.errorMessage}`);
         break;
       case AgentEventType.TOOL_CALL:
+        loader.stopLoading();
         console.log(`\n[Tool Call: ${event.name}]`);
         break;
       case AgentEventType.TOOL_RESPONSE:

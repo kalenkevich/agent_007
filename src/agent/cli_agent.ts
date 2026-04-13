@@ -3,7 +3,11 @@ import type { Agent } from "./agent.js";
 import type { LlmModel } from "../model/model.js";
 import type { Tool } from "../tools/tool.js";
 import type { Skill } from "../skills/skill.js";
-import { type AgentEvent, AgentEventType } from "./agent_event.js";
+import {
+  type AgentEvent,
+  AgentEventType,
+  AgentEndReason,
+} from "./agent_event.js";
 import type { Content } from "../content.js";
 import {
   type UserInput,
@@ -111,6 +115,12 @@ export class CliAgent implements Agent {
         yield this.createEvent(agentEvent.type!, agentEvent);
       }
     }
+
+    yield this.createEvent(AgentEventType.END, {
+      role: "agent",
+      type: AgentEventType.END,
+      reason: AgentEndReason.COMPLETED,
+    });
   }
 
   private createEvent(

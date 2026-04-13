@@ -38,6 +38,7 @@ export function llmResponseToAgentEvents(
         role: "agent",
         errorMessage: response.errorMessage || "Unknown error",
         statusCode: 500,
+        partial: response.partial,
       },
     ];
   }
@@ -50,6 +51,7 @@ export function llmResponseToAgentEvents(
         type: AgentEventType.MESSAGE,
         role: "agent",
         parts: [part],
+        partial: response.partial,
       };
       events.push(contentEvent);
       continue;
@@ -63,6 +65,7 @@ export function llmResponseToAgentEvents(
         requestId: part.id,
         name: part.name,
         args: part.args,
+        partial: response.partial,
       };
       events.push(contentEvent);
       continue;
@@ -76,6 +79,7 @@ export function llmResponseToAgentEvents(
         requestId: part.id,
         name: part.name,
         result: part.response,
+        partial: response.partial,
       };
       events.push(contentEvent);
     }

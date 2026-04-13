@@ -42,6 +42,7 @@ export interface BaseAgentEvent {
   timestamp: string;
   role: "user" | "agent";
   parts?: ContentPart[];
+  partial?: boolean;
 }
 
 export interface AgentStartEvent extends BaseAgentEvent {
