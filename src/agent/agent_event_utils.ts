@@ -31,6 +31,17 @@ export function getContentFromAgentEvent(
 export function llmResponseToAgentEvents(
   response: LlmResponse,
 ): Partial<AgentEvent>[] {
+  if (response.errorCode || response.errorMessage) {
+    return [
+      {
+        type: AgentEventType.ERROR,
+        role: "agent",
+        errorMessage: response.errorMessage || "Unknown error",
+        statusCode: 500,
+      },
+    ];
+  }
+
   const events: Partial<AgentEvent>[] = [];
 
   for (const part of response.content?.parts ?? []) {

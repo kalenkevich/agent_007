@@ -31,6 +31,10 @@ export class AdaptiveLlmModel implements LlmModel {
       yield * this.currentModel.run(request, config);
     } catch (e: unknown) {
       logger.error("[AdaptiveLlmModel] error:", e);
+      yield {
+        errorCode: "ADAPTIVE_MODEL_ERROR",
+        errorMessage: e instanceof Error ? e.message : String(e),
+      };
     }
   }
 }

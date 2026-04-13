@@ -28,61 +28,77 @@ export class Gemini {
     logger.debug(
       "[Gemini Model] Running model with request:",
       JSON.stringify(request, null, 2),
-    );  
+    );
 
     if (config?.stream) {
       yield* this.runStream(request, config);
       return;
     }
 
-    const response = await this.client.models.generateContent(
-      toGenAiRequest({
-        model: this.modelName,
-        request,
-        config,
-      }),
-    );
+    try {
+      const response = await this.client.models.generateContent(
+        toGenAiRequest({
+          model: this.modelName,
+          request,
+          config,
+        }),
+      );
 
-    logger.debug(
-      "[Gemini Model] response received:",
-      JSON.stringify(response, null, 2),
-    );
+      logger.debug(
+        "[Gemini Model] response received:",
+        JSON.stringify(response, null, 2),
+      );
 
-    yield createLlmResponse(response);
+      yield createLlmResponse(response);
+    } catch (e: unknown) {
+      logger.error("[Gemini Model] error:", e);
+      yield {
+        errorCode: "GEMINI_ERROR",
+        errorMessage: extractErrorMessage(e),
+      };
+    }
   }
 
   private async *runStream(
     request: LlmRequest,
     config?: RunConfig,
   ): AsyncGenerator<LlmResponse, void, unknown> {
-    const aggregator = new StreamingResponseAggregator();
-    const stream = await this.client.models.generateContentStream(
-      toGenAiRequest({
-        model: this.modelName,
-        request,
-        config,
-      }),
-    );
-
-    for await (const response of stream) {
-      for await (const llmResponse of aggregator.processResponse(response)) {
-        logger.debug(
-          "[Gemini Model] yielding streaming response",
-          JSON.stringify(llmResponse, null, 2),
-        );
-
-        yield llmResponse;
-      }
-    }
-
-    const finalResponse = aggregator.close();
-    if (finalResponse) {
-      logger.debug(
-        "[Gemini Model] yielding final streaming response",
-        JSON.stringify(finalResponse, null, 2),
+    try {
+      const aggregator = new StreamingResponseAggregator();
+      const stream = await this.client.models.generateContentStream(
+        toGenAiRequest({
+          model: this.modelName,
+          request,
+          config,
+        }),
       );
 
-      yield finalResponse;
+      for await (const response of stream) {
+        for await (const llmResponse of aggregator.processResponse(response)) {
+          logger.debug(
+            "[Gemini Model] yielding streaming response",
+            JSON.stringify(llmResponse, null, 2),
+          );
+
+          yield llmResponse;
+        }
+      }
+
+      const finalResponse = aggregator.close();
+      if (finalResponse) {
+        logger.debug(
+          "[Gemini Model] yielding final streaming response",
+          JSON.stringify(finalResponse, null, 2),
+        );
+
+        yield finalResponse;
+      }
+    } catch (e: unknown) {
+      logger.error("[Gemini Model] stream error:", e);
+      yield {
+        errorCode: "GEMINI_STREAM_ERROR",
+        errorMessage: extractErrorMessage(e),
+      };
     }
 
     logger.debug("[Gemini Model] stream finished");
@@ -110,4 +126,27 @@ function toGenAiRequest({
       systemInstruction: request.systemInstructions,
     },
   };
+}
+
+function extractErrorMessage(e: unknown): string {
+  if (e instanceof Error) {
+    try {
+      const parsed = JSON.parse(e.message);
+      if (parsed.error && parsed.error.message) {
+        try {
+          const innerParsed = JSON.parse(parsed.error.message);
+          if (innerParsed.error && innerParsed.error.message) {
+            return innerParsed.error.message;
+          }
+        } catch {
+          return parsed.error.message;
+        }
+        return parsed.error.message;
+      }
+    } catch {
+      return e.message;
+    }
+    return e.message;
+  }
+  return String(e);
 }
