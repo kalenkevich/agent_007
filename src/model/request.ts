@@ -4,7 +4,7 @@ import type { FunctionDeclaration } from "../tools/tool.js";
 export interface LlmRequest {
   model?: string;
   contents: Content[];
-  systemInstructions: string;
+  systemInstructions?: string;
   tools?: FunctionDeclaration[];
   thinkingConfig?: ThinkingConfig;
 }

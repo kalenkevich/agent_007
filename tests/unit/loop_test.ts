@@ -111,4 +111,31 @@ describe("CoreAgentLoop", () => {
     expect(events[0].errorMessage).toBe("Immediate error");
     expect(events[0].streamId).toBe("unknown");
   });
+
+  it("should append events to session service", async () => {
+    const mockAgent = {
+      run: vi.fn().mockImplementation(async function* () {
+        yield { type: AgentEventType.START, streamId: "123" };
+        yield { type: AgentEventType.END, streamId: "123" };
+      }),
+    };
+    vi.mocked(CliAgent).mockImplementation(function () {
+      return mockAgent as any;
+    });
+
+    const loop = new CoreAgentLoop({
+      models: {
+        main: { modelName: "gemini-3.1-pro-preview", apiKey: "dummy" },
+        util: { modelName: "gemini-3-flash-preview", apiKey: "dummy" },
+      },
+    } as any);
+
+    const mockSessionService = (loop as any).sessionService;
+
+    await loop.run("hello");
+
+    expect(mockSessionService.appendEvent).toHaveBeenCalledTimes(2);
+    expect(mockSessionService.appendEvent).toHaveBeenCalledWith("test-session-id", expect.objectContaining({ type: AgentEventType.START }));
+    expect(mockSessionService.appendEvent).toHaveBeenCalledWith("test-session-id", expect.objectContaining({ type: AgentEventType.END }));
+  });
 });

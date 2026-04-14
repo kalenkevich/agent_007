@@ -7,6 +7,14 @@ import {
 import type { Tool } from "../../src/tools/tool.js";
 import type { ToolCallPolicy } from "../../src/tools/tool_call_policy.js";
 
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    readFile: vi.fn().mockResolvedValue("Mocked plan content"),
+  };
+});
+
 describe("CliAgent - Tool Confirmation", () => {
   it("should request confirmation when policy requires it", async () => {
     const mockModel = {
@@ -294,7 +302,7 @@ describe("CliAgent - Tool Confirmation", () => {
 
     const compactionMessage = events.find(
       (e) =>
-        e.type === AgentEventType.MESSAGE &&
+        e.type === AgentEventType.COMPACTION &&
         e.parts &&
         e.parts[0].text &&
         e.parts[0].text.includes("Context compacted"),
@@ -341,7 +349,7 @@ describe("CliAgent - Tool Confirmation", () => {
       model: mockModel as any,
       compactionConfig: {
         enabled: true,
-        strategy: "compact",
+        strategy: "summarize",
         maxTokens: 800,
         triggerThreshold: 0.8,
       },
@@ -361,7 +369,7 @@ describe("CliAgent - Tool Confirmation", () => {
 
     const compactionMessage = events.find(
       (e) =>
-        e.type === AgentEventType.MESSAGE &&
+        e.type === AgentEventType.COMPACTION &&
         e.parts &&
         e.parts[0].text &&
         e.parts[0].text.includes("Context compacted using LLM summarization"),
@@ -375,5 +383,94 @@ describe("CliAgent - Tool Confirmation", () => {
       "Summary of previous conversation",
     );
     expect(firstContent.parts[0].text).toContain("Summarized history");
+  });
+});
+
+describe("CliAgent - Basic Flow", () => {
+  it("should yield message events when model responds with text", async () => {
+    const mockModel = {
+      run: vi.fn().mockImplementation(async function* () {
+        yield {
+          content: {
+            role: "agent",
+            parts: [{ type: "text", text: "Hello from agent" }],
+          },
+        };
+      }),
+      countTokens: vi.fn().mockResolvedValue(10),
+    };
+
+    const agent = new CliAgent({
+      model: mockModel as any,
+    });
+
+    const events: any[] = [];
+    for await (const event of agent.run("hello")) {
+      events.push(event);
+    }
+
+    expect(events.length).toBe(4); // START, MESSAGE (user), MESSAGE (agent), END
+    expect(events[0].type).toBe(AgentEventType.START);
+    expect(events[1].type).toBe(AgentEventType.MESSAGE); // User message
+    expect(events[2].type).toBe(AgentEventType.MESSAGE); // Agent response
+    expect(events[2].parts[0].text).toBe("Hello from agent");
+    expect(events[3].type).toBe(AgentEventType.END);
+  });
+});
+
+describe("CliAgent - Plan Execution", () => {
+  it("should execute plan when resumed with approved plan", async () => {
+    const mockModel = {
+      run: vi.fn().mockImplementation(async function* () {
+        yield {
+          content: {
+            role: "agent",
+            parts: [{ type: "text", text: "Model response executing plan" }],
+          },
+        };
+      }),
+    };
+
+    const agent = new CliAgent({
+      model: mockModel as any,
+    });
+
+    const streamId = "stream_123";
+    (agent as any).history = [
+      {
+        type: AgentEventType.USER_INPUT_REQUEST,
+        streamId,
+        id: "1",
+        requestId: "req_123",
+        message: "Do you approve this plan?",
+        requestSchema: {
+          type: "plan_approval",
+          planFilePath: "/tmp/plan_123.md",
+        },
+      } as any,
+    ];
+    (agent as any).streamId = streamId;
+
+    const events: any[] = [];
+    for await (const event of agent.run({
+      type: AgentEventType.USER_INPUT_RESPONSE,
+      id: "resp_123",
+      streamId,
+      timestamp: new Date().toISOString(),
+      role: "user",
+      requestId: "req_123",
+      action: "accept",
+    })) {
+      events.push(event);
+    }
+
+    expect(events.map((e) => e.type)).toContain(AgentEventType.MESSAGE);
+
+    const planMessage = events.find(
+      (e) => e.type === AgentEventType.MESSAGE && e.role === "user",
+    );
+    expect(planMessage).toBeTruthy();
+    expect(planMessage.parts[0].text).toContain("Plan approved");
+    expect(planMessage.parts[0].text).toContain("Mocked plan content");
   });
 });

@@ -6,9 +6,9 @@ To do:
 - [x] Tool call approval
 - [x] Sessions
 - [x] Chat history
-- [x] Dymaic model support
-- [/] Planing agent
-  - [/] Ask user for approval
+- [x] Dynamic model support
+- [/] Planning agent
+  - [x] Ask user for approval
   - [ ] Plan execution
 - [ ] Define project constants by scaning the codebase:
   - language, framework, package managers, build tools
@@ -21,7 +21,7 @@ To do:
 - [ ] Personality (aggresive, polite, casual)
 - [ ] Web search
 - [ ] Code execution
-- [ ] Context compaction
+- [x] Context compaction
 - [ ] Memory facts
 - [ ] Index project for Llm (LllWiki)
 - [ ] Conenct to Telegram

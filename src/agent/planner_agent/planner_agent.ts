@@ -105,6 +105,7 @@ Respond ONLY with the plan.`;
       role: "agent",
       requestId,
       message: "Do you approve this plan?",
+      requestSchema: { type: "plan_approval", planFilePath: tempFilePath },
     });
 
     return;
