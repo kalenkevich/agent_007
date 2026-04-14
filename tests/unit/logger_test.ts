@@ -29,25 +29,25 @@ describe("Logger", () => {
   });
 
   it("should log to console.log", () => {
-    const logger = new Logger([new ConsoleTransport()]);
+    const logger = new Logger([new ConsoleTransport(true)]);
     logger.log("test log");
     expect(consoleLogSpy).toHaveBeenCalledWith("test log");
   });
 
   it("should log to console.info", () => {
-    const logger = new Logger([new ConsoleTransport()]);
+    const logger = new Logger([new ConsoleTransport(true)]);
     logger.info("test info");
     expect(consoleInfoSpy).toHaveBeenCalledWith("test info");
   });
 
   it("should log to console.warn", () => {
-    const logger = new Logger([new ConsoleTransport()]);
+    const logger = new Logger([new ConsoleTransport(true)]);
     logger.warn("test warn");
     expect(consoleWarnSpy).toHaveBeenCalledWith("test warn");
   });
 
   it("should log to console.error", () => {
-    const logger = new Logger([new ConsoleTransport()]);
+    const logger = new Logger([new ConsoleTransport(true)]);
     logger.error("test error");
     expect(consoleErrorSpy).toHaveBeenCalledWith("test error");
   });
@@ -84,6 +84,7 @@ describe("Logger", () => {
 
   it("should use custom transport", () => {
     const mockTransport = {
+      enabled: true,
       log: vi.fn(),
     };
     const logger = new Logger([mockTransport]);
@@ -98,8 +99,8 @@ describe("Logger", () => {
   });
 
   it("should use multiple custom transports", () => {
-    const mockTransport1 = { log: vi.fn() };
-    const mockTransport2 = { log: vi.fn() };
+    const mockTransport1 = { enabled: true, log: vi.fn() };
+    const mockTransport2 = { enabled: true, log: vi.fn() };
     const logger = new Logger([mockTransport1, mockTransport2]);
     logger.log("test multiple");
     expect(mockTransport1.log).toHaveBeenCalled();

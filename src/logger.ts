@@ -65,7 +65,12 @@ export class FileTransport implements LogTransport {
 export class Logger {
   private transports: LogTransport[] = [];
 
-  constructor(transports?: LogTransport[]) {}
+  constructor(transports?: LogTransport[]) {
+    if (transports) {
+      this.transports = transports;
+    }
+  }
+
 
   getTransports(): LogTransport[] {
     if (this.transports.length) {

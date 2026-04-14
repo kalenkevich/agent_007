@@ -1,9 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { CoreAgentLoop, AgentLoopType } from "../../src/core/loop.js";
-import { CliAgent } from "../../src/agent/cli_agent.js";
+import { CliAgent } from "../../src/agent/cli_agent/cli_agent.js";
 import { AgentEventType } from "../../src/agent/agent_event.js";
 
-vi.mock("../../src/agent/cli_agent.js");
+vi.mock("../../src/agent/cli_agent/cli_agent.js");
+
 vi.mock("../../src/model/adaptive_model.js");
 
 describe("CoreAgentLoop", () => {
