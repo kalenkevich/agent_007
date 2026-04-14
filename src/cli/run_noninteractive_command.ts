@@ -22,10 +22,10 @@ export async function runNoninteractiveCommand(options: RunCommandOptions) {
   const config = await loadConfig();
 
   if (options.model) {
-    config.model.modelName = options.model;
+    config.models.main.modelName = options.model;
   }
 
-  console.log(`Using model: ${config.model.modelName}`);
+  console.log(`Using model: ${config.models.main.modelName}`);
 
   const loop = new CoreAgentLoop(config);
   const lastPrintedToolCalls = new Map<string, string>();

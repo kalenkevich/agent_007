@@ -15,15 +15,31 @@ export async function loadConfig(): Promise<Config> {
   }
 
   return {
-    model: {
-      modelName: process.env.MODEL_NAME || "gemini-3.1-pro-preview",
-      apiKey: geminiApiKey,
+    models: {
+      main: {
+        modelName: process.env.MODEL_NAME || "gemini-3.1-pro-preview",
+        apiKey: geminiApiKey,
+      },
       fallback: [
         {
-          modelName: "gemini-3-flash-preview",
+          modelName: process.env.FALLBACK_MODEL_NAME || "gemini-2.5-pro",
+          apiKey: geminiApiKey,
+        },
+        {
+          modelName:
+            process.env.FALLBACK_MODEL_NAME || "gemini-3-flash-preview",
+          apiKey: geminiApiKey,
+        },
+        {
+          modelName: process.env.FALLBACK_MODEL_NAME || "gemini-2.5-flash",
           apiKey: geminiApiKey,
         },
       ],
+      util: {
+        modelName:
+          process.env.UTIL_MODEL_NAME || "gemini-3.1-flash-lite-preview",
+        apiKey: geminiApiKey,
+      },
     },
     thinkingConfig: {
       enabled: process.env.ENABLE_THINKING !== "false",

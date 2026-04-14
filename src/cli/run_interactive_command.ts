@@ -29,10 +29,10 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
   const config = await loadConfig();
 
   if (options.model) {
-    config.model.modelName = options.model;
+    config.models.main.modelName = options.model;
   }
 
-  console.log(`Using model: ${config.model.modelName}`);
+  console.log(`Using model: ${config.models.main.modelName}`);
 
   const rl = createInterface({ input, output });
 

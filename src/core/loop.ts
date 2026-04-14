@@ -48,20 +48,19 @@ export class CoreAgentLoop extends EventEmitter {
       history = session.events;
     }
 
-    const model = new AdaptiveLlmModel(this.config.model);
+    const model = new AdaptiveLlmModel(this.config.models);
     this.agent = new CliAgent({
       model: model,
       thinkingConfig: this.config.thinkingConfig,
       history,
     });
 
-    const ModelClass = resolveLlmModel("gemini-3-flash-preview");
-    this.utilLlm = new UtilLlm(
-      new ModelClass({
-        modelName: "gemini-3-flash-preview",
-        apiKey: this.config.model.apiKey,
-      }),
-    );
+    const utilModelConfig = this.config.models.util;
+    if (!utilModelConfig) {
+      throw new Error("Util model config is missing");
+    }
+    const UtilModelClass = resolveLlmModel(utilModelConfig.modelName);
+    this.utilLlm = new UtilLlm(new UtilModelClass(utilModelConfig));
 
     if (!this.sessionId) {
       const session = await this.sessionService.createSession(

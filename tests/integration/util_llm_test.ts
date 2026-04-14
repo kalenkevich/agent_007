@@ -7,11 +7,11 @@ import { AgentEventType, type AgentEvent } from "../../src/agent/agent_event.js"
 describe("UtilLlm Integration", () => {
   it("should generate a session title using real model", async () => {
     const config = await loadConfig();
-    if (!config.model.apiKey) {
+    if (!config.models.main.apiKey) {
       console.warn("Skipping integration test: GEMINI_API_KEY is not set.");
       return;
     }
-    const model = new AdaptiveLlmModel(config.model);
+    const model = new AdaptiveLlmModel(config.models);
     const utilLlm = new UtilLlm(model);
 
     const events: AgentEvent[] = [

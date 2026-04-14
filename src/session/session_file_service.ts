@@ -7,18 +7,37 @@ import * as path from "node:path";
 
 export class SessionFileService {
   private rootDir: string;
-  private initialised: boolean = false;
+  private initialized: boolean = false;
+  private locks: Map<string, Promise<void>> = new Map();
 
   constructor() {
     this.rootDir = path.join(APP_FILE_DIR, "sessions");
   }
 
   private async init() {
-    if (this.initialised) {
+    if (this.initialized) {
       return;
     }
 
     await fs.mkdir(this.rootDir, { recursive: true });
+  }
+
+  private async lock(sessionId: string): Promise<() => void> {
+    let unlock: () => void = () => {};
+    const previous = this.locks.get(sessionId) || Promise.resolve();
+
+    const current = new Promise<void>((r) => {
+      unlock = r;
+    });
+
+    this.locks.set(
+      sessionId,
+      previous.then(() => current),
+    );
+
+    await previous;
+
+    return unlock;
   }
 
   async getSession(sessionId: string): Promise<Session> {
@@ -77,31 +96,39 @@ export class SessionFileService {
     { title }: { title: string },
   ): Promise<void> {
     await this.init();
+    const unlock = await this.lock(sessionId);
+    try {
+      const metaFilePath = getSessionMetadataFileName(this.rootDir, sessionId);
+      const sessionMeta = (await loadFileData(metaFilePath)) as Session;
 
-    const metaFilePath = getSessionMetadataFileName(this.rootDir, sessionId);
-    const sessionMeta = (await loadFileData(metaFilePath)) as Session;
+      if (!sessionMeta) {
+        return;
+      }
 
-    if (!sessionMeta) {
-      return;
+      sessionMeta.title = title;
+      await saveToFile(metaFilePath, sessionMeta);
+    } finally {
+      unlock();
     }
-
-    sessionMeta.title = title;
-    await saveToFile(metaFilePath, sessionMeta);
   }
 
   async appendEvent(sessionId: string, agentEvent: AgentEvent): Promise<void> {
     await this.init();
+    const unlock = await this.lock(sessionId);
+    try {
+      const sessionFilePath = getSessionFileName(this.rootDir, sessionId);
+      const session = (await loadFileData(sessionFilePath)) as Session;
 
-    const sessionFilePath = getSessionFileName(this.rootDir, sessionId);
-    const session = (await loadFileData(sessionFilePath)) as Session;
+      if (!session) {
+        return;
+      }
 
-    if (!session) {
-      return;
+      session.events.push(agentEvent);
+
+      await saveToFile(sessionFilePath, session);
+    } finally {
+      unlock();
     }
-
-    session.events.push(agentEvent);
-
-    await saveToFile(sessionFilePath, session);
   }
 
   async listSessions(): Promise<Array<SessionMetadata>> {

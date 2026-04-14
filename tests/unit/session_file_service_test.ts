@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   SessionFileService,
   loadFileData,
-  saveToFile,
-  listFiles,
 } from "../../src/session/session_file_service.js";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";

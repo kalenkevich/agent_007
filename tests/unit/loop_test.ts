@@ -32,7 +32,10 @@ describe("CoreAgentLoop", () => {
     });
 
     const loop = new CoreAgentLoop({
-      model: { modelName: "test", apiKey: "dummy" },
+      models: {
+        main: { modelName: "gemini-3.1-pro-preview", apiKey: "dummy" },
+        util: { modelName: "gemini-3-flash-preview", apiKey: "dummy" },
+      },
     } as any);
 
     const events: any[] = [];
@@ -59,7 +62,10 @@ describe("CoreAgentLoop", () => {
     });
 
     const loop = new CoreAgentLoop({
-      model: { modelName: "test", apiKey: "dummy" },
+      models: {
+        main: { modelName: "gemini-3.1-pro-preview", apiKey: "dummy" },
+        util: { modelName: "gemini-3-flash-preview", apiKey: "dummy" },
+      },
     } as any);
 
     const events: any[] = [];
@@ -87,7 +93,10 @@ describe("CoreAgentLoop", () => {
     });
 
     const loop = new CoreAgentLoop({
-      model: { modelName: "test", apiKey: "dummy" },
+      models: {
+        main: { modelName: "gemini-3.1-pro-preview", apiKey: "dummy" },
+        util: { modelName: "gemini-3-flash-preview", apiKey: "dummy" },
+      },
     } as any);
 
     const events: any[] = [];
