@@ -19,6 +19,7 @@ import { SessionFileService } from "../session/session_file_service.js";
 import { UserCommandType } from "../user_input.js";
 import { InitProjectCommandHandler } from "../command/init_project_command_handler.js";
 import { isYes, parseUserAction } from "./prompt_utils.js";
+import { checkAndPromptVersion } from "./version_check.js";
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -31,6 +32,8 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
   if (!prompt && options.positionals.length > 0) {
     prompt = options.positionals.join(" ");
   }
+
+  await checkAndPromptVersion();
 
   const config = await loadConfig();
 
