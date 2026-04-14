@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Agent 007 - Yet another AI agent coding harness. Your ultimate AI assistant in the terminal.">
+    <title>Agent 007 | AI Coding Assistant</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕵️‍♂️</text></svg>">
+</head>
+<body>
+    <!-- Background Blobs -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <header id="main-header">
+        <div class="container header-container">
+            <div class="logo" id="site-logo">Agent<span>007</span></div>
+            <nav id="main-nav">
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="https://github.com/kalenkevich/agent_007" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="hero">
+            <div class="container hero-container">
+                <h1 id="hero-title">Your AI Coding <span class="gradient-text">Partner.</span></h1>
+                <p id="hero-subtitle">Meet Agent 007. An interactive AI assistant that lives in your terminal. Leverages Gemini to understand your codebase, execute tools, and accelerate your development.</p>
+                <div class="cta-group">
+                    <a href="https://github.com/kalenkevich/agent_007" target="_blank" class="btn btn-outline" id="hero-secondary-cta">View on GitHub</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation Section -->
+        <section id="installation">
+            <div class="container">
+                <div class="cta-box glass">
+                    <h2>Quick Start</h2>
+                    <p>Install Agent 007 globally via npm and start building faster.</p>
+                    <div class="code-block-container">
+                        <pre><code id="install-code">npm install @kalenkevich/agent_007 -g</code></pre>
+                        <button class="btn btn-secondary" id="copy-btn">Copy</button>
+                    </div>
+                    <p class="form-message" id="form-message"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Supercharge Your Development</h2>
+                    <p>Discover the features that make Agent 007 the ultimate terminal companion.</p>
+                </div>
+                <div class="grid feature-grid">
+                    <!-- Card 1 -->
+                    <div class="card glass" id="feature-1">
+                        <div class="card-icon">🤖</div>
+                        <h3>Interactive CLI</h3>
+                        <p>Engage in a natural dialogue to solve coding problems directly in your terminal.</p>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="card glass" id="feature-2">
+                        <div class="card-icon">🛠️</div>
+                        <h3>Autonomous Tooling</h3>
+                        <p>Let the agent read/write files, search code, and run commands with your approval.</p>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="card glass" id="feature-3">
+                        <div class="card-icon">🔍</div>
+                        <h3>Project Aware</h3>
+                        <p>Scans your project to understand the language, framework, and structure for better assistance.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+    </main>
+
+    <footer id="main-footer">
+        <div class="container footer-container">
+            <p>&copy; 2026 Agent 007. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="https://github.com/kalenkevich/agent_007">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script src="script.js"></script>
+</body>
+</html>
