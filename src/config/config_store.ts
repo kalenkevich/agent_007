@@ -1,12 +1,12 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import * as os from "node:os";
+import { APP_FILE_DIR } from "./app_dir.js";
 
 export class ConfigStore {
   private configDir: string;
 
   constructor() {
-    this.configDir = path.join(os.homedir(), ".agent_007");
+    this.configDir = APP_FILE_DIR;
   }
 
   private async ensureDir() {

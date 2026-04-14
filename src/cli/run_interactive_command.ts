@@ -11,6 +11,8 @@ import {
 import { TerminalLoader } from "./loader.js";
 import { configStore } from "../config/config_store.js";
 import type { ThinkingConfig } from "../model/request.js";
+import type { Session, SessionMetadata } from "../session/session.js";
+import { SessionFileService } from "../session/session_file_service.js";
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -57,8 +59,34 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
     console.log(`Thinking level set to: ${level}`);
   }
 
-  const loop = new CoreAgentLoop(config);
+  const sessionService = new SessionFileService();
+  const sessions = await sessionService.listSessions();
+  let sessionId: string | undefined = undefined;
 
+  if (sessions.length > 0) {
+    console.log("\nAvailable sessions:");
+    sessions.forEach((s, index) => {
+      console.log(`${index + 1}. ${getSessionName(s)}`);
+    });
+
+    const answer = await rl.question(
+      "\nSelect session number to resume or 'n' for new session [default: new]: ",
+    );
+    const trimmed = answer.trim().toLowerCase();
+    if (trimmed !== "" && trimmed !== "n") {
+      const selectedIndex = parseInt(trimmed, 10) - 1;
+      if (selectedIndex >= 0 && selectedIndex < sessions.length) {
+        sessionId = sessions[selectedIndex].id;
+        console.log(
+          `Resuming session: ${getSessionName(sessions[selectedIndex])}`,
+        );
+      } else {
+        console.log("Invalid selection. Starting a new session.");
+      }
+    }
+  }
+
+  const loop = new CoreAgentLoop(config, sessionId);
   const loader = new TerminalLoader();
   let hasStreamed = false;
   let isThinking = false;
@@ -196,4 +224,33 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
   } finally {
     rl.close();
   }
+}
+
+function formatDate(date: Date): string {
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+
+  if (isToday) {
+    return `today ${hours}:${minutes}`;
+  } else {
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day} ${hours}:${minutes}`;
+  }
+}
+
+function getSessionName(session: Session | SessionMetadata): string {
+  if (!session.title) {
+    return session.id;
+  }
+
+  const date = new Date(session.timestamp);
+  const formattedDate = formatDate(date);
+  return `${session.title} (${formattedDate})`;
 }

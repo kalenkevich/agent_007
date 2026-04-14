@@ -6,8 +6,15 @@ import { Run } from "./run.js";
 import type { Config } from "../config/config.js";
 import { AdaptiveLlmModel } from "../model/adaptive_model.js";
 import { randomUUID } from "node:crypto";
-import { AgentEventType, type ErrorEvent } from "../agent/agent_event.js";
+import { UtilLlm } from "../model/util_llm.js";
+import {
+  AgentEventType,
+  type AgentEvent,
+  type ErrorEvent,
+} from "../agent/agent_event.js";
 import { logger } from "../logger.js";
+import { SessionFileService } from "../session/session_file_service.js";
+import { resolveLlmModel } from "../model/registry.js";
 
 export enum AgentLoopType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -18,10 +25,16 @@ export class CoreAgentLoop extends EventEmitter {
   private initialized = false;
   private currentRun?: Run;
   private config: Config;
+  private sessionService: SessionFileService;
+  private sessionId?: string;
+  private utilLlm?: UtilLlm;
+  private sessionTitleGenerated = false;
 
-  constructor(config: Config) {
+  constructor(config: Config, sessionId?: string) {
     super();
     this.config = config;
+    this.sessionId = sessionId;
+    this.sessionService = new SessionFileService();
   }
 
   private async init() {
@@ -29,10 +42,35 @@ export class CoreAgentLoop extends EventEmitter {
       return;
     }
 
+    let history: AgentEvent[] = [];
+    if (this.sessionId) {
+      const session = await this.sessionService.getSession(this.sessionId);
+      history = session.events;
+    }
+
+    const model = new AdaptiveLlmModel(this.config.model);
     this.agent = new CliAgent({
-      model: new AdaptiveLlmModel(this.config.model),
+      model: model,
       thinkingConfig: this.config.thinkingConfig,
+      history,
     });
+
+    const ModelClass = resolveLlmModel("gemini-3-flash-preview");
+    this.utilLlm = new UtilLlm(
+      new ModelClass({
+        modelName: "gemini-3-flash-preview",
+        apiKey: this.config.model.apiKey,
+      }),
+    );
+
+    if (!this.sessionId) {
+      const session = await this.sessionService.createSession(
+        this.agent.name,
+        [],
+      );
+      this.sessionId = session.id;
+    }
+
     this.initialized = true;
     logger.debug("[CoreAgentLoop] initialized");
   }
@@ -52,7 +90,38 @@ export class CoreAgentLoop extends EventEmitter {
     try {
       for await (const event of this.agent!.run(userInput)) {
         streamId = event.streamId;
+
+        if (this.sessionId) {
+          this.sessionService.appendEvent(this.sessionId, event);
+        }
+
         this.emit(AgentLoopType.AGENT_EVENT, event);
+      }
+
+      if (!this.sessionTitleGenerated && this.sessionId) {
+        const sessionMeta = await this.sessionService.getSessionMetadata(
+          this.sessionId,
+        );
+        if (sessionMeta && !sessionMeta.title) {
+          const session = await this.sessionService.getSession(this.sessionId);
+          const userMessages = session.events.filter(
+            (e) => e.type === AgentEventType.MESSAGE && e.role === "user",
+          );
+          const agentMessages = session.events.filter(
+            (e) => e.type === AgentEventType.MESSAGE && e.role === "agent",
+          );
+
+          if (userMessages.length >= 1 && agentMessages.length >= 1) {
+            const title = await this.utilLlm!.generateSessionTitle(
+              session.events,
+            );
+            await this.sessionService.updateSession(this.sessionId, {
+              title,
+            });
+            this.sessionTitleGenerated = true;
+            logger.debug(`[CoreAgentLoop] Generated session title: ${title}`);
+          }
+        }
       }
     } catch (e: unknown) {
       logger.error("[CoreAgentLoop] run error:", e);
@@ -67,6 +136,11 @@ export class CoreAgentLoop extends EventEmitter {
         errorMessage: error.message || String(error),
         fatal: true,
       };
+
+      if (this.sessionId) {
+        this.sessionService.appendEvent(this.sessionId, errorEvent);
+      }
+
       this.emit(AgentLoopType.AGENT_EVENT, errorEvent);
     } finally {
       this.currentRun.finish();

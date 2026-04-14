@@ -7,6 +7,18 @@ vi.mock("../../src/agent/cli_agent/cli_agent.js");
 
 vi.mock("../../src/model/adaptive_model.js");
 
+vi.mock("../../src/session/session_file_service.js", () => {
+  return {
+    SessionFileService: class {
+      getSession = vi.fn().mockResolvedValue({ events: [], title: undefined });
+      getSessionMetadata = vi.fn().mockResolvedValue({ title: undefined });
+      createSession = vi.fn().mockResolvedValue({ id: "test-session-id" });
+      appendEvent = vi.fn().mockResolvedValue(undefined);
+      updateSession = vi.fn().mockResolvedValue(undefined);
+    },
+  };
+});
+
 describe("CoreAgentLoop", () => {
   it("should yield events on success", async () => {
     const mockAgent = {
@@ -19,7 +31,9 @@ describe("CoreAgentLoop", () => {
       return mockAgent as any;
     });
 
-    const loop = new CoreAgentLoop({ model: { modelName: "test" } } as any);
+    const loop = new CoreAgentLoop({
+      model: { modelName: "test", apiKey: "dummy" },
+    } as any);
 
     const events: any[] = [];
     loop.on(AgentLoopType.AGENT_EVENT, (event) => {
@@ -44,7 +58,9 @@ describe("CoreAgentLoop", () => {
       return mockAgent as any;
     });
 
-    const loop = new CoreAgentLoop({ model: { modelName: "test" } } as any);
+    const loop = new CoreAgentLoop({
+      model: { modelName: "test", apiKey: "dummy" },
+    } as any);
 
     const events: any[] = [];
     loop.on(AgentLoopType.AGENT_EVENT, (event) => {
@@ -70,7 +86,9 @@ describe("CoreAgentLoop", () => {
       return mockAgent as any;
     });
 
-    const loop = new CoreAgentLoop({ model: { modelName: "test" } } as any);
+    const loop = new CoreAgentLoop({
+      model: { modelName: "test", apiKey: "dummy" },
+    } as any);
 
     const events: any[] = [];
     loop.on(AgentLoopType.AGENT_EVENT, (event) => {
