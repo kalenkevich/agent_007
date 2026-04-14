@@ -58,12 +58,14 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
   const loader = new TerminalLoader();
   let hasStreamed = false;
   let isThinking = false;
+  const lastPrintedToolCalls = new Map<string, string>();
 
   loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
     switch (event.type) {
       case AgentEventType.START:
         loader.startLoading();
         hasStreamed = false;
+        lastPrintedToolCalls.clear();
         break;
       case AgentEventType.MESSAGE:
         if (event.role === "agent" && event.parts) {
@@ -110,6 +112,12 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         console.error(`\nAgent Error: ${event.errorMessage}`);
         break;
       case AgentEventType.TOOL_CALL:
+        const contentStr = JSON.stringify({ name: event.name, args: event.args });
+        if (lastPrintedToolCalls.get(event.requestId) === contentStr) {
+          break;
+        }
+        lastPrintedToolCalls.set(event.requestId, contentStr);
+
         loader.stopLoading();
         console.log(`\n\x1b[33m[Tool Call: ${event.name}]\x1b[0m`);
         console.log(JSON.stringify(event.args, null, 2));
