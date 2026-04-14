@@ -53,7 +53,7 @@ export type ToolExecuteFunction<
   TOutputParameters extends ToolOutputSchema = ToolOutputSchema,
 > = (
   input: ToolInput<TInputParameters>,
-) => Promise<TOutputParameters> | TOutputParameters;
+) => Promise<ToolOutput<TOutputParameters>> | ToolOutput<TOutputParameters>;
 
 export interface Tool<
   TInputParameters extends ToolInputSchema = ToolInputSchema,

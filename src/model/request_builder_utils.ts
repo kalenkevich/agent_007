@@ -1,4 +1,4 @@
-import type { LlmRequest } from "./request.js";
+import type { LlmRequest, ThinkingConfig } from "./request.js";
 import type { Content } from "../content.js";
 import type { Tool, FunctionDeclaration } from "../tools/tool.js";
 import { type Skill, toFunctionDeclaration } from "../skills/skill.js";
@@ -9,8 +9,9 @@ interface BuildLlmRequestOptions {
   historyContent: Content[];
   tools?: Tool[];
   skills?: Skill[];
-  description: string;
+  description?: string;
   instructions: string;
+  thinkingConfig?: ThinkingConfig;
 }
 
 export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
@@ -22,6 +23,7 @@ export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
     skills,
     description,
     instructions,
+    thinkingConfig,
   } = options;
 
   return {
@@ -32,6 +34,7 @@ export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
       description,
       instructions,
     ),
+    thinkingConfig,
   };
 }
 
@@ -49,12 +52,14 @@ export function buildSkillsTools(skills?: Skill[]): FunctionDeclaration[] {
 
 export function buildSystemInstruction(
   name: string,
-  description: string,
+  description: string | undefined,
   instructions: string,
 ): string {
   return [
     `You are an agent. Your internal name is "${name}".`,
-    `The description about you is "${description}"`,
+    description ? `The description about you is "${description}"` : "",
     instructions,
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }

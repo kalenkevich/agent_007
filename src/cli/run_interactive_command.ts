@@ -1,9 +1,12 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import * as readline from "node:readline";
 import { loadConfig } from "../config/config_loader.js";
 import { CoreAgentLoop, AgentLoopType } from "../core/loop.js";
 import { AgentEventType, type AgentEvent } from "../agent/agent_event.js";
 import { TerminalLoader } from "./loader.js";
+import { configStore } from "../config/config_store.js";
+import type { ThinkingConfig } from "../model/request.js";
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -27,10 +30,35 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
 
   const rl = createInterface({ input, output });
 
+  if (config.thinkingConfig.enabled && !config.thinkingConfig.level) {
+    const validLevels = ["low", "medium", "high", "auto"];
+    let level: string | null = null;
+    while (!level) {
+      const answer = await rl.question(
+        "Select thinking level (low, medium, high, auto) [default: high]: ",
+      );
+      const trimmed = answer.trim().toLowerCase();
+      if (trimmed === "") {
+        level = "high";
+      } else if (validLevels.includes(trimmed)) {
+        level = trimmed;
+      } else {
+        console.log(
+          "Invalid level. Please choose from: low, medium, high, auto",
+        );
+      }
+    }
+    config.thinkingConfig.level = level as ThinkingConfig["level"];
+    await configStore.set("thinking_level", level);
+    console.log(`Thinking level set to: ${level}`);
+  }
+
   const loop = new CoreAgentLoop(config);
 
   const loader = new TerminalLoader();
   let hasStreamed = false;
+  let isThinking = false;
+
   loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
     switch (event.type) {
       case AgentEventType.START:
@@ -43,7 +71,19 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
             hasStreamed = true;
             loader.stopLoading();
             for (const part of event.parts) {
-              if ("text" in part && part.text) {
+              if ("thought" in part && part.thought) {
+                if (!isThinking) {
+                  isThinking = true;
+                  rl.write("\x1b[2mThinking: ");
+                }
+                rl.write(part.thought);
+              } else if ("text" in part && part.text) {
+                if (isThinking) {
+                  readline.cursorTo(process.stdout, 0);
+                  readline.clearLine(process.stdout, 0);
+                  isThinking = false;
+                  rl.write("\x1b[0m"); // Reset style
+                }
                 rl.write(part.text);
               }
             }

@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Agent } from "../agent.js";
 import type { LlmModel } from "../../model/model.js";
-import type { Tool } from "../../tools/tool.js";
 import type { Skill } from "../../skills/skill.js";
 import {
   type AgentEvent,
@@ -14,6 +13,7 @@ import {
   isUserCommand,
   toContentParts,
 } from "../../user_input.js";
+import type { ThinkingConfig } from "../../model/request.js";
 import { buildLlmRequest } from "../../model/request_builder_utils.js";
 import {
   getContentFromAgentEvent,
@@ -21,34 +21,34 @@ import {
 } from "../agent_event_utils.js";
 import { logger } from "../../logger.js";
 import { CLI_AGENT_SYSTEM_PROMPT } from "./system_prompt.js";
+import { BUILD_IN_TOOLS } from "../../tools/build_in/index.js";
 
 export interface CliAgentOptions {
   model: LlmModel;
-  tools?: Tool[];
-  skills?: Skill[];
   history?: AgentEvent[];
+  skills?: Skill[];
+  thinkingConfig?: ThinkingConfig;
 }
 
 export class CliAgent implements Agent {
   readonly id = "cli_agent";
-  readonly name: string;
-  readonly description: string;
-  readonly instructions: string;
-  readonly model: LlmModel;
-  readonly tools?: Tool[];
+  readonly name = "Agent 007";
+  readonly description = "Agent 007";
+  readonly instructions = CLI_AGENT_SYSTEM_PROMPT;
+  readonly tools = BUILD_IN_TOOLS;
   readonly skills?: Skill[];
+
+  readonly model: LlmModel;
   private streamId?: string;
   private history: AgentEvent[] = [];
   private historyContent: Content[] = [];
+  private thinkingConfig?: ThinkingConfig;
 
   private abortController?: AbortController;
 
   constructor(options: CliAgentOptions) {
-    this.name = "Agent 007";
-    this.description = "Agent 007";
-    this.instructions = CLI_AGENT_SYSTEM_PROMPT;
     this.model = options.model;
-    this.tools = options.tools;
+    this.thinkingConfig = options.thinkingConfig;
     this.skills = options.skills;
     this.history = options.history || [];
     this.historyContent = this.history
@@ -100,6 +100,7 @@ export class CliAgent implements Agent {
       skills: this.skills,
       description: this.description,
       instructions: this.instructions,
+      thinkingConfig: this.thinkingConfig,
     });
 
     logger.debug("[CliAgent] calling model.run");

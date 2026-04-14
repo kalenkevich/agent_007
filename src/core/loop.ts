@@ -31,6 +31,7 @@ export class CoreAgentLoop extends EventEmitter {
 
     this.agent = new CliAgent({
       model: new AdaptiveLlmModel(this.config.model),
+      thinkingConfig: this.config.thinkingConfig,
     });
     this.initialized = true;
     logger.debug("[CoreAgentLoop] initialized");

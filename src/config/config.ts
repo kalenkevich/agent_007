@@ -1,3 +1,5 @@
+import { type ThinkingConfig } from "../model/request.js";
+
 export interface ModelConfig {
   modelName: string;
   apiKey: string;
@@ -7,4 +9,5 @@ export interface ModelConfig {
 
 export interface Config {
   model: ModelConfig;
+  thinkingConfig: ThinkingConfig;
 }

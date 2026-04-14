@@ -1,4 +1,8 @@
-import { GoogleGenAI, type GenerateContentParameters } from "@google/genai";
+import {
+  GoogleGenAI,
+  type GenerateContentParameters,
+  ThinkingLevel,
+} from "@google/genai";
 import type { LlmRequest } from "../request.js";
 import type { LlmResponse } from "../response.js";
 import type { ModelConfig } from "../../config/config.js";
@@ -123,6 +127,12 @@ function toGenAiRequest({
       tools: request.tools
         ? [{ functionDeclarations: request.tools }]
         : undefined,
+      thinkingConfig: {
+        includeThoughts: request.thinkingConfig?.enabled,
+        thinkingLevel: toThinkingLevelConfig(
+          request.thinkingConfig?.level || "auto",
+        ),
+      },
       systemInstruction: request.systemInstructions,
     },
   };
@@ -149,4 +159,19 @@ function extractErrorMessage(e: unknown): string {
     return e.message;
   }
   return String(e);
+}
+
+function toThinkingLevelConfig(
+  thinkingLevel: "low" | "medium" | "high" | "auto",
+): ThinkingLevel {
+  switch (thinkingLevel) {
+    case "low":
+      return ThinkingLevel.LOW;
+    case "medium":
+      return ThinkingLevel.MEDIUM;
+    case "high":
+      return ThinkingLevel.HIGH;
+    case "auto":
+      return ThinkingLevel.HIGH;
+  }
 }

@@ -6,4 +6,10 @@ export interface LlmRequest {
   contents: Content[];
   systemInstructions: string;
   tools?: FunctionDeclaration[];
+  thinkingConfig?: ThinkingConfig;
+}
+
+export interface ThinkingConfig {
+  enabled: boolean;
+  level?: "low" | "medium" | "high" | "auto";
 }
