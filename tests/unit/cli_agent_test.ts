@@ -5,7 +5,7 @@ import {
   type ToolCallEvent,
 } from "../../src/agent/agent_event.js";
 import type { Tool } from "../../src/tools/tool.js";
-import type { RunToolPolicy } from "../../src/tools/tool_policy.js";
+import type { ToolCallPolicy } from "../../src/tools/tool_call_policy.js";
 
 describe("CliAgent - Tool Confirmation", () => {
   it("should request confirmation when policy requires it", async () => {
@@ -36,7 +36,7 @@ describe("CliAgent - Tool Confirmation", () => {
       toFunctionDeclaration: () => ({ name: "test_tool", description: "test" }),
     };
 
-    const policy: RunToolPolicy = { confirmationRequired: true };
+    const policy: ToolCallPolicy = { confirmationRequired: true };
 
     const agent = new CliAgent({
       model: mockModel as any,
@@ -81,7 +81,7 @@ describe("CliAgent - Tool Confirmation", () => {
       toFunctionDeclaration: () => ({ name: "test_tool", description: "test" }),
     };
 
-    const policy: RunToolPolicy = { confirmationRequired: true };
+    const policy: ToolCallPolicy = { confirmationRequired: true };
 
     const agent = new CliAgent({
       model: mockModel as any,
@@ -175,7 +175,7 @@ describe("CliAgent - Tool Confirmation", () => {
       toFunctionDeclaration: () => ({ name: "test_tool", description: "test" }),
     };
 
-    const policy: RunToolPolicy = { confirmationRequired: true };
+    const policy: ToolCallPolicy = { confirmationRequired: true };
 
     const agent = new CliAgent({
       model: mockModel as any,
@@ -246,5 +246,134 @@ describe("CliAgent - Tool Confirmation", () => {
     expect(events[0].error).toBe("User declined tool execution");
 
     expect(mockTool.execute).not.toHaveBeenCalled();
+  });
+
+  it("should trigger context compaction when token limit is exceeded", async () => {
+    const mockModel = {
+      run: vi.fn().mockImplementation(async function* () {
+        yield {
+          content: {
+            role: "agent",
+            parts: [{ type: "text", text: "Response after compaction" }],
+          },
+        };
+      }),
+      countTokens: vi.fn().mockResolvedValue(1000),
+      modelName: "mock-model",
+    };
+
+    const agent = new CliAgent({
+      model: mockModel as any,
+      compactionConfig: {
+        enabled: true,
+        strategy: "truncate",
+        maxTokens: 800,
+        triggerThreshold: 0.8,
+      },
+    });
+
+    (agent as any).historyContent = [
+      { role: "user", parts: [{ type: "text", text: "m1" }] },
+      { role: "agent", parts: [{ type: "text", text: "r1" }] },
+      { role: "user", parts: [{ type: "text", text: "m2" }] },
+      { role: "agent", parts: [{ type: "text", text: "r2" }] },
+      { role: "user", parts: [{ type: "text", text: "m3" }] },
+      { role: "agent", parts: [{ type: "text", text: "r3" }] },
+      { role: "user", parts: [{ type: "text", text: "m4" }] },
+      { role: "agent", parts: [{ type: "text", text: "r4" }] },
+      { role: "user", parts: [{ type: "text", text: "m5" }] },
+      { role: "agent", parts: [{ type: "text", text: "r5" }] },
+    ];
+
+    const events: any[] = [];
+    for await (const event of agent.run("hello")) {
+      events.push(event);
+    }
+
+    expect(events.map((e) => e.type)).toContain(AgentEventType.MESSAGE);
+
+    const compactionMessage = events.find(
+      (e) =>
+        e.type === AgentEventType.MESSAGE &&
+        e.parts &&
+        e.parts[0].text &&
+        e.parts[0].text.includes("Context compacted"),
+    );
+    expect(compactionMessage).toBeTruthy();
+
+    // Initial 10 + 1 (user) = 11. Remove 2 = 9. Add compaction message = 10. Add response = 11.
+    expect((agent as any).historyContent.length).toBe(11);
+
+    // Check that the oldest messages were removed (m1 and r1)
+    // So the new first message should be m2
+    const firstContent = (agent as any).historyContent[0];
+    expect(firstContent.parts[0].text).toBe("m2");
+  });
+
+  it("should trigger context compaction with 'compact' strategy", async () => {
+    const mockModel = {
+      run: vi.fn().mockImplementation(async function* (request) {
+        if (
+          request.contents[0].parts[0].text.includes(
+            "Summarize the following conversation",
+          )
+        ) {
+          yield {
+            content: {
+              role: "agent",
+              parts: [{ type: "text", text: "Summarized history" }],
+            },
+          };
+          return;
+        }
+        yield {
+          content: {
+            role: "agent",
+            parts: [{ type: "text", text: "Response after compaction" }],
+          },
+        };
+      }),
+      countTokens: vi.fn().mockResolvedValue(1000),
+      modelName: "mock-model",
+    };
+
+    const agent = new CliAgent({
+      model: mockModel as any,
+      compactionConfig: {
+        enabled: true,
+        strategy: "compact",
+        maxTokens: 800,
+        triggerThreshold: 0.8,
+      },
+    });
+
+    (agent as any).historyContent = [
+      { role: "user", parts: [{ type: "text", text: "m1" }] },
+      { role: "agent", parts: [{ type: "text", text: "r1" }] },
+    ];
+
+    const events: any[] = [];
+    for await (const event of agent.run("hello")) {
+      events.push(event);
+    }
+
+    expect(events.map((e) => e.type)).toContain(AgentEventType.MESSAGE);
+
+    const compactionMessage = events.find(
+      (e) =>
+        e.type === AgentEventType.MESSAGE &&
+        e.parts &&
+        e.parts[0].text &&
+        e.parts[0].text.includes("Context compacted using LLM summarization"),
+    );
+    expect(compactionMessage).toBeTruthy();
+
+    expect((agent as any).historyContent.length).toBe(3);
+
+    const firstContent = (agent as any).historyContent[0];
+    expect(firstContent.parts[0].text).toContain(
+      "Summary of previous conversation",
+    );
+    expect(firstContent.parts[0].text).toContain("Summarized history");
   });
 });

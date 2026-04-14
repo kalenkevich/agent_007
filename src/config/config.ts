@@ -6,6 +6,13 @@ export interface ModelConfig {
   tokenLimit?: number;
 }
 
+export interface CompactionConfig {
+  enabled: boolean;
+  strategy: "truncate" | "summarize" | "hybrid" | "compact";
+  maxTokens: number;
+  triggerThreshold?: number;
+}
+
 export interface Config {
   models: {
     main: ModelConfig;
@@ -13,4 +20,5 @@ export interface Config {
     util?: ModelConfig;
   };
   thinkingConfig: ThinkingConfig;
+  compactionConfig: CompactionConfig;
 }

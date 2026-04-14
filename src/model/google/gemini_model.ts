@@ -63,6 +63,23 @@ export class Gemini {
     }
   }
 
+  async countTokens(request: LlmRequest): Promise<number> {
+    const response = await this.client.models.countTokens({
+      model: this.modelName,
+      contents: request.contents.map((c) => contentToGenAIContent(c)),
+      config: {
+        tools: request.tools
+          ? [{ functionDeclarations: request.tools }]
+          : undefined,
+        systemInstruction: request.systemInstructions,
+      },
+    });
+
+    logger.debug("[Gemini Model] token count:", response.totalTokens);
+
+    return response.totalTokens || 0;
+  }
+
   private async *runStream(
     request: LlmRequest,
     config?: RunConfig,

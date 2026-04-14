@@ -67,4 +67,11 @@ export class AdaptiveLlmModel implements LlmModel {
       }
     }
   }
+
+  async countTokens(request: LlmRequest): Promise<number> {
+    if (!this.currentModel) {
+      throw new Error("Model not initialized");
+    }
+    return this.currentModel.countTokens(request);
+  }
 }

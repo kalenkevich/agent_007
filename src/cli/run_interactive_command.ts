@@ -8,6 +8,7 @@ import {
   AgentEventType,
   type AgentEvent,
   type UserInputRequestEvent,
+  type CompactionEvent,
 } from "../agent/agent_event.js";
 import { TerminalLoader } from "./loader.js";
 import { configStore } from "../config/config_store.js";
@@ -136,6 +137,20 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
               }
             }
             rl.write("\n");
+          }
+        }
+        break;
+      case AgentEventType.COMPACTION:
+        loader.stopLoading();
+        const compactionEvent = event as CompactionEvent;
+        console.log(
+          `\n\x1b[36m[Compaction: ${compactionEvent.strategy}]\x1b[0m`,
+        );
+        if (compactionEvent.parts) {
+          for (const part of compactionEvent.parts) {
+            if ("text" in part && part.text) {
+              console.log(part.text);
+            }
           }
         }
         break;

@@ -45,5 +45,13 @@ export async function loadConfig(): Promise<Config> {
       enabled: process.env.ENABLE_THINKING !== "false",
       level: thinkingLevel,
     },
+    compactionConfig: {
+      maxTokens: 10000,
+      enabled: process.env.ENABLE_COMPACTION !== "false",
+      strategy: process.env.COMPACTION_STRATEGY as
+        | "summarize"
+        | "truncate"
+        | "hybrid",
+    },
   };
 }

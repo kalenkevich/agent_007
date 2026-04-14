@@ -9,12 +9,16 @@ To do:
 - [x] Dymaic model support
 - [/] Planing agent
   - [/] Ask user for approval
+  - [ ] Plan execution
+- [ ] Define project constants by scaning the codebase:
+  - language, framework, package managers, build tools
+  - project structure
+  - coding style, rules and conventions
 - [ ] Skills
 - [ ] Other models support (OpenAI, Anthropic, etc)
 - [ ] TUI with ink
-- [ ] Web UI?
+- [ ] Web/Native UI?
 - [ ] Personality (aggresive, polite, casual)
-- [ ] Plan execution
 - [ ] Web search
 - [ ] Code execution
 - [ ] Context compaction

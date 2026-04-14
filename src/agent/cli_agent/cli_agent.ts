@@ -18,7 +18,6 @@ import {
   UserCommandType,
 } from "../../user_input.js";
 import type { ThinkingConfig } from "../../model/request.js";
-import { buildLlmRequest } from "../../model/request_builder_utils.js";
 import {
   getContentFromAgentEvent,
   llmResponseToAgentEvents,
@@ -31,12 +30,17 @@ import {
   type ToolCallPolicy,
   DEFAULT_POLICY,
 } from "../../tools/tool_call_policy.js";
+import type { CompactionConfig } from "../../config/config.js";
+import { BasicRequestProcessor } from "../request_processor/basic_request_processor.js";
+import { CompactionProcessor } from "../request_processor/compaction_processor.js";
+import type { AgentState } from "../request_processor/request_processor.js";
 
 export interface CliAgentOptions {
   model: LlmModel;
   history?: AgentEvent[];
   skills?: Skill[];
   thinkingConfig?: ThinkingConfig;
+  compactionConfig?: CompactionConfig;
   toolPolicies?: Record<string, ToolCallPolicy>;
   tools?: Tool[];
 }
@@ -55,7 +59,7 @@ export class CliAgent implements Agent {
   private historyContent: Content[] = [];
   private thinkingConfig?: ThinkingConfig;
   private toolPolicies: Record<string, ToolCallPolicy>;
-
+  private compactionConfig?: CompactionConfig;
   private abortController?: AbortController;
 
   constructor(options: CliAgentOptions) {
@@ -68,6 +72,7 @@ export class CliAgent implements Agent {
       .filter(Boolean) as Content[];
     this.toolPolicies = options.toolPolicies || {};
     this.tools = options.tools || BUILD_IN_TOOLS;
+    this.compactionConfig = options.compactionConfig;
   }
 
   async *run(userInput: UserInput): AsyncGenerator<AgentEvent, void, unknown> {
@@ -92,7 +97,7 @@ export class CliAgent implements Agent {
           tools: this.tools,
           skills: this.skills,
         });
-        yield * planner.run(userInput.task);
+        yield* planner.run(userInput.task);
       }
       return;
     }
@@ -205,19 +210,47 @@ export class CliAgent implements Agent {
     let continueTurn = true;
 
     while (continueTurn) {
-      const lastContent = this.historyContent[this.historyContent.length - 1];
-      const historyForRequest = this.historyContent.slice(0, -1);
-
-      const llmRequest = buildLlmRequest({
+      const basicProcessor = new BasicRequestProcessor({
         agentName: this.name,
-        content: lastContent,
-        historyContent: historyForRequest,
-        tools: this.tools,
-        skills: this.skills,
         description: this.description,
         instructions: this.instructions,
+        tools: this.tools,
+        skills: this.skills,
         thinkingConfig: this.thinkingConfig,
       });
+
+      const compactionProcessor = new CompactionProcessor({
+        model: this.model,
+        compactionConfig: this.compactionConfig,
+        requestBuilderOptions: {
+          agentName: this.name,
+          description: this.description,
+          instructions: this.instructions,
+          tools: this.tools,
+          skills: this.skills,
+          thinkingConfig: this.thinkingConfig,
+        },
+        streamId: this.streamId!,
+      });
+
+      let state: AgentState = {
+        historyContent: this.historyContent,
+        events: [],
+      };
+
+      state = await basicProcessor.process(state);
+      state = await compactionProcessor.process(state);
+
+      this.historyContent = state.historyContent;
+
+      for (const event of state.events) {
+        yield event;
+      }
+
+      const llmRequest = state.llmRequest;
+      if (!llmRequest) {
+        throw new Error("LlmRequest is missing after processors");
+      }
 
       logger.debug("[CliAgent] calling model.run");
 

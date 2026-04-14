@@ -13,4 +13,6 @@ export interface LlmModel {
     request: LlmRequest,
     config?: LlmModelConfig,
   ): AsyncGenerator<LlmResponse, void, unknown>;
+
+  countTokens(request: LlmRequest): Promise<number>;
 }

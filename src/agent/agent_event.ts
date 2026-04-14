@@ -10,6 +10,7 @@ export enum AgentEventType {
   USER_INPUT_RESPONSE = "USER_INPUT_RESPONSE",
   ERROR = "ERROR",
   USAGE = "USAGE",
+  COMPACTION = "COMPACTION",
 }
 
 export enum AgentEndReason {
@@ -32,7 +33,8 @@ export type AgentEvent =
   | UserInputRequestEvent
   | UserInputResponseEvent
   | ErrorEvent
-  | UsageEvent;
+  | UsageEvent
+  | CompactionEvent;
 
 export interface BaseAgentEvent {
   // Event unique id
@@ -121,7 +123,6 @@ export function isUserInputRequestEvent(
 export interface UserInputResponseEvent extends BaseAgentEvent {
   type: AgentEventType.USER_INPUT_RESPONSE;
   requestId: string;
-  // response data for the requested schema
   data?: Record<string, unknown>;
   // 'cancel' here means ignore - the run will continue as if this response has not been provided
   action?: "accept" | "decline" | "cancel";
@@ -158,4 +159,13 @@ export interface UsageEvent extends BaseAgentEvent {
 
 export function isUsageEvent(event: AgentEvent): event is UsageEvent {
   return event.type === AgentEventType.USAGE;
+}
+
+export interface CompactionEvent extends BaseAgentEvent {
+  type: AgentEventType.COMPACTION;
+  strategy: "truncate" | "summarize";
+}
+
+export function isCompactionEvent(event: AgentEvent): event is CompactionEvent {
+  return event.type === AgentEventType.COMPACTION;
 }
