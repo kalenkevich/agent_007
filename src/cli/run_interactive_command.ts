@@ -3,7 +3,11 @@ import { stdin as input, stdout as output } from "node:process";
 import * as readline from "node:readline";
 import { loadConfig } from "../config/config_loader.js";
 import { CoreAgentLoop, AgentLoopType } from "../core/loop.js";
-import { AgentEventType, type AgentEvent } from "../agent/agent_event.js";
+import {
+  AgentEventType,
+  type AgentEvent,
+  type UserInputRequestEvent,
+} from "../agent/agent_event.js";
 import { TerminalLoader } from "./loader.js";
 import { configStore } from "../config/config_store.js";
 import type { ThinkingConfig } from "../model/request.js";
@@ -59,6 +63,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
   let hasStreamed = false;
   let isThinking = false;
   const lastPrintedToolCalls = new Map<string, string>();
+  let pendingUserInputRequest: UserInputRequestEvent | null = null;
 
   loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
     switch (event.type) {
@@ -112,7 +117,10 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         console.error(`\nAgent Error: ${event.errorMessage}`);
         break;
       case AgentEventType.TOOL_CALL:
-        const contentStr = JSON.stringify({ name: event.name, args: event.args });
+        const contentStr = JSON.stringify({
+          name: event.name,
+          args: event.args,
+        });
         if (lastPrintedToolCalls.get(event.requestId) === contentStr) {
           break;
         }
@@ -134,6 +142,10 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           }
         }
         break;
+      case AgentEventType.USER_INPUT_REQUEST:
+        loader.stopLoading();
+        pendingUserInputRequest = event as UserInputRequestEvent;
+        break;
       default:
         break;
     }
@@ -143,6 +155,15 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
     if (prompt) {
       console.log(`\nInitial prompt: ${prompt}`);
       await loop.run(prompt);
+
+      while (pendingUserInputRequest) {
+        const request = pendingUserInputRequest;
+        pendingUserInputRequest = null;
+        const answer = await rl.question(
+          `\n${(request as UserInputRequestEvent).message} (yes/no): `,
+        );
+        await loop.run(answer);
+      }
     }
 
     while (true) {
@@ -162,6 +183,15 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
       }
 
       await loop.run(trimmedAnswer);
+
+      while (pendingUserInputRequest) {
+        const request = pendingUserInputRequest;
+        pendingUserInputRequest = null;
+        const answer = await rl.question(
+          `\n${(request as UserInputRequestEvent).message} (yes/no): `,
+        );
+        await loop.run(answer);
+      }
     }
   } finally {
     rl.close();

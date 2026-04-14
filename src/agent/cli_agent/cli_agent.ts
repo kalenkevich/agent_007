@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Agent } from "../agent.js";
 import type { LlmModel } from "../../model/model.js";
 import type { Skill } from "../../skills/skill.js";
+import type { Tool } from "../../tools/tool.js";
 import {
   type AgentEvent,
   AgentEventType,
@@ -23,12 +24,15 @@ import {
 import { logger } from "../../logger.js";
 import { CLI_AGENT_SYSTEM_PROMPT } from "./system_prompt.js";
 import { BUILD_IN_TOOLS } from "../../tools/build_in/index.js";
+import { type RunToolPolicy, DEFAULT_POLICY } from "../../tools/tool_policy.js";
 
 export interface CliAgentOptions {
   model: LlmModel;
   history?: AgentEvent[];
   skills?: Skill[];
   thinkingConfig?: ThinkingConfig;
+  toolPolicies?: Record<string, RunToolPolicy>;
+  tools?: Tool[];
 }
 
 export class CliAgent implements Agent {
@@ -36,7 +40,7 @@ export class CliAgent implements Agent {
   readonly name = "Agent 007";
   readonly description = "Agent 007";
   readonly instructions = CLI_AGENT_SYSTEM_PROMPT;
-  readonly tools = BUILD_IN_TOOLS;
+  readonly tools: Tool[];
   readonly skills?: Skill[];
 
   readonly model: LlmModel;
@@ -44,6 +48,7 @@ export class CliAgent implements Agent {
   private history: AgentEvent[] = [];
   private historyContent: Content[] = [];
   private thinkingConfig?: ThinkingConfig;
+  private toolPolicies: Record<string, RunToolPolicy>;
 
   private abortController?: AbortController;
 
@@ -55,6 +60,8 @@ export class CliAgent implements Agent {
     this.historyContent = this.history
       .map((c) => getContentFromAgentEvent(c))
       .filter(Boolean) as Content[];
+    this.toolPolicies = options.toolPolicies || {};
+    this.tools = options.tools || BUILD_IN_TOOLS;
   }
 
   async *run(userInput: UserInput): AsyncGenerator<AgentEvent, void, unknown> {
@@ -81,14 +88,103 @@ export class CliAgent implements Agent {
 
     logger.debug("[CliAgent] runInternal started");
 
-    this.abortController = new AbortController();
-    this.streamId = randomUUID();
+    const lastEvent = this.history[this.history.length - 1];
+    let skipInitialEvents = false;
 
-    yield this.createEvent(AgentEventType.START);
-    yield this.createEvent(AgentEventType.MESSAGE, {
-      role: "user",
-      parts: userContent,
-    });
+    if (lastEvent && lastEvent.type === AgentEventType.USER_INPUT_REQUEST) {
+      logger.debug("[CliAgent] Resuming from USER_INPUT_REQUEST");
+      this.streamId = lastEvent.streamId;
+      skipInitialEvents = true;
+
+      const requestId = lastEvent.requestId;
+      const toolCall = this.history.find(
+        (e) => e.type === AgentEventType.TOOL_CALL && e.requestId === requestId,
+      ) as ToolCallEvent;
+
+      if (toolCall) {
+        const isAccepted =
+          typeof userInput === "string" &&
+          userInput.trim().toLowerCase() === "yes";
+
+        if (isAccepted) {
+          const tool = this.tools.find((t) => t.name === toolCall.name);
+          if (tool) {
+            try {
+              logger.debug(
+                `[CliAgent] Executing tool ${toolCall.name} after confirmation`,
+              );
+              const result = await tool.execute(toolCall.args);
+              yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
+                role: "user",
+                requestId: toolCall.requestId,
+                name: toolCall.name,
+                result: result as Record<string, unknown> | string,
+                parts: [
+                  {
+                    type: "function_response",
+                    id: toolCall.requestId,
+                    name: toolCall.name,
+                    response:
+                      typeof result === "object"
+                        ? (result as Record<string, unknown>)
+                        : { result },
+                  },
+                ],
+              });
+            } catch (error: any) {
+              logger.error(
+                `[CliAgent] Tool execution failed: ${error.message}`,
+              );
+              yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
+                role: "user",
+                requestId: toolCall.requestId,
+                name: toolCall.name,
+                error: error.message,
+                result: {},
+                parts: [
+                  {
+                    type: "function_response",
+                    id: toolCall.requestId,
+                    name: toolCall.name,
+                    response: { error: error.message },
+                  },
+                ],
+              });
+            }
+          }
+        } else {
+          logger.debug(
+            `[CliAgent] Tool ${toolCall.name} execution declined by user`,
+          );
+          yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
+            role: "user",
+            requestId: toolCall.requestId,
+            name: toolCall.name,
+            error: "User declined tool execution",
+            result: {},
+            parts: [
+              {
+                type: "function_response",
+                id: toolCall.requestId,
+                name: toolCall.name,
+                response: { error: "User declined tool execution" },
+              },
+            ],
+          });
+        }
+      }
+    }
+
+    if (!skipInitialEvents) {
+      this.abortController = new AbortController();
+      this.streamId = randomUUID();
+
+      yield this.createEvent(AgentEventType.START);
+      yield this.createEvent(AgentEventType.MESSAGE, {
+        role: "user",
+        parts: userContent,
+      });
+    }
 
     let continueTurn = true;
 
@@ -147,6 +243,19 @@ export class CliAgent implements Agent {
           continue;
         }
 
+        const policy = this.toolPolicies[toolCall.name] || DEFAULT_POLICY;
+        if (policy.confirmationRequired) {
+          logger.debug(
+            `[CliAgent] Tool ${toolCall.name} requires confirmation`,
+          );
+          yield this.createEvent(AgentEventType.USER_INPUT_REQUEST, {
+            role: "agent",
+            requestId: toolCall.requestId,
+            message: `Do you want to allow execution of tool ${toolCall.name}?`,
+          });
+          return;
+        }
+
         try {
           logger.debug(`[CliAgent] Executing tool ${toolCall.name}`);
           const result = await tool.execute(toolCall.args);
@@ -160,7 +269,10 @@ export class CliAgent implements Agent {
                 type: "function_response",
                 id: toolCall.requestId,
                 name: toolCall.name,
-                response: typeof result === "object" ? (result as Record<string, unknown>) : { result },
+                response:
+                  typeof result === "object"
+                    ? (result as Record<string, unknown>)
+                    : { result },
               },
             ],
           });
