@@ -8,12 +8,14 @@ import {
   AgentEventType,
   AgentEndReason,
   type ToolCallEvent,
+  isUserInputResponseEvent,
 } from "../agent_event.js";
 import type { Content } from "../../content.js";
 import {
   type UserInput,
   isUserCommand,
   toContentParts,
+  UserCommandType,
 } from "../../user_input.js";
 import type { ThinkingConfig } from "../../model/request.js";
 import { buildLlmRequest } from "../../model/request_builder_utils.js";
@@ -24,6 +26,7 @@ import {
 import { logger } from "../../logger.js";
 import { CLI_AGENT_SYSTEM_PROMPT } from "./system_prompt.js";
 import { BUILD_IN_TOOLS } from "../../tools/build_in/index.js";
+import { PlannerAgent } from "../planner_agent/planner_agent.js";
 import {
   type ToolCallPolicy,
   DEFAULT_POLICY,
@@ -83,11 +86,16 @@ export class CliAgent implements Agent {
     userInput: UserInput,
   ): AsyncGenerator<AgentEvent, void, unknown> {
     if (isUserCommand(userInput)) {
-      // process command
+      if (userInput.command === UserCommandType.PLAN) {
+        const planner = new PlannerAgent({
+          model: this.model,
+          tools: this.tools,
+          skills: this.skills,
+        });
+        yield * planner.run(userInput.task);
+      }
       return;
     }
-
-    const userContent = toContentParts(userInput);
 
     logger.debug("[CliAgent] runInternal started");
 
@@ -106,8 +114,8 @@ export class CliAgent implements Agent {
 
       if (toolCall) {
         const isAccepted =
-          typeof userInput === "string" &&
-          userInput.trim().toLowerCase() === "yes";
+          isUserInputResponseEvent(userInput as any) &&
+          (userInput as any).action === "accept";
 
         if (isAccepted) {
           const tool = this.tools.find((t) => t.name === toolCall.name);
@@ -175,10 +183,15 @@ export class CliAgent implements Agent {
             ],
           });
         }
+      } else {
+        if (isUserInputResponseEvent(userInput)) {
+          yield this.createEvent(userInput.type, userInput);
+        }
       }
     }
 
     if (!skipInitialEvents) {
+      const userContent = toContentParts(userInput as any);
       this.abortController = new AbortController();
       this.streamId = randomUUID();
 

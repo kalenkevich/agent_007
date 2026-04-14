@@ -1,5 +1,6 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { randomUUID } from "node:crypto";
 import * as readline from "node:readline";
 import { loadConfig } from "../config/config_loader.js";
 import { CoreAgentLoop, AgentLoopType } from "../core/loop.js";
@@ -13,6 +14,7 @@ import { configStore } from "../config/config_store.js";
 import type { ThinkingConfig } from "../model/request.js";
 import type { Session, SessionMetadata } from "../session/session.js";
 import { SessionFileService } from "../session/session_file_service.js";
+import { UserCommandType } from "../user_input.js";
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -190,7 +192,23 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         const answer = await rl.question(
           `\n${(request as UserInputRequestEvent).message} (yes/no): `,
         );
-        await loop.run(answer);
+        const lowerAnswer = answer.trim().toLowerCase();
+        const action =
+          lowerAnswer === "yes" ||
+          lowerAnswer === "y" ||
+          lowerAnswer === "accept"
+            ? "accept"
+            : "decline";
+
+        await loop.run({
+          type: AgentEventType.USER_INPUT_RESPONSE,
+          id: randomUUID(),
+          streamId: (request as UserInputRequestEvent).streamId,
+          timestamp: new Date().toISOString(),
+          role: "user",
+          requestId: (request as UserInputRequestEvent).requestId,
+          action,
+        });
       }
     }
 
@@ -210,6 +228,37 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         break;
       }
 
+      if (trimmedAnswer.startsWith("/plan")) {
+        const task = trimmedAnswer.substring(5).trim();
+        await loop.run({ command: UserCommandType.PLAN, task: task });
+
+        while (pendingUserInputRequest) {
+          const request = pendingUserInputRequest;
+          pendingUserInputRequest = null;
+          const answer = await rl.question(
+            `\n${(request as UserInputRequestEvent).message} (yes/no): `,
+          );
+          const lowerAnswer = answer.trim().toLowerCase();
+          const action =
+            lowerAnswer === "yes" ||
+            lowerAnswer === "y" ||
+            lowerAnswer === "accept"
+              ? "accept"
+              : "decline";
+
+          await loop.run({
+            type: AgentEventType.USER_INPUT_RESPONSE,
+            id: randomUUID(),
+            streamId: (request as UserInputRequestEvent).streamId,
+            timestamp: new Date().toISOString(),
+            role: "user",
+            requestId: (request as UserInputRequestEvent).requestId,
+            action,
+          });
+        }
+        continue;
+      }
+
       await loop.run(trimmedAnswer);
 
       while (pendingUserInputRequest) {
@@ -218,13 +267,30 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         const answer = await rl.question(
           `\n${(request as UserInputRequestEvent).message} (yes/no): `,
         );
-        await loop.run(answer);
+        const lowerAnswer = answer.trim().toLowerCase();
+        const action =
+          lowerAnswer === "yes" ||
+          lowerAnswer === "y" ||
+          lowerAnswer === "accept"
+            ? "accept"
+            : "decline";
+
+        await loop.run({
+          type: AgentEventType.USER_INPUT_RESPONSE,
+          id: randomUUID(),
+          streamId: (request as UserInputRequestEvent).streamId,
+          timestamp: new Date().toISOString(),
+          role: "user",
+          requestId: (request as UserInputRequestEvent).requestId,
+          action,
+        });
       }
     }
   } finally {
     rl.close();
   }
 }
+
 
 function formatDate(date: Date): string {
   const now = new Date();

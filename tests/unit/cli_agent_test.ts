@@ -132,7 +132,15 @@ describe("CliAgent - Tool Confirmation", () => {
     (agent as any).streamId = streamId;
 
     const events: any[] = [];
-    for await (const event of agent.run("yes")) {
+    for await (const event of agent.run({
+      type: AgentEventType.USER_INPUT_RESPONSE,
+      id: "resp_123",
+      streamId,
+      timestamp: new Date().toISOString(),
+      role: "user",
+      requestId: "call_123",
+      action: "accept",
+    })) {
       console.log("Event yielded (yes):", event.type);
       events.push(event);
     }
@@ -218,7 +226,15 @@ describe("CliAgent - Tool Confirmation", () => {
     (agent as any).streamId = streamId;
 
     const events: any[] = [];
-    for await (const event of agent.run("no")) {
+    for await (const event of agent.run({
+      type: AgentEventType.USER_INPUT_RESPONSE,
+      id: "resp_456",
+      streamId,
+      timestamp: new Date().toISOString(),
+      role: "user",
+      requestId: "call_123",
+      action: "decline",
+    })) {
       console.log("Event yielded (no):", event.type);
       events.push(event);
     }

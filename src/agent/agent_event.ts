@@ -128,9 +128,12 @@ export interface UserInputResponseEvent extends BaseAgentEvent {
 }
 
 export function isUserInputResponseEvent(
-  event: AgentEvent,
+  event: unknown,
 ): event is UserInputResponseEvent {
-  return event.type === AgentEventType.USER_INPUT_RESPONSE;
+  return (
+    (event as UserInputResponseEvent).type ===
+    AgentEventType.USER_INPUT_RESPONSE
+  );
 }
 
 export interface ErrorEvent extends BaseAgentEvent {

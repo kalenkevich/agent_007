@@ -1,10 +1,12 @@
 import type { ModelConfig } from "./config/config.js";
 import type { Content, ContentPart } from "./content.js";
+import type { UserInputResponseEvent } from "./agent/agent_event.js";
 
-export type UserCommand = SetModelCommand;
+export type UserCommand = SetModelCommand | PlanCommand;
 
 export enum UserCommandType {
   SET_MODEL = "set_model",
+  PLAN = "plan",
 }
 
 export interface SetModelCommand {
@@ -13,12 +15,18 @@ export interface SetModelCommand {
   config?: ModelConfig;
 }
 
+export interface PlanCommand {
+  command: UserCommandType.PLAN;
+  task: string;
+}
+
 export type UserInput =
   | string
   | Content
   | ContentPart
   | ContentPart[]
-  | UserCommand;
+  | UserCommand
+  | UserInputResponseEvent;
 
 export function isUserCommand(userInput: UserInput): userInput is UserCommand {
   return (userInput as UserCommand).command !== undefined;

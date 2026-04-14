@@ -6,11 +6,6 @@ export class TerminalLoader {
   private loadingInterval: NodeJS.Timeout | null = null;
   private frameIndex = 0;
 
-  constructor() {
-    this.loadingInterval = null;
-    this.frameIndex = 0;
-  }
-
   startLoading() {
     if (this.loadingInterval) return;
     this.frameIndex = 0;
