@@ -17,7 +17,11 @@
     }
   },
   "bin": {
+    "agent007": "./dist/cli_entrypoint.js",
     "agent_007": "./dist/cli_entrypoint.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",
