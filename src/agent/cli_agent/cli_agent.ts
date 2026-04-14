@@ -24,14 +24,17 @@ import {
 import { logger } from "../../logger.js";
 import { CLI_AGENT_SYSTEM_PROMPT } from "./system_prompt.js";
 import { BUILD_IN_TOOLS } from "../../tools/build_in/index.js";
-import { type RunToolPolicy, DEFAULT_POLICY } from "../../tools/tool_policy.js";
+import {
+  type ToolCallPolicy,
+  DEFAULT_POLICY,
+} from "../../tools/tool_call_policy.js";
 
 export interface CliAgentOptions {
   model: LlmModel;
   history?: AgentEvent[];
   skills?: Skill[];
   thinkingConfig?: ThinkingConfig;
-  toolPolicies?: Record<string, RunToolPolicy>;
+  toolPolicies?: Record<string, ToolCallPolicy>;
   tools?: Tool[];
 }
 
@@ -48,7 +51,7 @@ export class CliAgent implements Agent {
   private history: AgentEvent[] = [];
   private historyContent: Content[] = [];
   private thinkingConfig?: ThinkingConfig;
-  private toolPolicies: Record<string, RunToolPolicy>;
+  private toolPolicies: Record<string, ToolCallPolicy>;
 
   private abortController?: AbortController;
 
