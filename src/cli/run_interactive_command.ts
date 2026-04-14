@@ -111,10 +111,20 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         break;
       case AgentEventType.TOOL_CALL:
         loader.stopLoading();
-        console.log(`\n[Tool Call: ${event.name}]`);
+        console.log(`\n\x1b[33m[Tool Call: ${event.name}]\x1b[0m`);
+        console.log(JSON.stringify(event.args, null, 2));
         break;
       case AgentEventType.TOOL_RESPONSE:
-        console.log(`\n[Tool Response: ${event.name}]`);
+        console.log(`\n\x1b[32m[Tool Response: ${event.name}]\x1b[0m`);
+        if (event.error) {
+          console.log(`\x1b[31mError: ${event.error}\x1b[0m`);
+        } else {
+          if (typeof event.result === "string") {
+            console.log(event.result);
+          } else {
+            console.log(JSON.stringify(event.result, null, 2));
+          }
+        }
         break;
       default:
         break;

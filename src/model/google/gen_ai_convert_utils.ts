@@ -62,6 +62,7 @@ export function contentPartToGenAIContentPart(
         partialArgs: part.partialArgs,
         willContinue: part.willContinue,
       },
+      thoughtSignature: part.thoughtSignature,
     };
   }
 
@@ -73,6 +74,7 @@ export function contentPartToGenAIContentPart(
         response: part.response,
         willContinue: part.willContinue,
       },
+      thoughtSignature: part.thoughtSignature,
     };
   }
 
@@ -128,6 +130,7 @@ export function genAIContentPartToContentPart(
       args: part.functionCall.args,
       partialArgs: part.functionCall.partialArgs,
       willContinue: part.functionCall.willContinue,
+      thoughtSignature: part.thoughtSignature,
     };
   }
 
@@ -138,6 +141,7 @@ export function genAIContentPartToContentPart(
       name: part.functionResponse.name,
       response: part.functionResponse.response,
       willContinue: part.functionResponse.willContinue,
+      thoughtSignature: part.thoughtSignature,
     };
   }
 

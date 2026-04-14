@@ -27,7 +27,7 @@ export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
   } = options;
 
   return {
-    contents: [...historyContent, content],
+    contents: mergeAdjacentContents([...historyContent, content]),
     tools: [...buildTools(tools), ...buildSkillsTools(skills)],
     systemInstructions: buildSystemInstruction(
       agentName,
@@ -36,6 +36,20 @@ export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
     ),
     thinkingConfig,
   };
+}
+
+function mergeAdjacentContents(contents: Content[]): Content[] {
+  const result: Content[] = [];
+  for (const content of contents) {
+    const last = result[result.length - 1];
+    if (last && last.role === content.role) {
+      last.parts.push(...content.parts);
+    } else {
+      result.push({ ...content, parts: [...content.parts] });
+    }
+  }
+
+  return result;
 }
 
 export function buildTools(tools?: Tool[]): FunctionDeclaration[] {

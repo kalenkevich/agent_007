@@ -14,10 +14,8 @@ export function getContentFromAgentEvent(
   if (
     isUsageEvent(agentEvent) ||
     isAgentStartEvent(agentEvent) ||
-    isAgentEndEvent(agentEvent)
-    // || isUserInputRequestEvent(agentEvent) ||
-    // isUserInputResponseEvent(agentEvent) ||
-    // isErrorEvent(agentEvent)
+    isAgentEndEvent(agentEvent) ||
+    agentEvent.partial
   ) {
     return undefined;
   }

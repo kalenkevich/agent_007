@@ -127,12 +127,12 @@ function toGenAiRequest({
       tools: request.tools
         ? [{ functionDeclarations: request.tools }]
         : undefined,
-      thinkingConfig: {
-        includeThoughts: request.thinkingConfig?.enabled,
+      thinkingConfig: request.thinkingConfig?.enabled ? {
+        includeThoughts: request.thinkingConfig.enabled,
         thinkingLevel: toThinkingLevelConfig(
-          request.thinkingConfig?.level || "auto",
+          request.thinkingConfig.level || "auto",
         ),
-      },
+      } : undefined,
       systemInstruction: request.systemInstructions,
     },
   };
