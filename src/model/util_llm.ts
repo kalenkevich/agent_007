@@ -1,6 +1,7 @@
 import type { LlmModel } from "./model.js";
 import { type AgentEvent, isMessageEvent } from "../agent/agent_event.js";
 import type { Content, TextContentPart } from "../content.js";
+import { logger } from "../logger.js";
 
 export class UtilLlm {
   private model: LlmModel;
@@ -103,7 +104,63 @@ export class UtilLlm {
       }
       return summary.trim();
     } catch (e) {
-      console.error("Failed to compact history:", e);
+      logger.error("Failed to compact history:", e);
+      throw e;
+    }
+  }
+
+  async scanProjectConstants(context: string): Promise<Record<string, any>> {
+    const prompt = `Analyze the following project information and define project constants.
+Identify:
+- language, framework, package managers, build tools
+- project structure
+- coding style, rules and conventions
+
+Output the result as a JSON object. Do not include markdown formatting in the response, just the raw JSON.
+
+Project Info:
+${context}
+`;
+
+    const request = {
+      contents: [
+        {
+          role: "user" as const,
+          parts: [{ type: "text" as const, text: prompt }],
+        },
+      ],
+      systemInstructions:
+        "You are a helpful assistant that analyzes codebases and extracts project conventions and constants in JSON format.",
+    };
+
+    try {
+      const generator = this.model.run(request);
+      let resultStr = "";
+      for await (const response of generator) {
+        if (response.errorMessage) {
+          throw new Error(response.errorMessage);
+        }
+        if (response.content && response.content.parts) {
+          for (const part of response.content.parts) {
+            if (part.type === "text") {
+              resultStr += part.text;
+            }
+          }
+        }
+      }
+      
+      let cleanedStr = resultStr.trim();
+      if (cleanedStr.startsWith("\`\`\`json")) {
+        cleanedStr = cleanedStr.substring(7);
+      }
+      if (cleanedStr.endsWith("\`\`\`")) {
+        cleanedStr = cleanedStr.substring(0, cleanedStr.length - 3);
+      }
+      cleanedStr = cleanedStr.trim();
+
+      return JSON.parse(cleanedStr);
+    } catch (e) {
+      logger.error("Failed to scan project constants:", e);
       throw e;
     }
   }

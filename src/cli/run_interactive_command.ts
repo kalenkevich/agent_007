@@ -12,10 +12,13 @@ import {
 } from "../agent/agent_event.js";
 import { TerminalLoader } from "./loader.js";
 import { configStore } from "../config/config_store.js";
+import { projectService } from "../core/project_service.js";
 import type { ThinkingConfig } from "../model/request.js";
 import type { Session, SessionMetadata } from "../session/session.js";
 import { SessionFileService } from "../session/session_file_service.js";
 import { UserCommandType } from "../user_input.js";
+import { InitProjectCommandHandler } from "../command/init_project_command_handler.js";
+import { isYes, parseUserAction } from "./prompt_utils.js";
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -86,6 +89,16 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
       } else {
         console.log("Invalid selection. Starting a new session.");
       }
+    }
+  }
+
+  if (!(await projectService.isInitialized())) {
+    const answer = await rl.question(
+      "\nProject has not been scanned yet. Initializing the project helps the LLM understand your codebase better and improves the quality of assistance.\nDo you want to run 'init' now? (yes/no) [default: yes]: ",
+    );
+    if (isYes(answer, true)) {
+      const handler = new InitProjectCommandHandler();
+      await handler.handle();
     }
   }
 
@@ -207,13 +220,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         const answer = await rl.question(
           `\n${(request as UserInputRequestEvent).message} (yes/no): `,
         );
-        const lowerAnswer = answer.trim().toLowerCase();
-        const action =
-          lowerAnswer === "yes" ||
-          lowerAnswer === "y" ||
-          lowerAnswer === "accept"
-            ? "accept"
-            : "decline";
+        const action = parseUserAction(answer);
 
         await loop.run({
           type: AgentEventType.USER_INPUT_RESPONSE,
@@ -253,13 +260,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           const answer = await rl.question(
             `\n${(request as UserInputRequestEvent).message} (yes/no): `,
           );
-          const lowerAnswer = answer.trim().toLowerCase();
-          const action =
-            lowerAnswer === "yes" ||
-            lowerAnswer === "y" ||
-            lowerAnswer === "accept"
-              ? "accept"
-              : "decline";
+          const action = parseUserAction(answer);
 
           await loop.run({
             type: AgentEventType.USER_INPUT_RESPONSE,
@@ -274,6 +275,12 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         continue;
       }
 
+      if (trimmedAnswer.startsWith("/init")) {
+        const handler = new InitProjectCommandHandler();
+        await handler.handle();
+        continue;
+      }
+
       await loop.run(trimmedAnswer);
 
       while (pendingUserInputRequest) {
@@ -282,13 +289,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         const answer = await rl.question(
           `\n${(request as UserInputRequestEvent).message} (yes/no): `,
         );
-        const lowerAnswer = answer.trim().toLowerCase();
-        const action =
-          lowerAnswer === "yes" ||
-          lowerAnswer === "y" ||
-          lowerAnswer === "accept"
-            ? "accept"
-            : "decline";
+        const action = parseUserAction(answer);
 
         await loop.run({
           type: AgentEventType.USER_INPUT_RESPONSE,
@@ -305,7 +306,6 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
     rl.close();
   }
 }
-
 
 function formatDate(date: Date): string {
   const now = new Date();

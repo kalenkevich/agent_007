@@ -15,6 +15,8 @@ import {
 import { logger } from "../logger.js";
 import { SessionFileService } from "../session/session_file_service.js";
 import { resolveLlmModel } from "../model/registry.js";
+import { projectService } from "./project_service.js";
+import { CLI_AGENT_SYSTEM_PROMPT } from "../agent/cli_agent/system_prompt.js";
 
 export enum AgentLoopType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -49,10 +51,18 @@ export class CoreAgentLoop extends EventEmitter {
     }
 
     const model = new AdaptiveLlmModel(this.config.models);
+    const constantsStr = await projectService.getConstants();
+
+    let instructions = CLI_AGENT_SYSTEM_PROMPT;
+    if (constantsStr) {
+      instructions += `\n\nProject Constants and Conventions:\n${constantsStr}`;
+    }
+
     this.agent = new CliAgent({
       model: model,
       thinkingConfig: this.config.thinkingConfig,
       history,
+      instructions,
     });
 
     const utilModelConfig = this.config.models.util;

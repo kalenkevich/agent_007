@@ -6,6 +6,7 @@ import { runInteractiveCommand } from "./cli/run_interactive_command.js";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { configStore } from "./config/config_store.js";
+import { InitProjectCommandHandler } from "./command/init_project_command_handler.js";
 
 const options = {
   prompt: {
@@ -31,6 +32,7 @@ Usage: agent007 <command> [options]
 Commands:
   i, interactive     Run the agent interactively (REPL)
   ni, noninteractive  Run the agent with a prompt and exit
+  init               Initialize project and define constants
 
 Options:
   -p, --prompt <string>  The task for the agent
@@ -104,6 +106,12 @@ async function main() {
         positionals: positionals.slice(1),
       });
 
+      return;
+    }
+
+    if (command === "init") {
+      const handler = new InitProjectCommandHandler();
+      await handler.handle();
       return;
     }
 

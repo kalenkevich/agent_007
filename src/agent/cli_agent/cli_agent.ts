@@ -44,13 +44,14 @@ export interface CliAgentOptions {
   compactionConfig?: CompactionConfig;
   toolPolicies?: Record<string, ToolCallPolicy>;
   tools?: Tool[];
+  instructions?: string;
 }
 
 export class CliAgent implements Agent {
   readonly id = "cli_agent";
   readonly name = "Agent 007";
   readonly description = "Agent 007";
-  readonly instructions = CLI_AGENT_SYSTEM_PROMPT;
+  readonly instructions: string;
   readonly tools: Tool[];
   readonly skills?: Skill[];
 
@@ -74,6 +75,7 @@ export class CliAgent implements Agent {
     this.toolPolicies = options.toolPolicies || {};
     this.tools = options.tools || BUILD_IN_TOOLS;
     this.compactionConfig = options.compactionConfig;
+    this.instructions = options.instructions || CLI_AGENT_SYSTEM_PROMPT;
   }
 
   async *run(userInput: UserInput): AsyncGenerator<AgentEvent, void, unknown> {

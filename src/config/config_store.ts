@@ -42,6 +42,7 @@ export class ConfigStore {
   async set(filename: string, value: string): Promise<void> {
     await this.ensureDir();
     const filePath = path.join(this.configDir, filename);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, value.trim(), "utf-8");
   }
 }

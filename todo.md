@@ -10,7 +10,7 @@ To do:
 - [/] Planning agent
   - [x] Ask user for approval
   - [ ] Plan execution
-- [ ] Define project constants by scaning the codebase:
+- [x] Define project constants by scaning the codebase:
   - language, framework, package managers, build tools
   - project structure
   - coding style, rules and conventions
