@@ -1,0 +1,25 @@
+To do:
+
+- [x] Basic Agent loop
+- [x] User command execution
+- [x] Tool execution
+- [x] Tool call approval
+- [x] Sessions
+- [x] Chat history
+- [x] Dymaic model support
+- [/] Planing agent
+  - [/] Ask user for approval
+- [ ] Skills
+- [ ] Other models support (OpenAI, Anthropic, etc)
+- [ ] TUI with ink
+- [ ] Web UI?
+- [ ] Personality (aggresive, polite, casual)
+- [ ] Plan execution
+- [ ] Web search
+- [ ] Code execution
+- [ ] Context compaction
+- [ ] Memory facts
+- [ ] Index project for Llm (LllWiki)
+- [ ] Conenct to Telegram
+- [ ] Voice support
+- [ ] i18n (en, russian)
