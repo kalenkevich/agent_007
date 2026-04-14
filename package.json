@@ -5,6 +5,10 @@
   "description": "Yet another AI agent coding harness.",
   "type": "module",
   "module": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kalenkevich/agent_007"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
