@@ -1,14 +1,14 @@
-import type { LlmModel } from "./model.js";
-import { Gemini } from "./google/gemini_model.js";
+import {Gemini} from './google/gemini_model.js';
+import type {LlmModel} from './model.js';
 
 type LlmModelClass = {
-  new (params: { modelName: string; apiKey: string }): LlmModel;
+  new (params: {modelName: string; apiKey: string}): LlmModel;
 };
 
 export enum ModelType {
-  LITE = "lite",
-  FAST = "fast",
-  PRO = "pro",
+  LITE = 'lite',
+  FAST = 'fast',
+  PRO = 'pro',
 }
 
 export interface ModelInfo {
@@ -18,33 +18,33 @@ export interface ModelInfo {
 }
 
 const MODEL_REGISTRY: Record<string, ModelInfo> = {
-  "gemini-3.1-pro-preview": {
-    name: "gemini-3.1-pro-preview",
+  'gemini-3.1-pro-preview': {
+    name: 'gemini-3.1-pro-preview',
     type: ModelType.PRO,
     klass: Gemini,
   },
-  "gemini-3-flash-preview": {
-    name: "gemini-3-flash-preview",
+  'gemini-3-flash-preview': {
+    name: 'gemini-3-flash-preview',
     type: ModelType.FAST,
     klass: Gemini,
   },
-  "gemini-3.1-flash-lite-preview": {
-    name: "gemini-3.1-flash-lite-preview",
+  'gemini-3.1-flash-lite-preview': {
+    name: 'gemini-3.1-flash-lite-preview',
     type: ModelType.LITE,
     klass: Gemini,
   },
-  "gemini-2.5-pro": {
-    name: "gemini-2.5-pro",
+  'gemini-2.5-pro': {
+    name: 'gemini-2.5-pro',
     type: ModelType.PRO,
     klass: Gemini,
   },
-  "gemini-2.5-flash": {
-    name: "gemini-2.5-flash",
+  'gemini-2.5-flash': {
+    name: 'gemini-2.5-flash',
     type: ModelType.FAST,
     klass: Gemini,
   },
-  "gemini-2.5-flash-lite": {
-    name: "gemini-2.5-flash-lite",
+  'gemini-2.5-flash-lite': {
+    name: 'gemini-2.5-flash-lite',
     type: ModelType.LITE,
     klass: Gemini,
   },

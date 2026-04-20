@@ -1,5 +1,5 @@
-import type { LlmRequest } from "./request.js";
-import type { LlmResponse } from "./response.js";
+import type {LlmRequest} from './request.js';
+import type {LlmResponse} from './response.js';
 
 export interface LlmModelConfig {
   stream?: boolean;

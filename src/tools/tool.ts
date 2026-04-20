@@ -1,6 +1,8 @@
 import { z as z3 } from "zod/v3";
 import { z as z4 } from "zod/v4";
 import type { Schema } from "./schema.js";
+import type {LlmRequest} from '../model/request.js';
+import type {Toolset} from './toolset.js';
 
 export enum Behavior {
   UNSPECIFIED = "UNSPECIFIED",
@@ -65,4 +67,7 @@ export interface Tool<
   output: ToolOutputSchema;
   execute: ToolExecuteFunction<TInputParameters, TOutputParameters>;
   toFunctionDeclaration(): FunctionDeclaration;
+  processLlmRequest(request: LlmRequest): Promise<LlmRequest | undefined>;
 }
+
+export type ToolUnion = Tool | Toolset;

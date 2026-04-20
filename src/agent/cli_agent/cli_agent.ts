@@ -1,40 +1,45 @@
-import { randomUUID } from "node:crypto";
-import * as fs from "node:fs/promises";
-import type { Agent } from "../agent.js";
-import type { LlmModel } from "../../model/model.js";
-import type { Skill } from "../../skills/skill.js";
-import type { Tool } from "../../tools/tool.js";
+import {randomUUID} from 'node:crypto';
+import * as fs from 'node:fs/promises';
+import {UnsafeLocalCodeExecutor} from '../../code_executor/unsafe_local_code_executor.js';
+import type {CompactionConfig} from '../../config/config.js';
+import type {Content, ContentPart} from '../../content.js';
+import {logger} from '../../logger.js';
+import type {LlmModel} from '../../model/model.js';
+import type {LlmRequest, ThinkingConfig} from '../../model/request.js';
+import type {Skill} from '../../skills/skill.js';
+import {BUILD_IN_TOOLS} from '../../tools/build_in/index.js';
+import {isFunctionalTool} from '../../tools/functional_tool.js';
+import {SkillToolset} from '../../tools/skills/skill_toolset.js';
+import type {Tool, ToolUnion} from '../../tools/tool.js';
 import {
-  type AgentEvent,
-  AgentEventType,
-  AgentEndReason,
-  type ToolCallEvent,
-  isUserInputResponseEvent,
-} from "../agent_event.js";
-import type { Content } from "../../content.js";
+  type ToolCallPolicy,
+  DEFAULT_POLICY,
+} from '../../tools/tool_call_policy.js';
+import {isToolset} from '../../tools/toolset.js';
 import {
   type UserInput,
   isUserCommand,
   toContentParts,
   UserCommandType,
-} from "../../user_input.js";
-import type { ThinkingConfig } from "../../model/request.js";
+} from '../../user_input.js';
+import type {Agent} from '../agent.js';
+import {
+  type AgentEvent,
+  type ToolCallEvent,
+  type UserInputResponseEvent,
+  AgentEndReason,
+  AgentEventType,
+  isUserInputResponseEvent,
+} from '../agent_event.js';
 import {
   getContentFromAgentEvent,
   llmResponseToAgentEvents,
-} from "../agent_event_utils.js";
-import { logger } from "../../logger.js";
-import { CLI_AGENT_SYSTEM_PROMPT } from "./system_prompt.js";
-import { BUILD_IN_TOOLS } from "../../tools/build_in/index.js";
-import { PlannerAgent } from "../planner_agent/planner_agent.js";
-import {
-  type ToolCallPolicy,
-  DEFAULT_POLICY,
-} from "../../tools/tool_call_policy.js";
-import type { CompactionConfig } from "../../config/config.js";
-import { BasicRequestProcessor } from "../request_processor/basic_request_processor.js";
-import { CompactionProcessor } from "../request_processor/compaction_processor.js";
-import type { AgentState } from "../request_processor/request_processor.js";
+} from '../agent_event_utils.js';
+import {PlannerAgent} from '../planner_agent/planner_agent.js';
+import {BasicRequestProcessor} from '../request_processor/basic_request_processor.js';
+import {CompactionProcessor} from '../request_processor/compaction_processor.js';
+import type {AgentState} from '../request_processor/request_processor.js';
+import {CLI_AGENT_SYSTEM_PROMPT} from './system_prompt.js';
 
 export interface CliAgentOptions {
   model: LlmModel;
@@ -43,17 +48,16 @@ export interface CliAgentOptions {
   thinkingConfig?: ThinkingConfig;
   compactionConfig?: CompactionConfig;
   toolPolicies?: Record<string, ToolCallPolicy>;
-  tools?: Tool[];
+  tools?: ToolUnion[];
   instructions?: string;
 }
 
 export class CliAgent implements Agent {
-  readonly id = "cli_agent";
-  readonly name = "Agent 007";
-  readonly description = "Agent 007";
+  readonly id = 'cli_agent';
+  readonly name = 'Agent 007';
+  readonly description = 'Agent 007';
   readonly instructions: string;
-  readonly tools: Tool[];
-  readonly skills?: Skill[];
+  readonly tools: ToolUnion[];
 
   readonly model: LlmModel;
   private streamId?: string;
@@ -67,13 +71,19 @@ export class CliAgent implements Agent {
   constructor(options: CliAgentOptions) {
     this.model = options.model;
     this.thinkingConfig = options.thinkingConfig;
-    this.skills = options.skills;
     this.history = options.history || [];
     this.historyContent = this.history
       .map((c) => getContentFromAgentEvent(c))
       .filter(Boolean) as Content[];
     this.toolPolicies = options.toolPolicies || {};
-    this.tools = options.tools || BUILD_IN_TOOLS;
+    this.tools = options.tools || [
+      ...BUILD_IN_TOOLS,
+      new SkillToolset(options.skills || [], {
+        codeExecutor: new UnsafeLocalCodeExecutor({
+          timeoutSeconds: 5 * 60 * 1000, // 5 minutes
+        }),
+      }),
+    ];
     this.compactionConfig = options.compactionConfig;
     this.instructions = options.instructions || CLI_AGENT_SYSTEM_PROMPT;
   }
@@ -98,58 +108,60 @@ export class CliAgent implements Agent {
         const planner = new PlannerAgent({
           model: this.model,
           tools: this.tools,
-          skills: this.skills,
         });
         yield* planner.run(userInput.task);
       }
       return;
     }
 
-    logger.debug("[CliAgent] runInternal started");
+    logger.debug('[CliAgent] runInternal started');
 
     const lastEvent = this.history[this.history.length - 1];
     let skipInitialEvents = false;
 
     if (lastEvent && lastEvent.type === AgentEventType.USER_INPUT_REQUEST) {
-      logger.debug("[CliAgent] Resuming from USER_INPUT_REQUEST");
+      logger.debug('[CliAgent] Resuming from USER_INPUT_REQUEST');
       this.streamId = lastEvent.streamId;
       skipInitialEvents = true;
 
       const requestId = lastEvent.requestId;
-      if ((lastEvent.requestSchema as any)?.type === "plan_approval") {
+      if (lastEvent.requestSchema?.['type'] === 'plan_approval') {
         const isAccepted =
-          isUserInputResponseEvent(userInput) && userInput.action === "accept";
+          isUserInputResponseEvent(userInput) && userInput.action === 'accept';
 
         if (isAccepted) {
-          const planFilePath = (lastEvent.requestSchema as any)
-            .planFilePath as string;
+          const planFilePath = lastEvent.requestSchema?.[
+            'planFilePath'
+          ] as string;
           try {
-            const planContent = await fs.readFile(planFilePath, "utf-8");
+            const planContent = await fs.readFile(planFilePath, 'utf-8');
             yield this.createEvent(AgentEventType.MESSAGE, {
-              role: "user",
+              role: 'user',
               parts: [
                 {
-                  type: "text",
+                  type: 'text',
                   text: `Plan approved. Please execute the following plan:\n\n${planContent}`,
                 },
               ],
             });
-          } catch (error: any) {
-            logger.error(`Failed to read plan file: ${error.message}`);
+          } catch (error: unknown) {
+            logger.error(
+              `Failed to read plan file: ${(error as Error).message}`,
+            );
             yield this.createEvent(AgentEventType.MESSAGE, {
-              role: "user",
+              role: 'user',
               parts: [
                 {
-                  type: "text",
-                  text: `Plan approved, but failed to read plan file: ${error.message}. Please proceed if you know the plan.`,
+                  type: 'text',
+                  text: `Plan approved, but failed to read plan file: ${(error as Error).message}. Please proceed if you know the plan.`,
                 },
               ],
             });
           }
         } else {
           yield this.createEvent(AgentEventType.MESSAGE, {
-            role: "user",
-            parts: [{ type: "text", text: "Plan declined." }],
+            role: 'user',
+            parts: [{type: 'text', text: 'Plan declined.'}],
           });
         }
       } else {
@@ -160,50 +172,50 @@ export class CliAgent implements Agent {
 
         if (toolCall) {
           const isAccepted =
-            isUserInputResponseEvent(userInput as any) &&
-            (userInput as any).action === "accept";
+            isUserInputResponseEvent(userInput) &&
+            (userInput as UserInputResponseEvent).action === 'accept';
 
           if (isAccepted) {
             const tool = this.tools.find((t) => t.name === toolCall.name);
-            if (tool) {
+            if (tool && isFunctionalTool(tool)) {
               try {
                 logger.debug(
                   `[CliAgent] Executing tool ${toolCall.name} after confirmation`,
                 );
                 const result = await tool.execute(toolCall.args);
                 yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-                  role: "user",
+                  role: 'user',
                   requestId: toolCall.requestId,
                   name: toolCall.name,
                   result: result as Record<string, unknown> | string,
                   parts: [
                     {
-                      type: "function_response",
+                      type: 'function_response',
                       id: toolCall.requestId,
                       name: toolCall.name,
                       response:
-                        typeof result === "object"
+                        typeof result === 'object'
                           ? (result as Record<string, unknown>)
-                          : { result },
+                          : {result},
                     },
                   ],
                 });
-              } catch (error: any) {
+              } catch (error: unknown) {
                 logger.error(
-                  `[CliAgent] Tool execution failed: ${error.message}`,
+                  `[CliAgent] Tool execution failed: ${(error as Error).message}`,
                 );
                 yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-                  role: "user",
+                  role: 'user',
                   requestId: toolCall.requestId,
                   name: toolCall.name,
-                  error: error.message,
+                  error: (error as Error).message,
                   result: {},
                   parts: [
                     {
-                      type: "function_response",
+                      type: 'function_response',
                       id: toolCall.requestId,
                       name: toolCall.name,
-                      response: { error: error.message },
+                      response: {error: (error as Error).message},
                     },
                   ],
                 });
@@ -214,17 +226,17 @@ export class CliAgent implements Agent {
               `[CliAgent] Tool ${toolCall.name} execution declined by user`,
             );
             yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-              role: "user",
+              role: 'user',
               requestId: toolCall.requestId,
               name: toolCall.name,
-              error: "User declined tool execution",
+              error: 'User declined tool execution',
               result: {},
               parts: [
                 {
-                  type: "function_response",
+                  type: 'function_response',
                   id: toolCall.requestId,
                   name: toolCall.name,
-                  response: { error: "User declined tool execution" },
+                  response: {error: 'User declined tool execution'},
                 },
               ],
             });
@@ -238,13 +250,13 @@ export class CliAgent implements Agent {
     }
 
     if (!skipInitialEvents) {
-      const userContent = toContentParts(userInput as any);
+      const userContent = toContentParts(userInput as ContentPart[]);
       this.abortController = new AbortController();
       this.streamId = randomUUID();
 
       yield this.createEvent(AgentEventType.START);
       yield this.createEvent(AgentEventType.MESSAGE, {
-        role: "user",
+        role: 'user',
         parts: userContent,
       });
     }
@@ -257,7 +269,6 @@ export class CliAgent implements Agent {
         description: this.description,
         instructions: this.instructions,
         tools: this.tools,
-        skills: this.skills,
         thinkingConfig: this.thinkingConfig,
       });
 
@@ -269,7 +280,6 @@ export class CliAgent implements Agent {
           description: this.description,
           instructions: this.instructions,
           tools: this.tools,
-          skills: this.skills,
           thinkingConfig: this.thinkingConfig,
         },
         streamId: this.streamId!,
@@ -289,21 +299,29 @@ export class CliAgent implements Agent {
         yield event;
       }
 
-      const llmRequest = state.llmRequest;
+      let llmRequest = state.llmRequest;
       if (!llmRequest) {
-        throw new Error("LlmRequest is missing after processors");
+        throw new Error('LlmRequest is missing after processors');
       }
 
-      logger.debug("[CliAgent] calling model.run");
-
+      logger.debug('[CliAgent] calling model.run');
       const toolCalls: ToolCallEvent[] = [];
+
+      for (const tool of this.tools) {
+        const processedRequest: LlmRequest | undefined =
+          await tool.processLlmRequest(llmRequest!);
+
+        if (processedRequest) {
+          llmRequest = processedRequest;
+        }
+      }
 
       for await (const modelResponse of this.model.run(llmRequest, {
         stream: true,
         abortSignal: this.abortController?.signal,
       })) {
         for (const agentEvent of llmResponseToAgentEvents(modelResponse)) {
-          logger.debug("[CliAgent] yielding event:", agentEvent.type);
+          logger.debug('[CliAgent] yielding event:', agentEvent.type);
           yield this.createEvent(agentEvent.type!, agentEvent);
 
           if (
@@ -321,11 +339,24 @@ export class CliAgent implements Agent {
       }
 
       for (const toolCall of toolCalls) {
-        const tool = this.tools.find((t) => t.name === toolCall.name);
+        let tool: Tool | undefined;
+        for (const possibleTool of this.tools) {
+          if (isToolset(possibleTool)) {
+            const tools = await possibleTool.getTools();
+            tool = tools.find((t) => t.name === toolCall.name);
+            if (tool) {
+              break;
+            }
+          } else if (possibleTool.name === toolCall.name) {
+            tool = possibleTool;
+            break;
+          }
+        }
+
         if (!tool) {
           logger.error(`[CliAgent] Tool not found: ${toolCall.name}`);
           yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-            role: "user",
+            role: 'user',
             requestId: toolCall.requestId,
             name: toolCall.name,
             error: `Tool ${toolCall.name} not found`,
@@ -340,7 +371,7 @@ export class CliAgent implements Agent {
             `[CliAgent] Tool ${toolCall.name} requires confirmation`,
           );
           yield this.createEvent(AgentEventType.USER_INPUT_REQUEST, {
-            role: "agent",
+            role: 'agent',
             requestId: toolCall.requestId,
             message: `Do you want to allow execution of tool ${toolCall.name}?`,
           });
@@ -351,36 +382,38 @@ export class CliAgent implements Agent {
           logger.debug(`[CliAgent] Executing tool ${toolCall.name}`);
           const result = await tool.execute(toolCall.args);
           yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-            role: "user",
+            role: 'user',
             requestId: toolCall.requestId,
             name: toolCall.name,
             result: result as Record<string, unknown> | string,
             parts: [
               {
-                type: "function_response",
+                type: 'function_response',
                 id: toolCall.requestId,
                 name: toolCall.name,
                 response:
-                  typeof result === "object"
+                  typeof result === 'object'
                     ? (result as Record<string, unknown>)
-                    : { result },
+                    : {result},
               },
             ],
           });
-        } catch (error: any) {
-          logger.error(`[CliAgent] Tool execution failed: ${error.message}`);
+        } catch (error: unknown) {
+          logger.error(
+            `[CliAgent] Tool execution failed: ${(error as Error).message}`,
+          );
           yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-            role: "user",
+            role: 'user',
             requestId: toolCall.requestId,
             name: toolCall.name,
-            error: error.message,
+            error: (error as Error).message,
             result: {},
             parts: [
               {
-                type: "function_response",
+                type: 'function_response',
                 id: toolCall.requestId,
                 name: toolCall.name,
-                response: { error: error.message },
+                response: {error: (error as Error).message},
               },
             ],
           });
@@ -389,7 +422,7 @@ export class CliAgent implements Agent {
     }
 
     yield this.createEvent(AgentEventType.END, {
-      role: "agent",
+      role: 'agent',
       type: AgentEventType.END,
       reason: AgentEndReason.COMPLETED,
     });

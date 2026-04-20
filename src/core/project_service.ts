@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
-import { configStore } from "../config/config_store.js";
+import {createHash} from 'node:crypto';
+import {configStore} from '../config/config_store.js';
 
 export class ProjectService {
   private cwd: string;
@@ -7,7 +7,7 @@ export class ProjectService {
 
   constructor(cwd: string = process.cwd()) {
     this.cwd = cwd;
-    this.projectId = createHash("sha256").update(this.cwd).digest("hex");
+    this.projectId = createHash('sha256').update(this.cwd).digest('hex');
   }
 
   getProjectId(): string {
@@ -22,7 +22,7 @@ export class ProjectService {
     return await configStore.get(this.getConstantsPath());
   }
 
-  async saveConstants(constants: any): Promise<void> {
+  async saveConstants(constants: unknown): Promise<void> {
     await configStore.set(
       this.getConstantsPath(),
       JSON.stringify(constants, null, 2),

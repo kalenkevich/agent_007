@@ -1,16 +1,16 @@
-import type { LlmModel, LlmModelConfig } from "./model.js";
-import type { LlmRequest } from "./request.js";
-import type { LlmResponse } from "./response.js";
-import type { ModelConfig } from "../config/config.js";
-import { resolveLlmModel } from "./registry.js";
-import { logger } from "../logger.js";
+import type {ModelConfig} from '../config/config.js';
+import {logger} from '../logger.js';
+import type {LlmModel, LlmModelConfig} from './model.js';
+import {resolveLlmModel} from './registry.js';
+import type {LlmRequest} from './request.js';
+import type {LlmResponse} from './response.js';
 
 export class AdaptiveLlmModel implements LlmModel {
   private currentModel!: LlmModel;
   private fallbackConfigs?: ModelConfig[];
-  readonly modelName: string = "adaptive";
+  readonly modelName: string = 'adaptive';
 
-  constructor(config: { main: ModelConfig; fallback?: ModelConfig[] }) {
+  constructor(config: {main: ModelConfig; fallback?: ModelConfig[]}) {
     this.setModel(config.main);
     this.fallbackConfigs = config.fallback;
   }
@@ -25,13 +25,13 @@ export class AdaptiveLlmModel implements LlmModel {
     config?: LlmModelConfig,
   ): AsyncGenerator<LlmResponse, void, unknown> {
     if (!this.currentModel) {
-      throw new Error("Model not initialized");
+      throw new Error('Model not initialized');
     }
 
     try {
       yield* this.currentModel.run(request, config);
     } catch (e: unknown) {
-      logger.error("[AdaptiveLlmModel] error:", e);
+      logger.error('[AdaptiveLlmModel] error:', e);
 
       if (this.fallbackConfigs && this.fallbackConfigs.length > 0) {
         for (const fallbackConfig of this.fallbackConfigs) {
@@ -56,12 +56,12 @@ export class AdaptiveLlmModel implements LlmModel {
         }
         // If all fallbacks failed
         yield {
-          errorCode: "ADAPTIVE_MODEL_ALL_FALLBACKS_FAILED",
-          errorMessage: "All fallback models failed.",
+          errorCode: 'ADAPTIVE_MODEL_ALL_FALLBACKS_FAILED',
+          errorMessage: 'All fallback models failed.',
         };
       } else {
         yield {
-          errorCode: "ADAPTIVE_MODEL_ERROR",
+          errorCode: 'ADAPTIVE_MODEL_ERROR',
           errorMessage: e instanceof Error ? e.message : String(e),
         };
       }
@@ -70,7 +70,7 @@ export class AdaptiveLlmModel implements LlmModel {
 
   async countTokens(request: LlmRequest): Promise<number> {
     if (!this.currentModel) {
-      throw new Error("Model not initialized");
+      throw new Error('Model not initialized');
     }
     return this.currentModel.countTokens(request);
   }

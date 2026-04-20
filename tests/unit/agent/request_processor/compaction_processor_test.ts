@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { CompactionProcessor } from "../../../../src/agent/request_processor/compaction_processor.js";
-import { AgentEventType } from "../../../../src/agent/agent_event.js";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {AgentEventType} from '../../../../src/agent/agent_event.js';
+import {CompactionProcessor} from '../../../../src/agent/request_processor/compaction_processor.js';
 
-describe("CompactionProcessor", () => {
+describe('CompactionProcessor', () => {
   const mockModel = {
     countTokens: vi.fn().mockResolvedValue(100),
     run: vi.fn(),
@@ -12,23 +12,23 @@ describe("CompactionProcessor", () => {
     vi.clearAllMocks();
   });
 
-  it("should do nothing if disabled", async () => {
+  it('should do nothing if disabled', async () => {
     const processor = new CompactionProcessor({
       model: mockModel as any,
       compactionConfig: {
         enabled: false,
-        strategy: "truncate",
+        strategy: 'truncate',
         maxTokens: 1000,
       },
       requestBuilderOptions: {} as any,
-      streamId: "123",
+      streamId: '123',
     });
 
     const state = {
       historyContent: [
         {
-          role: "user" as const,
-          parts: [{ type: "text" as const, text: "hi" }],
+          role: 'user' as const,
+          parts: [{type: 'text' as const, text: 'hi'}],
         },
       ],
       llmRequest: {} as any,
@@ -39,24 +39,24 @@ describe("CompactionProcessor", () => {
     expect(newState).toBe(state);
   });
 
-  it("should do nothing if below threshold", async () => {
+  it('should do nothing if below threshold', async () => {
     const processor = new CompactionProcessor({
       model: mockModel as any,
       compactionConfig: {
         enabled: true,
-        strategy: "truncate",
+        strategy: 'truncate',
         maxTokens: 1000,
         triggerThreshold: 0.8,
       },
       requestBuilderOptions: {} as any,
-      streamId: "123",
+      streamId: '123',
     });
 
     const state = {
       historyContent: [
         {
-          role: "user" as const,
-          parts: [{ type: "text" as const, text: "hi" }],
+          role: 'user' as const,
+          parts: [{type: 'text' as const, text: 'hi'}],
         },
       ],
       llmRequest: {} as any,
@@ -69,43 +69,43 @@ describe("CompactionProcessor", () => {
     expect(newState).toBe(state);
   });
 
-  it("should truncate history when exceeded", async () => {
+  it('should truncate history when exceeded', async () => {
     const processor = new CompactionProcessor({
       model: mockModel as any,
       compactionConfig: {
         enabled: true,
-        strategy: "truncate",
+        strategy: 'truncate',
         maxTokens: 1000,
         triggerThreshold: 0.8,
       },
       requestBuilderOptions: {
-        agentName: "test",
-        instructions: "test",
+        agentName: 'test',
+        instructions: 'test',
         tools: [],
       } as any,
-      streamId: "123",
+      streamId: '123',
     });
 
     const state = {
       historyContent: [
         {
-          role: "user" as const,
-          parts: [{ type: "text" as const, text: "m1" }],
+          role: 'user' as const,
+          parts: [{type: 'text' as const, text: 'm1'}],
         },
         {
-          role: "agent" as const,
-          parts: [{ type: "text" as const, text: "r1" }],
+          role: 'agent' as const,
+          parts: [{type: 'text' as const, text: 'r1'}],
         },
         {
-          role: "user" as const,
-          parts: [{ type: "text" as const, text: "m2" }],
+          role: 'user' as const,
+          parts: [{type: 'text' as const, text: 'm2'}],
         },
         {
-          role: "agent" as const,
-          parts: [{ type: "text" as const, text: "r2" }],
+          role: 'agent' as const,
+          parts: [{type: 'text' as const, text: 'r2'}],
         },
       ],
-      llmRequest: { contents: [] } as any,
+      llmRequest: {contents: []} as any,
       events: [],
     };
 

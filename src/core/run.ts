@@ -11,7 +11,7 @@ function createDeferred(): Deferred {
     resolve = res;
     reject = rej;
   });
-  return { promise, resolve: resolve!, reject: reject! };
+  return {promise, resolve: resolve!, reject: reject!};
 }
 
 export class Run {

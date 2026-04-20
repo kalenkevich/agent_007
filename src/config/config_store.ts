@@ -1,6 +1,6 @@
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { APP_FILE_DIR } from "./app_dir.js";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import {APP_FILE_DIR} from './app_dir.js';
 
 export class ConfigStore {
   private configDir: string;
@@ -10,31 +10,31 @@ export class ConfigStore {
   }
 
   private async ensureDir() {
-    await fs.mkdir(this.configDir, { recursive: true });
+    await fs.mkdir(this.configDir, {recursive: true});
   }
 
   async getApiKey(): Promise<string | null> {
-    const keyFilePath = path.join(this.configDir, "api_key");
+    const keyFilePath = path.join(this.configDir, 'api_key');
     try {
-      const content = await fs.readFile(keyFilePath, "utf-8");
+      const content = await fs.readFile(keyFilePath, 'utf-8');
       return content.trim();
-    } catch (error) {
+    } catch (_e: unknown) {
       return null;
     }
   }
 
   async setApiKey(key: string): Promise<void> {
     await this.ensureDir();
-    const keyFilePath = path.join(this.configDir, "api_key");
-    await fs.writeFile(keyFilePath, key.trim(), "utf-8");
+    const keyFilePath = path.join(this.configDir, 'api_key');
+    await fs.writeFile(keyFilePath, key.trim(), 'utf-8');
   }
 
   async get(filename: string): Promise<string | null> {
     const filePath = path.join(this.configDir, filename);
     try {
-      const content = await fs.readFile(filePath, "utf-8");
+      const content = await fs.readFile(filePath, 'utf-8');
       return content.trim();
-    } catch (error) {
+    } catch (_e: unknown) {
       return null;
     }
   }
@@ -42,8 +42,8 @@ export class ConfigStore {
   async set(filename: string, value: string): Promise<void> {
     await this.ensureDir();
     const filePath = path.join(this.configDir, filename);
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, value.trim(), "utf-8");
+    await fs.mkdir(path.dirname(filePath), {recursive: true});
+    await fs.writeFile(filePath, value.trim(), 'utf-8');
   }
 }
 

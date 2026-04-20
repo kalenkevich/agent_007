@@ -1,17 +1,18 @@
-import type { RequestProcessor, AgentState } from "./request_processor.js";
-import type { LlmModel } from "../../model/model.js";
-import type { CompactionConfig } from "../../config/config.js";
-import type { BasicRequestProcessorOptions } from "./basic_request_processor.js";
-import { buildLlmRequest } from "../../model/request_builder_utils.js";
-import { logger } from "../../logger.js";
+import {randomUUID} from 'node:crypto';
+import type {CompactionConfig} from '../../config/config.js';
+import type {Content} from '../../content.js';
+import {logger} from '../../logger.js';
+import type {LlmModel} from '../../model/model.js';
+import type {LlmRequest} from '../../model/request.js';
+import {buildLlmRequest} from '../../model/request_builder_utils.js';
+import {UtilLlm} from '../../model/util_llm.js';
 import {
   AgentEventType,
   type AgentEvent,
   type CompactionEvent,
-} from "../agent_event.js";
-import { randomUUID } from "node:crypto";
-import { UtilLlm } from "../../model/util_llm.js";
-import type { Content } from "../../content.js";
+} from '../agent_event.js';
+import type {BasicRequestProcessorOptions} from './basic_request_processor.js';
+import type {AgentState, RequestProcessor} from './request_processor.js';
 
 export interface CompactionProcessorOptions {
   model: LlmModel;
@@ -24,7 +25,7 @@ export class CompactionProcessor implements RequestProcessor {
   constructor(private options: CompactionProcessorOptions) {}
 
   async process(state: AgentState): Promise<AgentState> {
-    const { compactionConfig, model, streamId } = this.options;
+    const {compactionConfig, model, streamId} = this.options;
 
     if (!compactionConfig?.enabled || !state.llmRequest) {
       return state;
@@ -43,9 +44,9 @@ export class CompactionProcessor implements RequestProcessor {
         );
 
         let newHistoryContent = [...state.historyContent];
-        let events = [...state.events];
+        const events = [...state.events];
 
-        if (compactionConfig.strategy === "truncate") {
+        if (compactionConfig.strategy === 'truncate') {
           const historyLength = newHistoryContent.length;
           if (historyLength > 2) {
             const removeCount = Math.ceil((historyLength - 1) * 0.2);
@@ -56,11 +57,11 @@ export class CompactionProcessor implements RequestProcessor {
 
             events.push(
               this.createEvent(AgentEventType.COMPACTION, streamId, {
-                role: "agent",
-                strategy: "truncate",
+                role: 'agent',
+                strategy: 'truncate',
                 parts: [
                   {
-                    type: "text",
+                    type: 'text',
                     text: `[System: Context compacted to save tokens. Removed ${removeCount} older messages.]`,
                   },
                 ],
@@ -68,7 +69,7 @@ export class CompactionProcessor implements RequestProcessor {
             );
 
             // Rebuild request
-            const llmRequest = this.rebuildRequest(newHistoryContent);
+            const llmRequest = await this.rebuildRequest(newHistoryContent);
             return {
               historyContent: newHistoryContent,
               llmRequest,
@@ -77,7 +78,7 @@ export class CompactionProcessor implements RequestProcessor {
           }
         }
 
-        if (compactionConfig.strategy === "summarize") {
+        if (compactionConfig.strategy === 'summarize') {
           logger.info(
             `[CompactionProcessor] Compacting history using UtilLlm.`,
           );
@@ -87,10 +88,10 @@ export class CompactionProcessor implements RequestProcessor {
 
             newHistoryContent = [
               {
-                role: "agent",
+                role: 'agent',
                 parts: [
                   {
-                    type: "text",
+                    type: 'text',
                     text: `Summary of previous conversation:\n${summary}`,
                   },
                 ],
@@ -99,11 +100,11 @@ export class CompactionProcessor implements RequestProcessor {
 
             events.push(
               this.createEvent(AgentEventType.COMPACTION, streamId, {
-                role: "agent",
-                strategy: "summarize",
+                role: 'agent',
+                strategy: 'summarize',
                 parts: [
                   {
-                    type: "text",
+                    type: 'text',
                     text: `[System: Context compacted using LLM summarization.]`,
                   },
                 ],
@@ -111,37 +112,37 @@ export class CompactionProcessor implements RequestProcessor {
             );
 
             // Rebuild request
-            const llmRequest = this.rebuildRequest(newHistoryContent);
+            const llmRequest = await this.rebuildRequest(newHistoryContent);
             return {
               historyContent: newHistoryContent,
               llmRequest,
               events,
             };
-          } catch (error: any) {
+          } catch (error: unknown) {
             logger.error(
-              `[CompactionProcessor] Compaction failed: ${error.message}`,
+              `[CompactionProcessor] Compaction failed: ${(error as Error).message}`,
             );
           }
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(
-        `[CompactionProcessor] Failed to count tokens or compact context: ${error.message}`,
+        `[CompactionProcessor] Failed to count tokens or compact context: ${(error as Error).message}`,
       );
     }
 
     return state;
   }
 
-  private rebuildRequest(historyContent: Content[]) {
+  private rebuildRequest(historyContent: Content[]): Promise<LlmRequest> {
     const lastContent = historyContent[historyContent.length - 1];
     const historyForRequest = historyContent.slice(0, -1);
+
     return buildLlmRequest({
       agentName: this.options.requestBuilderOptions.agentName,
       content: lastContent,
       historyContent: historyForRequest,
       tools: this.options.requestBuilderOptions.tools,
-      skills: this.options.requestBuilderOptions.skills,
       description: this.options.requestBuilderOptions.description,
       instructions: this.options.requestBuilderOptions.instructions,
       thinkingConfig: this.options.requestBuilderOptions.thinkingConfig,

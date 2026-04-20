@@ -1,25 +1,25 @@
-import { FunctionalTool } from "../functional_tool.js";
-import { type Schema, Type } from "../schema.js";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import {FunctionalTool} from '../functional_tool.js';
+import {type Schema, Type} from '../schema.js';
 
 export const FIND_TOOL = new FunctionalTool({
-  name: "find",
-  description: "Finds files matching a pattern.",
+  name: 'find',
+  description: 'Finds files matching a pattern.',
   params: {
     type: Type.OBJECT,
     properties: {
       pattern: {
         type: Type.STRING,
         description:
-          "The regular expression pattern to match against file names.",
+          'The regular expression pattern to match against file names.',
       },
       path: {
         type: Type.STRING,
         description: "The path to search in. Defaults to '.' if not specified.",
       },
     },
-    required: ["pattern"],
+    required: ['pattern'],
   } as Schema,
   output: {
     type: Type.OBJECT,
@@ -29,14 +29,14 @@ export const FIND_TOOL = new FunctionalTool({
         items: {
           type: Type.STRING,
         },
-        description: "List of matching file paths",
+        description: 'List of matching file paths',
       },
     },
   } as Schema,
   execute: async (input: unknown) => {
-    const typedInput = input as { pattern: string; path?: string };
+    const typedInput = input as {pattern: string; path?: string};
     const patternStr = typedInput.pattern;
-    const searchPath = typedInput.path || ".";
+    const searchPath = typedInput.path || '.';
     const resolvedPath = path.resolve(searchPath);
     const cwd = process.cwd();
 
@@ -50,7 +50,7 @@ export const FIND_TOOL = new FunctionalTool({
     const files: string[] = [];
 
     async function searchDir(dir: string) {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
+      const entries = await fs.readdir(dir, {withFileTypes: true});
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
 
@@ -60,7 +60,7 @@ export const FIND_TOOL = new FunctionalTool({
         }
 
         if (entry.isDirectory()) {
-          if (entry.name === ".git" || entry.name === "node_modules") {
+          if (entry.name === '.git' || entry.name === 'node_modules') {
             continue;
           }
           await searchDir(fullPath);
@@ -75,6 +75,6 @@ export const FIND_TOOL = new FunctionalTool({
       throw new Error(`Path ${resolvedPath} is not a directory.`);
     }
 
-    return { files };
+    return {files};
   },
 });

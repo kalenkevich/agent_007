@@ -1,25 +1,25 @@
-import { createInterface } from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
-import { randomUUID } from "node:crypto";
-import * as readline from "node:readline";
-import { loadConfig } from "../config/config_loader.js";
-import { CoreAgentLoop, AgentLoopType } from "../core/loop.js";
+import {randomUUID} from 'node:crypto';
+import {stdin as input, stdout as output} from 'node:process';
+import * as readline from 'node:readline';
+import {createInterface} from 'node:readline/promises';
 import {
   AgentEventType,
   type AgentEvent,
-  type UserInputRequestEvent,
   type CompactionEvent,
-} from "../agent/agent_event.js";
-import { TerminalLoader } from "./loader.js";
-import { configStore } from "../config/config_store.js";
-import { projectService } from "../core/project_service.js";
-import type { ThinkingConfig } from "../model/request.js";
-import type { Session, SessionMetadata } from "../session/session.js";
-import { SessionFileService } from "../session/session_file_service.js";
-import { UserCommandType } from "../user_input.js";
-import { InitProjectCommandHandler } from "../command/init_project_command_handler.js";
-import { isYes, parseUserAction } from "./prompt_utils.js";
-import { checkAndPromptVersion } from "./version_check.js";
+  type UserInputRequestEvent,
+} from '../agent/agent_event.js';
+import {InitProjectCommandHandler} from '../command/init_project_command_handler.js';
+import {loadConfig} from '../config/config_loader.js';
+import {configStore} from '../config/config_store.js';
+import {AgentLoopType, CoreAgentLoop} from '../core/loop.js';
+import {projectService} from '../core/project_service.js';
+import type {ThinkingConfig} from '../model/request.js';
+import type {Session, SessionMetadata} from '../session/session.js';
+import {SessionFileService} from '../session/session_file_service.js';
+import {UserCommandType} from '../user_input.js';
+import {TerminalLoader} from './loader.js';
+import {isYes, parseUserAction} from './prompt_utils.js';
+import {checkAndPromptVersion} from './version_check.js';
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -30,7 +30,7 @@ export interface RunCommandOptions {
 export async function runInteractiveCommand(options: RunCommandOptions) {
   let prompt = options.prompt;
   if (!prompt && options.positionals.length > 0) {
-    prompt = options.positionals.join(" ");
+    prompt = options.positionals.join(' ');
   }
 
   await checkAndPromptVersion();
@@ -43,28 +43,28 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
 
   console.log(`Using model: ${config.models.main.modelName}`);
 
-  const rl = createInterface({ input, output });
+  const rl = createInterface({input, output});
 
   if (config.thinkingConfig.enabled && !config.thinkingConfig.level) {
-    const validLevels = ["low", "medium", "high", "auto"];
+    const validLevels = ['low', 'medium', 'high', 'auto'];
     let level: string | null = null;
     while (!level) {
       const answer = await rl.question(
-        "Select thinking level (low, medium, high, auto) [default: high]: ",
+        'Select thinking level (low, medium, high, auto) [default: high]: ',
       );
       const trimmed = answer.trim().toLowerCase();
-      if (trimmed === "") {
-        level = "high";
+      if (trimmed === '') {
+        level = 'high';
       } else if (validLevels.includes(trimmed)) {
         level = trimmed;
       } else {
         console.log(
-          "Invalid level. Please choose from: low, medium, high, auto",
+          'Invalid level. Please choose from: low, medium, high, auto',
         );
       }
     }
-    config.thinkingConfig.level = level as ThinkingConfig["level"];
-    await configStore.set("thinking_level", level);
+    config.thinkingConfig.level = level as ThinkingConfig['level'];
+    await configStore.set('thinking_level', level);
     console.log(`Thinking level set to: ${level}`);
   }
 
@@ -73,7 +73,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
   let sessionId: string | undefined = undefined;
 
   if (sessions.length > 0) {
-    console.log("\nAvailable sessions:");
+    console.log('\nAvailable sessions:');
     sessions.forEach((s, index) => {
       console.log(`${index + 1}. ${getSessionName(s)}`);
     });
@@ -82,7 +82,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
       "\nSelect session number to resume or 'n' for new session [default: new]: ",
     );
     const trimmed = answer.trim().toLowerCase();
-    if (trimmed !== "" && trimmed !== "n") {
+    if (trimmed !== '' && trimmed !== 'n') {
       const selectedIndex = parseInt(trimmed, 10) - 1;
       if (selectedIndex >= 0 && selectedIndex < sessions.length) {
         sessionId = sessions[selectedIndex].id;
@@ -90,7 +90,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           `Resuming session: ${getSessionName(sessions[selectedIndex])}`,
         );
       } else {
-        console.log("Invalid selection. Starting a new session.");
+        console.log('Invalid selection. Starting a new session.');
       }
     }
   }
@@ -119,44 +119,45 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         hasStreamed = false;
         lastPrintedToolCalls.clear();
         break;
-      case AgentEventType.MESSAGE:
-        if (event.role === "agent" && event.parts) {
+      case AgentEventType.MESSAGE: {
+        if (event.role === 'agent' && event.parts) {
           if (event.partial === true) {
             hasStreamed = true;
             loader.stopLoading();
             for (const part of event.parts) {
-              if ("thought" in part && part.thought) {
+              if ('thought' in part && part.thought) {
                 if (!isThinking) {
                   isThinking = true;
-                  rl.write("\x1b[2mThinking: ");
+                  rl.write('\x1b[2mThinking: ');
                 }
                 rl.write(part.thought);
-              } else if ("text" in part && part.text) {
+              } else if ('text' in part && part.text) {
                 if (isThinking) {
                   readline.cursorTo(process.stdout, 0);
                   readline.clearLine(process.stdout, 0);
                   isThinking = false;
-                  rl.write("\x1b[0m"); // Reset style
+                  rl.write('\x1b[0m'); // Reset style
                 }
                 rl.write(part.text);
               }
             }
           } else {
             if (hasStreamed) {
-              rl.write("\n");
+              rl.write('\n');
               break;
             }
             loader.stopLoading();
             for (const part of event.parts) {
-              if ("text" in part && part.text) {
+              if ('text' in part && part.text) {
                 rl.write(part.text);
               }
             }
-            rl.write("\n");
+            rl.write('\n');
           }
         }
         break;
-      case AgentEventType.COMPACTION:
+      }
+      case AgentEventType.COMPACTION: {
         loader.stopLoading();
         const compactionEvent = event as CompactionEvent;
         console.log(
@@ -164,20 +165,23 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         );
         if (compactionEvent.parts) {
           for (const part of compactionEvent.parts) {
-            if ("text" in part && part.text) {
+            if ('text' in part && part.text) {
               console.log(part.text);
             }
           }
         }
         break;
-      case AgentEventType.END:
+      }
+      case AgentEventType.END: {
         loader.stopLoading();
         break;
-      case AgentEventType.ERROR:
+      }
+      case AgentEventType.ERROR: {
         loader.stopLoading();
         console.error(`\nAgent Error: ${event.errorMessage}`);
         break;
-      case AgentEventType.TOOL_CALL:
+      }
+      case AgentEventType.TOOL_CALL: {
         const contentStr = JSON.stringify({
           name: event.name,
           args: event.args,
@@ -191,22 +195,25 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         console.log(`\n\x1b[33m[Tool Call: ${event.name}]\x1b[0m`);
         console.log(JSON.stringify(event.args, null, 2));
         break;
-      case AgentEventType.TOOL_RESPONSE:
+      }
+      case AgentEventType.TOOL_RESPONSE: {
         console.log(`\n\x1b[32m[Tool Response: ${event.name}]\x1b[0m`);
         if (event.error) {
           console.log(`\x1b[31mError: ${event.error}\x1b[0m`);
         } else {
-          if (typeof event.result === "string") {
+          if (typeof event.result === 'string') {
             console.log(event.result);
           } else {
             console.log(JSON.stringify(event.result, null, 2));
           }
         }
         break;
-      case AgentEventType.USER_INPUT_REQUEST:
+      }
+      case AgentEventType.USER_INPUT_REQUEST: {
         loader.stopLoading();
         pendingUserInputRequest = event as UserInputRequestEvent;
         break;
+      }
       default:
         break;
     }
@@ -230,7 +237,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           id: randomUUID(),
           streamId: (request as UserInputRequestEvent).streamId,
           timestamp: new Date().toISOString(),
-          role: "user",
+          role: 'user',
           requestId: (request as UserInputRequestEvent).requestId,
           action,
         });
@@ -238,7 +245,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
     }
 
     while (true) {
-      const answer = await rl.question("\nUser > ");
+      const answer = await rl.question('\nUser > ');
       const trimmedAnswer = answer.trim();
 
       if (!trimmedAnswer) {
@@ -246,16 +253,16 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
       }
 
       if (
-        trimmedAnswer.toLowerCase() === "exit" ||
-        trimmedAnswer.toLowerCase() === "quit"
+        trimmedAnswer.toLowerCase() === 'exit' ||
+        trimmedAnswer.toLowerCase() === 'quit'
       ) {
-        console.log("Exiting...");
+        console.log('Exiting...');
         break;
       }
 
-      if (trimmedAnswer.startsWith("/plan")) {
+      if (trimmedAnswer.startsWith('/plan')) {
         const task = trimmedAnswer.substring(5).trim();
-        await loop.run({ command: UserCommandType.PLAN, task: task });
+        await loop.run({command: UserCommandType.PLAN, task: task});
 
         while (pendingUserInputRequest) {
           const request = pendingUserInputRequest;
@@ -270,7 +277,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
             id: randomUUID(),
             streamId: (request as UserInputRequestEvent).streamId,
             timestamp: new Date().toISOString(),
-            role: "user",
+            role: 'user',
             requestId: (request as UserInputRequestEvent).requestId,
             action,
           });
@@ -278,7 +285,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         continue;
       }
 
-      if (trimmedAnswer.startsWith("/init")) {
+      if (trimmedAnswer.startsWith('/init')) {
         const handler = new InitProjectCommandHandler();
         await handler.handle();
         continue;
@@ -299,7 +306,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           id: randomUUID(),
           streamId: (request as UserInputRequestEvent).streamId,
           timestamp: new Date().toISOString(),
-          role: "user",
+          role: 'user',
           requestId: (request as UserInputRequestEvent).requestId,
           action,
         });
@@ -317,14 +324,14 @@ function formatDate(date: Date): string {
     date.getMonth() === now.getMonth() &&
     date.getFullYear() === now.getFullYear();
 
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
 
   if (isToday) {
     return `today ${hours}:${minutes}`;
   } else {
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
     return `${date.getFullYear()}-${month}-${day} ${hours}:${minutes}`;
   }
 }

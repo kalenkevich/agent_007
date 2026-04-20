@@ -1,4 +1,4 @@
-export type UserAction = "accept" | "decline";
+export type UserAction = 'accept' | 'decline';
 
 /**
  * Checks if a user answer means "yes".
@@ -7,13 +7,13 @@ export type UserAction = "accept" | "decline";
  */
 export function isYes(answer: string, defaultYes = false): boolean {
   const trimmed = answer.trim().toLowerCase();
-  if (trimmed === "") return defaultYes;
-  return trimmed === "yes" || trimmed === "y" || trimmed === "accept";
+  if (trimmed === '') return defaultYes;
+  return trimmed === 'yes' || trimmed === 'y' || trimmed === 'accept';
 }
 
 /**
  * Parses a user answer to determine if it should be treated as an acceptance or decline.
  */
 export function parseUserAction(answer: string): UserAction {
-  return isYes(answer) ? "accept" : "decline";
+  return isYes(answer) ? 'accept' : 'decline';
 }

@@ -1,31 +1,28 @@
-import { randomUUID } from "node:crypto";
-import type { Agent } from "../agent.js";
-import type { LlmModel } from "../../model/model.js";
-import type { Tool } from "../../tools/tool.js";
-import type { Skill } from "../../skills/skill.js";
-import { type AgentEvent, AgentEventType } from "../agent_event.js";
-import { type UserInput } from "../../user_input.js";
-import { buildLlmRequest } from "../../model/request_builder_utils.js";
-import { llmResponseToAgentEvents } from "../agent_event_utils.js";
-import * as fs from "node:fs/promises";
-import * as os from "node:os";
-import * as path from "node:path";
+import {randomUUID} from 'node:crypto';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import type {LlmModel} from '../../model/model.js';
+import {buildLlmRequest} from '../../model/request_builder_utils.js';
+import type {ToolUnion} from '../../tools/tool.js';
+import {type UserInput} from '../../user_input.js';
+import type {Agent} from '../agent.js';
+import {type AgentEvent, AgentEventType} from '../agent_event.js';
+import {llmResponseToAgentEvents} from '../agent_event_utils.js';
 
 export interface PlannerAgentOptions {
   model: LlmModel;
-  tools?: Tool[];
-  skills?: Skill[];
+  tools?: ToolUnion[];
 }
 
 export class PlannerAgent implements Agent {
-  readonly id = "planner_agent";
-  readonly name = "Planner Agent";
-  readonly description = "Generates plans for tasks.";
+  readonly id = 'planner_agent';
+  readonly name = 'Planner Agent';
+  readonly description = 'Generates plans for tasks.';
   readonly instructions =
-    "You are a planning assistant. Your job is to create a plan for the given task.";
+    'You are a planning assistant. Your job is to create a plan for the given task.';
   readonly model: LlmModel;
-  readonly tools?: Tool[];
-  readonly skills?: Skill[];
+  readonly tools?: ToolUnion[];
 
   private streamId?: string;
   private history: AgentEvent[] = [];
@@ -34,7 +31,6 @@ export class PlannerAgent implements Agent {
   constructor(options: PlannerAgentOptions) {
     this.model = options.model;
     this.tools = options.tools;
-    this.skills = options.skills;
   }
 
   async *run(userInput: UserInput): AsyncGenerator<AgentEvent, void, unknown> {
@@ -44,26 +40,25 @@ export class PlannerAgent implements Agent {
     yield this.createEvent(AgentEventType.START);
 
     const task =
-      typeof userInput === "string" ? userInput : JSON.stringify(userInput);
+      typeof userInput === 'string' ? userInput : JSON.stringify(userInput);
 
     const planningPrompt = `Generate a plan for the following task: "${task}".
 The plan should be in free-form markdown.
 Respond ONLY with the plan.`;
 
-    const llmRequest = buildLlmRequest({
+    const llmRequest = await buildLlmRequest({
       agentName: this.name,
       content: {
-        role: "user",
-        parts: [{ type: "text", text: planningPrompt }],
+        role: 'user',
+        parts: [{type: 'text', text: planningPrompt}],
       },
       historyContent: [],
       tools: this.tools || [],
-      skills: this.skills,
       description: this.description,
       instructions: this.instructions,
     });
 
-    let planContent = "";
+    let planContent = '';
     for await (const modelResponse of this.model.run(llmRequest, {
       stream: true,
       abortSignal: this.abortController?.signal,
@@ -72,7 +67,7 @@ Respond ONLY with the plan.`;
         yield this.createEvent(agentEvent.type!, agentEvent);
         if (agentEvent.type === AgentEventType.MESSAGE && agentEvent.parts) {
           for (const part of agentEvent.parts) {
-            if ("text" in part && part.text) {
+            if ('text' in part && part.text) {
               planContent += part.text;
             }
           }
@@ -84,28 +79,28 @@ Respond ONLY with the plan.`;
     const tempFilePath = path.join(os.tmpdir(), `plan_${requestId}.md`);
 
     try {
-      await fs.writeFile(tempFilePath, planContent, "utf-8");
+      await fs.writeFile(tempFilePath, planContent, 'utf-8');
       yield this.createEvent(AgentEventType.MESSAGE, {
-        role: "agent",
-        parts: [{ type: "text", text: `\nPlan written to ${tempFilePath}` }],
+        role: 'agent',
+        parts: [{type: 'text', text: `\nPlan written to ${tempFilePath}`}],
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       yield this.createEvent(AgentEventType.MESSAGE, {
-        role: "agent",
+        role: 'agent',
         parts: [
           {
-            type: "text",
-            text: `\nFailed to write plan to ${tempFilePath}: ${error.message}`,
+            type: 'text',
+            text: `\nFailed to write plan to ${tempFilePath}: ${(error as Error).message}`,
           },
         ],
       });
     }
 
     yield this.createEvent(AgentEventType.USER_INPUT_REQUEST, {
-      role: "agent",
+      role: 'agent',
       requestId,
-      message: "Do you approve this plan?",
-      requestSchema: { type: "plan_approval", planFilePath: tempFilePath },
+      message: 'Do you approve this plan?',
+      requestSchema: {type: 'plan_approval', planFilePath: tempFilePath},
     });
 
     return;

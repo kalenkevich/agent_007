@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto";
-import type { Session, SessionMetadata } from "./session.js";
-import { type AgentEvent } from "../agent/agent_event.js";
-import { APP_FILE_DIR } from "../config/app_dir.js";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import {randomUUID} from 'node:crypto';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import {type AgentEvent} from '../agent/agent_event.js';
+import {APP_FILE_DIR} from '../config/app_dir.js';
+import type {Session, SessionMetadata} from './session.js';
 
 export class SessionFileService {
   private rootDir: string;
@@ -11,7 +11,7 @@ export class SessionFileService {
   private locks: Map<string, Promise<void>> = new Map();
 
   constructor() {
-    this.rootDir = path.join(APP_FILE_DIR, "sessions");
+    this.rootDir = path.join(APP_FILE_DIR, 'sessions');
   }
 
   private async init() {
@@ -19,7 +19,7 @@ export class SessionFileService {
       return;
     }
 
-    await fs.mkdir(this.rootDir, { recursive: true });
+    await fs.mkdir(this.rootDir, {recursive: true});
   }
 
   private async lock(sessionId: string): Promise<() => void> {
@@ -79,7 +79,7 @@ export class SessionFileService {
     };
 
     const sessionDir = path.join(this.rootDir, session.id);
-    await fs.mkdir(sessionDir, { recursive: true });
+    await fs.mkdir(sessionDir, {recursive: true});
 
     await saveToFile(getSessionMetadataFileName(this.rootDir, session.id), {
       title: session.title,
@@ -93,7 +93,7 @@ export class SessionFileService {
 
   async updateSession(
     sessionId: string,
-    { title }: { title: string },
+    {title}: {title: string},
   ): Promise<void> {
     await this.init();
     const unlock = await this.lock(sessionId);
@@ -140,7 +140,7 @@ export class SessionFileService {
       folders.map(async (f) => {
         try {
           return await loadFileData<SessionMetadata>(
-            path.join(this.rootDir, f, "metadata.json"),
+            path.join(this.rootDir, f, 'metadata.json'),
           );
         } catch (e) {
           console.warn(
@@ -167,22 +167,22 @@ export async function listFiles(folderPath: string): Promise<string[]> {
 }
 
 export function getSessionFileName(rootDir: string, sessionId: string): string {
-  return path.join(rootDir, sessionId, "session.json");
+  return path.join(rootDir, sessionId, 'session.json');
 }
 
 export function getSessionMetadataFileName(
   rootDir: string,
   sessionId: string,
 ): string {
-  return path.join(rootDir, sessionId, "metadata.json");
+  return path.join(rootDir, sessionId, 'metadata.json');
 }
 
 export async function saveToFile<T>(filePath: string, data: T): Promise<void> {
   try {
     await fs.writeFile(
       filePath,
-      typeof data === "string" ? data : JSON.stringify(data, null, 2),
-      { encoding: "utf-8" },
+      typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+      {encoding: 'utf-8'},
     );
   } catch (e) {
     console.error(`Failed to write file ${filePath}:`, e);
@@ -195,9 +195,9 @@ export async function loadFileData<T>(
   filePath: string,
 ): Promise<T | undefined> {
   try {
-    return JSON.parse(await fs.readFile(filePath, { encoding: "utf-8" })) as T;
-  } catch (e: any) {
-    if (e.code === "ENOENT") {
+    return JSON.parse(await fs.readFile(filePath, {encoding: 'utf-8'})) as T;
+  } catch (e: unknown) {
+    if ((e as {code: string}).code === 'ENOENT') {
       return undefined;
     }
     console.error(`Failed to read or parse file ${filePath}:`, e);

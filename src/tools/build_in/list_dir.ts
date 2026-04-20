@@ -1,11 +1,11 @@
-import { FunctionalTool } from "../functional_tool.js";
-import { type Schema, Type } from "../schema.js";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import {FunctionalTool} from '../functional_tool.js';
+import {type Schema, Type} from '../schema.js';
 
 export const LIST_DIR_TOOL = new FunctionalTool({
-  name: "list_dir",
-  description: "Lists the contents of a directory.",
+  name: 'list_dir',
+  description: 'Lists the contents of a directory.',
   params: {
     type: Type.OBJECT,
     properties: {
@@ -24,13 +24,13 @@ export const LIST_DIR_TOOL = new FunctionalTool({
         items: {
           type: Type.STRING,
         },
-        description: "List of file and directory names",
+        description: 'List of file and directory names',
       },
     },
   } as Schema,
   execute: async (input: unknown) => {
-    const typedInput = input as { path?: string };
-    const dirPath = typedInput.path || ".";
+    const typedInput = input as {path?: string};
+    const dirPath = typedInput.path || '.';
     const resolvedPath = path.resolve(dirPath);
     const cwd = process.cwd();
 
@@ -42,9 +42,12 @@ export const LIST_DIR_TOOL = new FunctionalTool({
 
     try {
       const files = await fs.readdir(resolvedPath);
-      return { files };
-    } catch (error: any) {
-      throw new Error(`Failed to list directory: ${error.message}`);
+      return {files};
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to list directory: ${error.message}`);
+      }
+      throw new Error('Failed to list directory');
     }
   },
 });

@@ -1,6 +1,6 @@
-import type { Content } from "../../content.js";
-import type { LlmRequest } from "../../model/request.js";
-import type { AgentEvent } from "../agent_event.js";
+import type {Content} from '../../content.js';
+import type {LlmRequest} from '../../model/request.js';
+import type {AgentEvent} from '../agent_event.js';
 
 export interface AgentState {
   historyContent: Content[];

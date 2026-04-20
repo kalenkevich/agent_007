@@ -1,4 +1,4 @@
-import { type ThinkingConfig } from "../model/request.js";
+import {type ThinkingConfig} from '../model/request.js';
 
 export interface ModelConfig {
   modelName: string;
@@ -8,7 +8,7 @@ export interface ModelConfig {
 
 export interface CompactionConfig {
   enabled: boolean;
-  strategy: "truncate" | "summarize" | "hybrid" | "compact";
+  strategy: 'truncate' | 'summarize' | 'hybrid' | 'compact';
   maxTokens: number;
   triggerThreshold?: number;
 }

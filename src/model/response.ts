@@ -1,10 +1,10 @@
-import type { Content } from "../content.js";
+import type {Content} from '../content.js';
 
 export interface UsageMetadata {
   inputTokens?: number;
   outputTokens?: number;
   cachedTokens?: number;
-  cost?: { amount: number; currency?: string };
+  cost?: {amount: number; currency?: string};
 }
 
 export type FinishReason = string;
@@ -52,7 +52,7 @@ export interface LlmResponse {
    * An optional key-value pair to label an LlmResponse.
    * NOTE: the entire object must be JSON serializable.
    */
-  customMetadata?: { [key: string]: unknown };
+  customMetadata?: {[key: string]: unknown};
 
   /**
    * The finish reason of the response.

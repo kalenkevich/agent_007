@@ -1,6 +1,6 @@
-import * as readline from "node:readline";
+import * as readline from 'node:readline';
 
-const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 export class TerminalLoader {
   private loadingInterval: NodeJS.Timeout | null = null;

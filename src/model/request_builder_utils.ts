@@ -1,26 +1,26 @@
-import type { LlmRequest, ThinkingConfig } from "./request.js";
-import type { Content } from "../content.js";
-import type { Tool, FunctionDeclaration } from "../tools/tool.js";
-import { type Skill, toFunctionDeclaration } from "../skills/skill.js";
+import type {Content} from '../content.js';
+import {type FunctionDeclaration, type ToolUnion} from '../tools/tool.js';
+import {isToolset} from '../tools/toolset.js';
+import type {LlmRequest, ThinkingConfig} from './request.js';
 
 interface BuildLlmRequestOptions {
   agentName: string;
   content: Content;
   historyContent: Content[];
-  tools?: Tool[];
-  skills?: Skill[];
+  tools?: ToolUnion[];
   description?: string;
   instructions: string;
   thinkingConfig?: ThinkingConfig;
 }
 
-export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
+export async function buildLlmRequest(
+  options: BuildLlmRequestOptions,
+): Promise<LlmRequest> {
   const {
     agentName,
     content,
     historyContent,
     tools,
-    skills,
     description,
     instructions,
     thinkingConfig,
@@ -28,7 +28,7 @@ export function buildLlmRequest(options: BuildLlmRequestOptions): LlmRequest {
 
   return {
     contents: mergeAdjacentContents([...historyContent, content]),
-    tools: [...buildTools(tools), ...buildSkillsTools(skills)],
+    tools: await buildTools(tools),
     systemInstructions: buildSystemInstruction(
       agentName,
       description,
@@ -45,23 +45,32 @@ function mergeAdjacentContents(contents: Content[]): Content[] {
     if (last && last.role === content.role) {
       last.parts.push(...content.parts);
     } else {
-      result.push({ ...content, parts: [...content.parts] });
+      result.push({...content, parts: [...content.parts]});
     }
   }
 
   return result;
 }
 
-export function buildTools(tools?: Tool[]): FunctionDeclaration[] {
+export async function buildTools(
+  tools?: ToolUnion[],
+): Promise<FunctionDeclaration[]> {
   if (!tools) return [];
+  const toolDeclarations: FunctionDeclaration[] = [];
 
-  return tools.map((t) => t.toFunctionDeclaration());
-}
+  for (const tool of tools) {
+    if (isToolset(tool)) {
+      const subTools = await tool.getTools();
 
-export function buildSkillsTools(skills?: Skill[]): FunctionDeclaration[] {
-  if (!skills) return [];
+      for (const subTool of subTools) {
+        toolDeclarations.push(subTool.toFunctionDeclaration());
+      }
+    } else {
+      toolDeclarations.push(tool.toFunctionDeclaration());
+    }
+  }
 
-  return skills.map((skill) => toFunctionDeclaration(skill));
+  return toolDeclarations;
 }
 
 export function buildSystemInstruction(
@@ -71,9 +80,9 @@ export function buildSystemInstruction(
 ): string {
   return [
     `You are an agent. Your internal name is "${name}".`,
-    description ? `The description about you is "${description}"` : "",
+    description ? `The description about you is "${description}"` : '',
     instructions,
   ]
     .filter(Boolean)
-    .join("\n\n");
+    .join('\n\n');
 }

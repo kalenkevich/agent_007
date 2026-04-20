@@ -1,12 +1,12 @@
+import type {Content} from '../content.js';
+import type {LlmResponse} from '../model/response.js';
 import {
   type AgentEvent,
   AgentEventType,
-  isUsageEvent,
-  isAgentStartEvent,
   isAgentEndEvent,
-} from "./agent_event.js";
-import type { LlmResponse } from "../model/response.js";
-import type { Content } from "../content.js";
+  isAgentStartEvent,
+  isUsageEvent,
+} from './agent_event.js';
 
 export function getContentFromAgentEvent(
   agentEvent: AgentEvent,
@@ -33,8 +33,8 @@ export function llmResponseToAgentEvents(
     return [
       {
         type: AgentEventType.ERROR,
-        role: "agent",
-        errorMessage: response.errorMessage || "Unknown error",
+        role: 'agent',
+        errorMessage: response.errorMessage || 'Unknown error',
         statusCode: 500,
         partial: response.partial,
       },
@@ -44,10 +44,10 @@ export function llmResponseToAgentEvents(
   const events: Partial<AgentEvent>[] = [];
 
   for (const part of response.content?.parts ?? []) {
-    if (part.type === "text" || part.type === "thought") {
+    if (part.type === 'text' || part.type === 'thought') {
       const contentEvent: Partial<AgentEvent> = {
         type: AgentEventType.MESSAGE,
-        role: "agent",
+        role: 'agent',
         parts: [part],
         partial: response.partial,
       };
@@ -55,10 +55,10 @@ export function llmResponseToAgentEvents(
       continue;
     }
 
-    if (part.type === "function_call") {
+    if (part.type === 'function_call') {
       const contentEvent: Partial<AgentEvent> = {
         type: AgentEventType.TOOL_CALL,
-        role: "agent",
+        role: 'agent',
         parts: [part],
         requestId: part.id,
         name: part.name,
@@ -69,10 +69,10 @@ export function llmResponseToAgentEvents(
       continue;
     }
 
-    if (part.type === "function_response") {
+    if (part.type === 'function_response') {
       const contentEvent: Partial<AgentEvent> = {
         type: AgentEventType.TOOL_RESPONSE,
-        role: "agent",
+        role: 'agent',
         parts: [part],
         requestId: part.id,
         name: part.name,

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Gemini } from "../../../src/model/google/gemini_model.js";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {Gemini} from '../../../src/model/google/gemini_model.js';
 
-vi.mock("@google/genai", () => {
+vi.mock('@google/genai', () => {
   const mockGenerateContent = vi.fn();
   const mockGenerateContentStream = vi.fn();
   const mockCountTokens = vi.fn();
@@ -17,29 +17,29 @@ vi.mock("@google/genai", () => {
       };
     }),
     ThinkingLevel: {
-      LOW: "LOW",
-      MEDIUM: "MEDIUM",
-      HIGH: "HIGH",
+      LOW: 'LOW',
+      MEDIUM: 'MEDIUM',
+      HIGH: 'HIGH',
     },
   };
 });
 
-describe("Gemini Model", () => {
+describe('Gemini Model', () => {
   let gemini: Gemini;
   let mockClient: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    gemini = new Gemini({ modelName: "test-model", apiKey: "test-key" });
+    gemini = new Gemini({modelName: 'test-model', apiKey: 'test-key'});
     mockClient = (gemini as any).client;
   });
 
-  it("should call generateContent for non-streaming request", async () => {
+  it('should call generateContent for non-streaming request', async () => {
     const mockResponse = {
       candidates: [
         {
           content: {
-            parts: [{ text: "Hello response" }],
+            parts: [{text: 'Hello response'}],
           },
         },
       ],
@@ -47,7 +47,7 @@ describe("Gemini Model", () => {
     mockClient.models.generateContent.mockResolvedValue(mockResponse);
 
     const generator = gemini.run({
-      contents: [{ role: "user", parts: [{ type: "text", text: "hello" }] }],
+      contents: [{role: 'user', parts: [{type: 'text', text: 'hello'}]}],
     });
     const results = [];
     for await (const res of generator) {
@@ -59,13 +59,13 @@ describe("Gemini Model", () => {
     expect(results[0].errorCode).toBeUndefined();
   });
 
-  it("should call generateContentStream for streaming request", async () => {
+  it('should call generateContentStream for streaming request', async () => {
     const mockStream = [
       {
         candidates: [
           {
             content: {
-              parts: [{ text: "Hello " }],
+              parts: [{text: 'Hello '}],
             },
           },
         ],
@@ -74,7 +74,7 @@ describe("Gemini Model", () => {
         candidates: [
           {
             content: {
-              parts: [{ text: "response" }],
+              parts: [{text: 'response'}],
             },
           },
         ],
@@ -85,9 +85,9 @@ describe("Gemini Model", () => {
 
     const generator = gemini.run(
       {
-        contents: [{ role: "user", parts: [{ type: "text", text: "hello" }] }],
+        contents: [{role: 'user', parts: [{type: 'text', text: 'hello'}]}],
       },
-      { stream: true },
+      {stream: true},
     );
     const results = [];
     for await (const res of generator) {
@@ -98,11 +98,11 @@ describe("Gemini Model", () => {
     expect(results.length).toBeGreaterThan(0);
   });
 
-  it("should call countTokens", async () => {
-    mockClient.models.countTokens.mockResolvedValue({ totalTokens: 42 });
+  it('should call countTokens', async () => {
+    mockClient.models.countTokens.mockResolvedValue({totalTokens: 42});
 
     const tokens = await gemini.countTokens({
-      contents: [{ role: "user", parts: [{ type: "text", text: "hello" }] }],
+      contents: [{role: 'user', parts: [{type: 'text', text: 'hello'}]}],
     });
 
     expect(mockClient.models.countTokens).toHaveBeenCalled();

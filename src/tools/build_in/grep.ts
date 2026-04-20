@@ -1,24 +1,24 @@
-import { FunctionalTool } from "../functional_tool.js";
-import { type Schema, Type } from "../schema.js";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import {FunctionalTool} from '../functional_tool.js';
+import {type Schema, Type} from '../schema.js';
 
 export const GREP_TOOL = new FunctionalTool({
-  name: "grep",
-  description: "Searches for a regular expression pattern in files.",
+  name: 'grep',
+  description: 'Searches for a regular expression pattern in files.',
   params: {
     type: Type.OBJECT,
     properties: {
       pattern: {
         type: Type.STRING,
-        description: "The regular expression pattern to search for.",
+        description: 'The regular expression pattern to search for.',
       },
       path: {
         type: Type.STRING,
         description: "The path to search in. Defaults to '.' if not specified.",
       },
     },
-    required: ["pattern"],
+    required: ['pattern'],
   } as Schema,
   output: {
     type: Type.OBJECT,
@@ -28,19 +28,19 @@ export const GREP_TOOL = new FunctionalTool({
         items: {
           type: Type.OBJECT,
           properties: {
-            file: { type: Type.STRING },
-            line: { type: Type.INTEGER },
-            content: { type: Type.STRING },
+            file: {type: Type.STRING},
+            line: {type: Type.INTEGER},
+            content: {type: Type.STRING},
           },
         },
-        description: "List of matches found",
+        description: 'List of matches found',
       },
     },
   } as Schema,
   execute: async (input: unknown) => {
-    const typedInput = input as { pattern: string; path?: string };
+    const typedInput = input as {pattern: string; path?: string};
     const patternStr = typedInput.pattern;
-    const searchPath = typedInput.path || ".";
+    const searchPath = typedInput.path || '.';
     const resolvedPath = path.resolve(searchPath);
     const cwd = process.cwd();
 
@@ -51,14 +51,14 @@ export const GREP_TOOL = new FunctionalTool({
     }
 
     const regex = new RegExp(patternStr);
-    const matches: Array<{ file: string; line: number; content: string }> = [];
+    const matches: Array<{file: string; line: number; content: string}> = [];
 
     async function searchDir(dir: string) {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
+      const entries = await fs.readdir(dir, {withFileTypes: true});
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
-          if (entry.name === ".git" || entry.name === "node_modules") {
+          if (entry.name === '.git' || entry.name === 'node_modules') {
             continue; // Skip these by default for sanity
           }
           await searchDir(fullPath);
@@ -70,8 +70,8 @@ export const GREP_TOOL = new FunctionalTool({
 
     async function searchFile(filePath: string) {
       try {
-        const content = await fs.readFile(filePath, "utf-8");
-        const lines = content.split("\n");
+        const content = await fs.readFile(filePath, 'utf-8');
+        const lines = content.split('\n');
         for (let i = 0; i < lines.length; i++) {
           if (regex.test(lines[i])) {
             matches.push({
@@ -81,7 +81,7 @@ export const GREP_TOOL = new FunctionalTool({
             });
           }
         }
-      } catch (error) {
+      } catch (_e: unknown) {
         // Ignore files that cannot be read as text or other errors
       }
     }
@@ -93,9 +93,11 @@ export const GREP_TOOL = new FunctionalTool({
     } else if (stats.isDirectory()) {
       await searchDir(resolvedPath);
     } else {
-      throw new Error(`Path ${resolvedPath} is neither a file nor a directory.`);
+      throw new Error(
+        `Path ${resolvedPath} is neither a file nor a directory.`,
+      );
     }
 
-    return { matches };
+    return {matches};
   },
 });

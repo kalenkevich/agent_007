@@ -1,33 +1,30 @@
-import { describe, it, expect, vi } from "vitest";
-import { CliAgent } from "../../src/agent/cli_agent/cli_agent.js";
-import {
-  AgentEventType,
-  type ToolCallEvent,
-} from "../../src/agent/agent_event.js";
-import type { Tool } from "../../src/tools/tool.js";
-import type { ToolCallPolicy } from "../../src/tools/tool_call_policy.js";
+import {describe, expect, it, vi} from 'vitest';
+import {AgentEventType} from '../../src/agent/agent_event.js';
+import {CliAgent} from '../../src/agent/cli_agent/cli_agent.js';
+import type {Tool} from '../../src/tools/tool.js';
+import type {ToolCallPolicy} from '../../src/tools/tool_call_policy.js';
 
-vi.mock("node:fs/promises", async (importOriginal) => {
+vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = (await importOriginal()) as any;
   return {
     ...actual,
-    readFile: vi.fn().mockResolvedValue("Mocked plan content"),
+    readFile: vi.fn().mockResolvedValue('Mocked plan content'),
   };
 });
 
-describe("CliAgent - Tool Confirmation", () => {
-  it("should request confirmation when policy requires it", async () => {
+describe('CliAgent - Tool Confirmation', () => {
+  it('should request confirmation when policy requires it', async () => {
     const mockModel = {
       run: vi.fn().mockImplementation(async function* () {
         yield {
           content: {
-            role: "agent",
+            role: 'agent',
             parts: [
               {
-                type: "function_call",
-                id: "call_123",
-                name: "test_tool",
-                args: { arg1: "val1" },
+                type: 'function_call',
+                id: 'call_123',
+                name: 'test_tool',
+                args: {arg1: 'val1'},
               },
             ],
           },
@@ -36,25 +33,25 @@ describe("CliAgent - Tool Confirmation", () => {
     };
 
     const mockTool: Tool = {
-      name: "test_tool",
-      description: "test",
+      name: 'test_tool',
+      description: 'test',
       params: {} as any,
       output: {} as any,
-      execute: vi.fn().mockResolvedValue({ result: "ok" }),
-      toFunctionDeclaration: () => ({ name: "test_tool", description: "test" }),
+      execute: vi.fn().mockResolvedValue({result: 'ok'}),
+      toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy: ToolCallPolicy = { confirmationRequired: true };
+    const policy: ToolCallPolicy = {confirmationRequired: true};
 
     const agent = new CliAgent({
       model: mockModel as any,
-      toolPolicies: { test_tool: policy },
+      toolPolicies: {test_tool: policy},
       tools: [mockTool],
     });
 
     const events: any[] = [];
-    for await (const event of agent.run("hello")) {
-      console.log("Event yielded:", event.type);
+    for await (const event of agent.run('hello')) {
+      console.log('Event yielded:', event.type);
       events.push(event);
     }
 
@@ -63,7 +60,7 @@ describe("CliAgent - Tool Confirmation", () => {
     expect(events[1].type).toBe(AgentEventType.MESSAGE);
     expect(events[2].type).toBe(AgentEventType.TOOL_CALL);
     expect(events[3].type).toBe(AgentEventType.USER_INPUT_REQUEST);
-    expect(events[3].requestId).toBe("call_123");
+    expect(events[3].requestId).toBe('call_123');
 
     expect(mockTool.execute).not.toHaveBeenCalled();
   });
@@ -73,65 +70,65 @@ describe("CliAgent - Tool Confirmation", () => {
       run: vi.fn().mockImplementation(async function* () {
         yield {
           content: {
-            role: "agent",
-            parts: [{ type: "text", text: "Model response after tool" }],
+            role: 'agent',
+            parts: [{type: 'text', text: 'Model response after tool'}],
           },
         };
       }),
     };
 
     const mockTool: Tool = {
-      name: "test_tool",
-      description: "test",
+      name: 'test_tool',
+      description: 'test',
       params: {} as any,
       output: {} as any,
-      execute: vi.fn().mockResolvedValue({ result: "ok" }),
-      toFunctionDeclaration: () => ({ name: "test_tool", description: "test" }),
+      execute: vi.fn().mockResolvedValue({result: 'ok'}),
+      toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy: ToolCallPolicy = { confirmationRequired: true };
+    const policy: ToolCallPolicy = {confirmationRequired: true};
 
     const agent = new CliAgent({
       model: mockModel as any,
-      toolPolicies: { test_tool: policy },
+      toolPolicies: {test_tool: policy},
       tools: [mockTool],
     });
 
-    const streamId = "stream_123";
+    const streamId = 'stream_123';
     (agent as any).history = [
-      { type: AgentEventType.START, streamId, id: "1" } as any,
+      {type: AgentEventType.START, streamId, id: '1'} as any,
       {
         type: AgentEventType.MESSAGE,
         streamId,
-        id: "2",
-        role: "user",
-        parts: [{ type: "text", text: "hello" }],
+        id: '2',
+        role: 'user',
+        parts: [{type: 'text', text: 'hello'}],
       } as any,
       {
         type: AgentEventType.TOOL_CALL,
         streamId,
-        id: "3",
-        requestId: "call_123",
-        name: "test_tool",
+        id: '3',
+        requestId: 'call_123',
+        name: 'test_tool',
         args: {},
       } as any,
       {
         type: AgentEventType.USER_INPUT_REQUEST,
         streamId,
-        id: "4",
-        requestId: "call_123",
-        message: "Confirm?",
+        id: '4',
+        requestId: 'call_123',
+        message: 'Confirm?',
       } as any,
     ];
     (agent as any).historyContent = [
-      { role: "user", parts: [{ type: "text", text: "hello" }] },
+      {role: 'user', parts: [{type: 'text', text: 'hello'}]},
       {
-        role: "agent",
+        role: 'agent',
         parts: [
           {
-            type: "function_call",
-            id: "call_123",
-            name: "test_tool",
+            type: 'function_call',
+            id: 'call_123',
+            name: 'test_tool',
             args: {},
           },
         ],
@@ -142,22 +139,22 @@ describe("CliAgent - Tool Confirmation", () => {
     const events: any[] = [];
     for await (const event of agent.run({
       type: AgentEventType.USER_INPUT_RESPONSE,
-      id: "resp_123",
+      id: 'resp_123',
       streamId,
       timestamp: new Date().toISOString(),
-      role: "user",
-      requestId: "call_123",
-      action: "accept",
+      role: 'user',
+      requestId: 'call_123',
+      action: 'accept',
     })) {
-      console.log("Event yielded (yes):", event.type);
+      console.log('Event yielded (yes):', event.type);
       events.push(event);
     }
 
     expect(events.length).toBe(3);
     expect(events[0].type).toBe(AgentEventType.TOOL_RESPONSE);
     expect(events[2].type).toBe(AgentEventType.END);
-    expect(events[0].requestId).toBe("call_123");
-    expect(events[0].result).toEqual({ result: "ok" });
+    expect(events[0].requestId).toBe('call_123');
+    expect(events[0].result).toEqual({result: 'ok'});
 
     expect(mockTool.execute).toHaveBeenCalled();
   });
@@ -167,65 +164,65 @@ describe("CliAgent - Tool Confirmation", () => {
       run: vi.fn().mockImplementation(async function* () {
         yield {
           content: {
-            role: "agent",
-            parts: [{ type: "text", text: "Model response after decline" }],
+            role: 'agent',
+            parts: [{type: 'text', text: 'Model response after decline'}],
           },
         };
       }),
     };
 
     const mockTool: Tool = {
-      name: "test_tool",
-      description: "test",
+      name: 'test_tool',
+      description: 'test',
       params: {} as any,
       output: {} as any,
-      execute: vi.fn().mockResolvedValue({ result: "ok" }),
-      toFunctionDeclaration: () => ({ name: "test_tool", description: "test" }),
+      execute: vi.fn().mockResolvedValue({result: 'ok'}),
+      toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy: ToolCallPolicy = { confirmationRequired: true };
+    const policy: ToolCallPolicy = {confirmationRequired: true};
 
     const agent = new CliAgent({
       model: mockModel as any,
-      toolPolicies: { test_tool: policy },
+      toolPolicies: {test_tool: policy},
       tools: [mockTool],
     });
 
-    const streamId = "stream_123";
+    const streamId = 'stream_123';
     (agent as any).history = [
-      { type: AgentEventType.START, streamId, id: "1" } as any,
+      {type: AgentEventType.START, streamId, id: '1'} as any,
       {
         type: AgentEventType.MESSAGE,
         streamId,
-        id: "2",
-        role: "user",
-        parts: [{ type: "text", text: "hello" }],
+        id: '2',
+        role: 'user',
+        parts: [{type: 'text', text: 'hello'}],
       } as any,
       {
         type: AgentEventType.TOOL_CALL,
         streamId,
-        id: "3",
-        requestId: "call_123",
-        name: "test_tool",
+        id: '3',
+        requestId: 'call_123',
+        name: 'test_tool',
         args: {},
       } as any,
       {
         type: AgentEventType.USER_INPUT_REQUEST,
         streamId,
-        id: "4",
-        requestId: "call_123",
-        message: "Confirm?",
+        id: '4',
+        requestId: 'call_123',
+        message: 'Confirm?',
       } as any,
     ];
     (agent as any).historyContent = [
-      { role: "user", parts: [{ type: "text", text: "hello" }] },
+      {role: 'user', parts: [{type: 'text', text: 'hello'}]},
       {
-        role: "agent",
+        role: 'agent',
         parts: [
           {
-            type: "function_call",
-            id: "call_123",
-            name: "test_tool",
+            type: 'function_call',
+            id: 'call_123',
+            name: 'test_tool',
             args: {},
           },
         ],
@@ -236,65 +233,65 @@ describe("CliAgent - Tool Confirmation", () => {
     const events: any[] = [];
     for await (const event of agent.run({
       type: AgentEventType.USER_INPUT_RESPONSE,
-      id: "resp_456",
+      id: 'resp_456',
       streamId,
       timestamp: new Date().toISOString(),
-      role: "user",
-      requestId: "call_123",
-      action: "decline",
+      role: 'user',
+      requestId: 'call_123',
+      action: 'decline',
     })) {
-      console.log("Event yielded (no):", event.type);
+      console.log('Event yielded (no):', event.type);
       events.push(event);
     }
 
     expect(events.length).toBe(3);
     expect(events[0].type).toBe(AgentEventType.TOOL_RESPONSE);
     expect(events[2].type).toBe(AgentEventType.END);
-    expect(events[0].requestId).toBe("call_123");
-    expect(events[0].error).toBe("User declined tool execution");
+    expect(events[0].requestId).toBe('call_123');
+    expect(events[0].error).toBe('User declined tool execution');
 
     expect(mockTool.execute).not.toHaveBeenCalled();
   });
 
-  it("should trigger context compaction when token limit is exceeded", async () => {
+  it('should trigger context compaction when token limit is exceeded', async () => {
     const mockModel = {
       run: vi.fn().mockImplementation(async function* () {
         yield {
           content: {
-            role: "agent",
-            parts: [{ type: "text", text: "Response after compaction" }],
+            role: 'agent',
+            parts: [{type: 'text', text: 'Response after compaction'}],
           },
         };
       }),
       countTokens: vi.fn().mockResolvedValue(1000),
-      modelName: "mock-model",
+      modelName: 'mock-model',
     };
 
     const agent = new CliAgent({
       model: mockModel as any,
       compactionConfig: {
         enabled: true,
-        strategy: "truncate",
+        strategy: 'truncate',
         maxTokens: 800,
         triggerThreshold: 0.8,
       },
     });
 
     (agent as any).historyContent = [
-      { role: "user", parts: [{ type: "text", text: "m1" }] },
-      { role: "agent", parts: [{ type: "text", text: "r1" }] },
-      { role: "user", parts: [{ type: "text", text: "m2" }] },
-      { role: "agent", parts: [{ type: "text", text: "r2" }] },
-      { role: "user", parts: [{ type: "text", text: "m3" }] },
-      { role: "agent", parts: [{ type: "text", text: "r3" }] },
-      { role: "user", parts: [{ type: "text", text: "m4" }] },
-      { role: "agent", parts: [{ type: "text", text: "r4" }] },
-      { role: "user", parts: [{ type: "text", text: "m5" }] },
-      { role: "agent", parts: [{ type: "text", text: "r5" }] },
+      {role: 'user', parts: [{type: 'text', text: 'm1'}]},
+      {role: 'agent', parts: [{type: 'text', text: 'r1'}]},
+      {role: 'user', parts: [{type: 'text', text: 'm2'}]},
+      {role: 'agent', parts: [{type: 'text', text: 'r2'}]},
+      {role: 'user', parts: [{type: 'text', text: 'm3'}]},
+      {role: 'agent', parts: [{type: 'text', text: 'r3'}]},
+      {role: 'user', parts: [{type: 'text', text: 'm4'}]},
+      {role: 'agent', parts: [{type: 'text', text: 'r4'}]},
+      {role: 'user', parts: [{type: 'text', text: 'm5'}]},
+      {role: 'agent', parts: [{type: 'text', text: 'r5'}]},
     ];
 
     const events: any[] = [];
-    for await (const event of agent.run("hello")) {
+    for await (const event of agent.run('hello')) {
       events.push(event);
     }
 
@@ -305,7 +302,7 @@ describe("CliAgent - Tool Confirmation", () => {
         e.type === AgentEventType.COMPACTION &&
         e.parts &&
         e.parts[0].text &&
-        e.parts[0].text.includes("Context compacted"),
+        e.parts[0].text.includes('Context compacted'),
     );
     expect(compactionMessage).toBeTruthy();
 
@@ -315,7 +312,7 @@ describe("CliAgent - Tool Confirmation", () => {
     // Check that the oldest messages were removed (m1 and r1)
     // So the new first message should be m2
     const firstContent = (agent as any).historyContent[0];
-    expect(firstContent.parts[0].text).toBe("m2");
+    expect(firstContent.parts[0].text).toBe('m2');
   });
 
   it("should trigger context compaction with 'compact' strategy", async () => {
@@ -323,45 +320,45 @@ describe("CliAgent - Tool Confirmation", () => {
       run: vi.fn().mockImplementation(async function* (request) {
         if (
           request.contents[0].parts[0].text.includes(
-            "Summarize the following conversation",
+            'Summarize the following conversation',
           )
         ) {
           yield {
             content: {
-              role: "agent",
-              parts: [{ type: "text", text: "Summarized history" }],
+              role: 'agent',
+              parts: [{type: 'text', text: 'Summarized history'}],
             },
           };
           return;
         }
         yield {
           content: {
-            role: "agent",
-            parts: [{ type: "text", text: "Response after compaction" }],
+            role: 'agent',
+            parts: [{type: 'text', text: 'Response after compaction'}],
           },
         };
       }),
       countTokens: vi.fn().mockResolvedValue(1000),
-      modelName: "mock-model",
+      modelName: 'mock-model',
     };
 
     const agent = new CliAgent({
       model: mockModel as any,
       compactionConfig: {
         enabled: true,
-        strategy: "summarize",
+        strategy: 'summarize',
         maxTokens: 800,
         triggerThreshold: 0.8,
       },
     });
 
     (agent as any).historyContent = [
-      { role: "user", parts: [{ type: "text", text: "m1" }] },
-      { role: "agent", parts: [{ type: "text", text: "r1" }] },
+      {role: 'user', parts: [{type: 'text', text: 'm1'}]},
+      {role: 'agent', parts: [{type: 'text', text: 'r1'}]},
     ];
 
     const events: any[] = [];
-    for await (const event of agent.run("hello")) {
+    for await (const event of agent.run('hello')) {
       events.push(event);
     }
 
@@ -372,7 +369,7 @@ describe("CliAgent - Tool Confirmation", () => {
         e.type === AgentEventType.COMPACTION &&
         e.parts &&
         e.parts[0].text &&
-        e.parts[0].text.includes("Context compacted using LLM summarization"),
+        e.parts[0].text.includes('Context compacted using LLM summarization'),
     );
     expect(compactionMessage).toBeTruthy();
 
@@ -380,20 +377,20 @@ describe("CliAgent - Tool Confirmation", () => {
 
     const firstContent = (agent as any).historyContent[0];
     expect(firstContent.parts[0].text).toContain(
-      "Summary of previous conversation",
+      'Summary of previous conversation',
     );
-    expect(firstContent.parts[0].text).toContain("Summarized history");
+    expect(firstContent.parts[0].text).toContain('Summarized history');
   });
 });
 
-describe("CliAgent - Basic Flow", () => {
-  it("should yield message events when model responds with text", async () => {
+describe('CliAgent - Basic Flow', () => {
+  it('should yield message events when model responds with text', async () => {
     const mockModel = {
       run: vi.fn().mockImplementation(async function* () {
         yield {
           content: {
-            role: "agent",
-            parts: [{ type: "text", text: "Hello from agent" }],
+            role: 'agent',
+            parts: [{type: 'text', text: 'Hello from agent'}],
           },
         };
       }),
@@ -405,7 +402,7 @@ describe("CliAgent - Basic Flow", () => {
     });
 
     const events: any[] = [];
-    for await (const event of agent.run("hello")) {
+    for await (const event of agent.run('hello')) {
       events.push(event);
     }
 
@@ -413,19 +410,19 @@ describe("CliAgent - Basic Flow", () => {
     expect(events[0].type).toBe(AgentEventType.START);
     expect(events[1].type).toBe(AgentEventType.MESSAGE); // User message
     expect(events[2].type).toBe(AgentEventType.MESSAGE); // Agent response
-    expect(events[2].parts[0].text).toBe("Hello from agent");
+    expect(events[2].parts[0].text).toBe('Hello from agent');
     expect(events[3].type).toBe(AgentEventType.END);
   });
 });
 
-describe("CliAgent - Plan Execution", () => {
-  it("should execute plan when resumed with approved plan", async () => {
+describe('CliAgent - Plan Execution', () => {
+  it('should execute plan when resumed with approved plan', async () => {
     const mockModel = {
       run: vi.fn().mockImplementation(async function* () {
         yield {
           content: {
-            role: "agent",
-            parts: [{ type: "text", text: "Model response executing plan" }],
+            role: 'agent',
+            parts: [{type: 'text', text: 'Model response executing plan'}],
           },
         };
       }),
@@ -435,17 +432,17 @@ describe("CliAgent - Plan Execution", () => {
       model: mockModel as any,
     });
 
-    const streamId = "stream_123";
+    const streamId = 'stream_123';
     (agent as any).history = [
       {
         type: AgentEventType.USER_INPUT_REQUEST,
         streamId,
-        id: "1",
-        requestId: "req_123",
-        message: "Do you approve this plan?",
+        id: '1',
+        requestId: 'req_123',
+        message: 'Do you approve this plan?',
         requestSchema: {
-          type: "plan_approval",
-          planFilePath: "/tmp/plan_123.md",
+          type: 'plan_approval',
+          planFilePath: '/tmp/plan_123.md',
         },
       } as any,
     ];
@@ -454,12 +451,12 @@ describe("CliAgent - Plan Execution", () => {
     const events: any[] = [];
     for await (const event of agent.run({
       type: AgentEventType.USER_INPUT_RESPONSE,
-      id: "resp_123",
+      id: 'resp_123',
       streamId,
       timestamp: new Date().toISOString(),
-      role: "user",
-      requestId: "req_123",
-      action: "accept",
+      role: 'user',
+      requestId: 'req_123',
+      action: 'accept',
     })) {
       events.push(event);
     }
@@ -467,10 +464,10 @@ describe("CliAgent - Plan Execution", () => {
     expect(events.map((e) => e.type)).toContain(AgentEventType.MESSAGE);
 
     const planMessage = events.find(
-      (e) => e.type === AgentEventType.MESSAGE && e.role === "user",
+      (e) => e.type === AgentEventType.MESSAGE && e.role === 'user',
     );
     expect(planMessage).toBeTruthy();
-    expect(planMessage.parts[0].text).toContain("Plan approved");
-    expect(planMessage.parts[0].text).toContain("Mocked plan content");
+    expect(planMessage.parts[0].text).toContain('Plan approved');
+    expect(planMessage.parts[0].text).toContain('Mocked plan content');
   });
 });

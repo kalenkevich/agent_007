@@ -1,22 +1,22 @@
-import { EventEmitter } from 'node:events';
-import type { Agent } from "../agent/agent.js";
-import type { UserInput } from "../user_input.js";
-import { CliAgent } from "../agent/cli_agent/cli_agent.js";
-import { Run } from "./run.js";
-import type { Config } from "../config/config.js";
-import { AdaptiveLlmModel } from "../model/adaptive_model.js";
-import { randomUUID } from "node:crypto";
-import { UtilLlm } from "../model/util_llm.js";
+import {randomUUID} from 'node:crypto';
+import {EventEmitter} from 'node:events';
+import type {Agent} from '../agent/agent.js';
 import {
   AgentEventType,
   type AgentEvent,
   type ErrorEvent,
-} from "../agent/agent_event.js";
-import { logger } from "../logger.js";
-import { SessionFileService } from "../session/session_file_service.js";
-import { resolveLlmModel } from "../model/registry.js";
-import { projectService } from "./project_service.js";
-import { CLI_AGENT_SYSTEM_PROMPT } from "../agent/cli_agent/system_prompt.js";
+} from '../agent/agent_event.js';
+import {CliAgent} from '../agent/cli_agent/cli_agent.js';
+import {CLI_AGENT_SYSTEM_PROMPT} from '../agent/cli_agent/system_prompt.js';
+import type {Config} from '../config/config.js';
+import {logger} from '../logger.js';
+import {AdaptiveLlmModel} from '../model/adaptive_model.js';
+import {resolveLlmModel} from '../model/registry.js';
+import {UtilLlm} from '../model/util_llm.js';
+import {SessionFileService} from '../session/session_file_service.js';
+import type {UserInput} from '../user_input.js';
+import {projectService} from './project_service.js';
+import {Run} from './run.js';
 
 export enum AgentLoopType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -67,7 +67,7 @@ export class CoreAgentLoop extends EventEmitter {
 
     const utilModelConfig = this.config.models.util;
     if (!utilModelConfig) {
-      throw new Error("Util model config is missing");
+      throw new Error('Util model config is missing');
     }
     const UtilModelClass = resolveLlmModel(utilModelConfig.modelName);
     this.utilLlm = new UtilLlm(new UtilModelClass(utilModelConfig));
@@ -81,12 +81,12 @@ export class CoreAgentLoop extends EventEmitter {
     }
 
     this.initialized = true;
-    logger.debug("[CoreAgentLoop] initialized");
+    logger.debug('[CoreAgentLoop] initialized');
   }
 
   async run(userInput: UserInput) {
     logger.debug(
-      "[CoreAgentLoop] run called with input:",
+      '[CoreAgentLoop] run called with input:',
       JSON.stringify(userInput, null, 2),
     );
     await this.currentRun?.wait();
@@ -95,7 +95,7 @@ export class CoreAgentLoop extends EventEmitter {
 
     await this.init();
 
-    let streamId = "unknown";
+    let streamId = 'unknown';
     try {
       for await (const event of this.agent!.run(userInput)) {
         streamId = event.streamId;
@@ -114,10 +114,10 @@ export class CoreAgentLoop extends EventEmitter {
         if (sessionMeta && !sessionMeta.title) {
           const session = await this.sessionService.getSession(this.sessionId);
           const userMessages = session.events.filter(
-            (e) => e.type === AgentEventType.MESSAGE && e.role === "user",
+            (e) => e.type === AgentEventType.MESSAGE && e.role === 'user',
           );
           const agentMessages = session.events.filter(
-            (e) => e.type === AgentEventType.MESSAGE && e.role === "agent",
+            (e) => e.type === AgentEventType.MESSAGE && e.role === 'agent',
           );
 
           if (userMessages.length >= 1 && agentMessages.length >= 1) {
@@ -133,13 +133,13 @@ export class CoreAgentLoop extends EventEmitter {
         }
       }
     } catch (e: unknown) {
-      logger.error("[CoreAgentLoop] run error:", e);
+      logger.error('[CoreAgentLoop] run error:', e);
       const error = e as Error;
       const errorEvent: ErrorEvent = {
         id: randomUUID(),
         streamId: streamId,
         timestamp: new Date().toISOString(),
-        role: "agent",
+        role: 'agent',
         type: AgentEventType.ERROR,
         statusCode: 500,
         errorMessage: error.message || String(error),

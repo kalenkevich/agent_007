@@ -1,11 +1,11 @@
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { projectService } from "../core/project_service.js";
-import { loadConfig } from "../config/config_loader.js";
-import { UtilLlm } from "../model/util_llm.js";
-import { resolveLlmModel } from "../model/registry.js";
-import { type CommandHandler } from "./commnad_handler.js";
-import { logger } from "../logger.js";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import {loadConfig} from '../config/config_loader.js';
+import {projectService} from '../core/project_service.js';
+import {logger} from '../logger.js';
+import {resolveLlmModel} from '../model/registry.js';
+import {UtilLlm} from '../model/util_llm.js';
+import {type CommandHandler} from './commnad_handler.js';
 
 export class InitProjectCommandHandler implements CommandHandler {
   async handle(): Promise<void> {
@@ -21,26 +21,26 @@ export class InitProjectCommandHandler implements CommandHandler {
     // List top level files and dirs
     try {
       const files = await fs.readdir(cwd);
-      context += `Top level files and directories:\n${files.join("\n")}\n\n`;
+      context += `Top level files and directories:\n${files.join('\n')}\n\n`;
     } catch (e) {
-      logger.error("Failed to read directory:", e);
+      logger.error('Failed to read directory:', e);
     }
 
     // Read package.json if exists
-    const packageJsonPath = path.join(cwd, "package.json");
+    const packageJsonPath = path.join(cwd, 'package.json');
     try {
-      const packageJson = await fs.readFile(packageJsonPath, "utf-8");
+      const packageJson = await fs.readFile(packageJsonPath, 'utf-8');
       context += `package.json:\n${packageJson}\n\n`;
-    } catch (e) {
+    } catch (_e: unknown) {
       // Ignore if doesn't exist
     }
 
     // Read tsconfig.json if exists
-    const tsconfigPath = path.join(cwd, "tsconfig.json");
+    const tsconfigPath = path.join(cwd, 'tsconfig.json');
     try {
-      const tsconfig = await fs.readFile(tsconfigPath, "utf-8");
+      const tsconfig = await fs.readFile(tsconfigPath, 'utf-8');
       context += `tsconfig.json:\n${tsconfig}\n\n`;
-    } catch (e) {
+    } catch (_e: unknown) {
       // Ignore if doesn't exist
     }
 
@@ -48,15 +48,15 @@ export class InitProjectCommandHandler implements CommandHandler {
     const config = await loadConfig();
     const utilModelConfig = config.models.util;
     if (!utilModelConfig) {
-      throw new Error("Util model config is missing");
+      throw new Error('Util model config is missing');
     }
     const UtilModelClass = resolveLlmModel(utilModelConfig.modelName);
     const utilLlm = new UtilLlm(new UtilModelClass(utilModelConfig));
 
-    logger.info("Scanning project constants with LLM...");
+    logger.info('Scanning project constants with LLM...');
     const constants = await utilLlm.scanProjectConstants(context);
 
-    logger.info("Saving constants...");
+    logger.info('Saving constants...');
     await projectService.saveConstants(constants);
 
     logger.info(

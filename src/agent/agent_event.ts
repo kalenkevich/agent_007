@@ -1,27 +1,27 @@
-import type { ContentPart } from "../content.js";
+import type {ContentPart} from '../content.js';
 
 export enum AgentEventType {
-  START = "START",
-  END = "END",
-  MESSAGE = "MESSAGE",
-  TOOL_CALL = "TOOL_CALL",
-  TOOL_RESPONSE = "TOOL_RESPONSE",
-  USER_INPUT_REQUEST = "USER_INPUT_REQUEST",
-  USER_INPUT_RESPONSE = "USER_INPUT_RESPONSE",
-  ERROR = "ERROR",
-  USAGE = "USAGE",
-  COMPACTION = "COMPACTION",
+  START = 'START',
+  END = 'END',
+  MESSAGE = 'MESSAGE',
+  TOOL_CALL = 'TOOL_CALL',
+  TOOL_RESPONSE = 'TOOL_RESPONSE',
+  USER_INPUT_REQUEST = 'USER_INPUT_REQUEST',
+  USER_INPUT_RESPONSE = 'USER_INPUT_RESPONSE',
+  ERROR = 'ERROR',
+  USAGE = 'USAGE',
+  COMPACTION = 'COMPACTION',
 }
 
 export enum AgentEndReason {
-  COMPLETED = "completed",
-  FAILED = "failed",
-  ABORTED = "aborted",
-  MAX_TURNS = "max_turns",
-  MAX_BUDGET = "max_budget",
-  MAX_TIME = "max_time",
-  REFUSAL = "refusal",
-  USER_RESPONSE_PENDING = "user_response_pending",
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  ABORTED = 'aborted',
+  MAX_TURNS = 'max_turns',
+  MAX_BUDGET = 'max_budget',
+  MAX_TIME = 'max_time',
+  REFUSAL = 'refusal',
+  USER_RESPONSE_PENDING = 'user_response_pending',
 }
 
 export type AgentEvent =
@@ -42,7 +42,7 @@ export interface BaseAgentEvent {
   // Agent stream / execution id
   streamId: string;
   timestamp: string;
-  role: "user" | "agent";
+  role: 'user' | 'agent';
   parts?: ContentPart[];
   partial?: boolean;
 }
@@ -125,7 +125,7 @@ export interface UserInputResponseEvent extends BaseAgentEvent {
   requestId: string;
   data?: Record<string, unknown>;
   // 'cancel' here means ignore - the run will continue as if this response has not been provided
-  action?: "accept" | "decline" | "cancel";
+  action?: 'accept' | 'decline' | 'cancel';
 }
 
 export function isUserInputResponseEvent(
@@ -154,7 +154,7 @@ export interface UsageEvent extends BaseAgentEvent {
   inputTokens?: number;
   outputTokens?: number;
   cachedTokens?: number;
-  cost?: { amount: number; currency?: string };
+  cost?: {amount: number; currency?: string};
 }
 
 export function isUsageEvent(event: AgentEvent): event is UsageEvent {
@@ -163,7 +163,7 @@ export function isUsageEvent(event: AgentEvent): event is UsageEvent {
 
 export interface CompactionEvent extends BaseAgentEvent {
   type: AgentEventType.COMPACTION;
-  strategy: "truncate" | "summarize";
+  strategy: 'truncate' | 'summarize';
 }
 
 export function isCompactionEvent(event: AgentEvent): event is CompactionEvent {

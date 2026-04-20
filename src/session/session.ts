@@ -1,4 +1,4 @@
-import { type AgentEvent } from "../agent/agent_event.js";
+import {type AgentEvent} from '../agent/agent_event.js';
 
 export interface SessionMetadata {
   id: string;

@@ -1,6 +1,6 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as util from "util";
+import * as fs from 'fs';
+import * as path from 'path';
+import * as util from 'util';
 
 export interface LogTransport {
   enabled: boolean;
@@ -20,19 +20,19 @@ export class ConsoleTransport implements LogTransport {
     }
 
     switch (level) {
-      case "DEBUG":
+      case 'DEBUG':
         console.debug(...args);
         break;
-      case "INFO":
+      case 'INFO':
         console.info(...args);
         break;
-      case "WARN":
+      case 'WARN':
         console.warn(...args);
         break;
-      case "ERROR":
+      case 'ERROR':
         console.error(...args);
         break;
-      case "LOG":
+      case 'LOG':
       default:
         console.log(...args);
     }
@@ -57,7 +57,7 @@ export class FileTransport implements LogTransport {
     try {
       fs.appendFileSync(this.logFile, `[${level}] ${formattedMessage}\n`);
     } catch (err) {
-      console.error("Failed to write to log file:", err);
+      console.error('Failed to write to log file:', err);
     }
   }
 }
@@ -71,18 +71,17 @@ export class Logger {
     }
   }
 
-
   getTransports(): LogTransport[] {
     if (this.transports.length) {
       return this.transports;
     }
 
     if (process.env.DEBUG_LOGGER) {
-      const logFile = path.join(process.cwd(), "debug.log");
+      const logFile = path.join(process.cwd(), 'debug.log');
 
       return [
-        new ConsoleTransport(process.env.DEBUG_LOGGER_CONSOLE === "true"),
-        new FileTransport(process.env.DEBUG_LOGGER === "true", logFile),
+        new ConsoleTransport(process.env.DEBUG_LOGGER_CONSOLE === 'true'),
+        new FileTransport(process.env.DEBUG_LOGGER === 'true', logFile),
       ];
     }
 
@@ -93,35 +92,35 @@ export class Logger {
     const timestamp = new Date().toISOString();
     const message = args
       .map((arg) =>
-        typeof arg === "string" ? arg : util.inspect(arg, { depth: null }),
+        typeof arg === 'string' ? arg : util.inspect(arg, {depth: null}),
       )
-      .join(" ");
+      .join(' ');
     return `[${timestamp}] [${level}] ${message}`;
   }
 
   log(...args: any[]) {
-    const formatted = this.formatMessage("LOG", ...args);
-    this.getTransports().forEach((t) => t.log("LOG", formatted, args));
+    const formatted = this.formatMessage('LOG', ...args);
+    this.getTransports().forEach((t) => t.log('LOG', formatted, args));
   }
 
   debug(...args: any[]) {
-    const formatted = this.formatMessage("DEBUG", ...args);
-    this.getTransports().forEach((t) => t.log("DEBUG", formatted, args));
+    const formatted = this.formatMessage('DEBUG', ...args);
+    this.getTransports().forEach((t) => t.log('DEBUG', formatted, args));
   }
 
   info(...args: any[]) {
-    const formatted = this.formatMessage("INFO", ...args);
-    this.getTransports().forEach((t) => t.log("INFO", formatted, args));
+    const formatted = this.formatMessage('INFO', ...args);
+    this.getTransports().forEach((t) => t.log('INFO', formatted, args));
   }
 
   warn(...args: any[]) {
-    const formatted = this.formatMessage("WARN", ...args);
-    this.getTransports().forEach((t) => t.log("WARN", formatted, args));
+    const formatted = this.formatMessage('WARN', ...args);
+    this.getTransports().forEach((t) => t.log('WARN', formatted, args));
   }
 
   error(...args: any[]) {
-    const formatted = this.formatMessage("ERROR", ...args);
-    this.getTransports().forEach((t) => t.log("ERROR", formatted, args));
+    const formatted = this.formatMessage('ERROR', ...args);
+    this.getTransports().forEach((t) => t.log('ERROR', formatted, args));
   }
 }
 
