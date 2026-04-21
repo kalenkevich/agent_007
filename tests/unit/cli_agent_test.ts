@@ -447,6 +447,9 @@ describe('CliAgent - Plan Execution', () => {
       } as any,
     ];
     (agent as any).streamId = streamId;
+    (agent as any).historyContent = [
+      { role: 'agent', parts: [{ type: 'text', text: 'Do you approve this plan?' }] }
+    ];
 
     const events: any[] = [];
     for await (const event of agent.run({

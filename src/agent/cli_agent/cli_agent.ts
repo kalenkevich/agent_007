@@ -8,7 +8,6 @@ import type {LlmModel} from '../../model/model.js';
 import type {LlmRequest, ThinkingConfig} from '../../model/request.js';
 import type {Skill} from '../../skills/skill.js';
 import {BUILD_IN_TOOLS} from '../../tools/build_in/index.js';
-import {isFunctionalTool} from '../../tools/functional_tool.js';
 import {SkillToolset} from '../../tools/skills/skill_toolset.js';
 import type {Tool, ToolUnion} from '../../tools/tool.js';
 import {
@@ -30,6 +29,7 @@ import {
   AgentEndReason,
   AgentEventType,
   isUserInputResponseEvent,
+  isUserInputRequestEvent,
 } from '../agent_event.js';
 import {
   getContentFromAgentEvent,
@@ -124,129 +124,7 @@ export class CliAgent implements Agent {
       this.streamId = lastEvent.streamId;
       skipInitialEvents = true;
 
-      const requestId = lastEvent.requestId;
-      if (lastEvent.requestSchema?.['type'] === 'plan_approval') {
-        const isAccepted =
-          isUserInputResponseEvent(userInput) && userInput.action === 'accept';
-
-        if (isAccepted) {
-          const planFilePath = lastEvent.requestSchema?.[
-            'planFilePath'
-          ] as string;
-          try {
-            const planContent = await fs.readFile(planFilePath, 'utf-8');
-            yield this.createEvent(AgentEventType.MESSAGE, {
-              role: 'user',
-              parts: [
-                {
-                  type: 'text',
-                  text: `Plan approved. Please execute the following plan:\n\n${planContent}`,
-                },
-              ],
-            });
-          } catch (error: unknown) {
-            logger.error(
-              `Failed to read plan file: ${(error as Error).message}`,
-            );
-            yield this.createEvent(AgentEventType.MESSAGE, {
-              role: 'user',
-              parts: [
-                {
-                  type: 'text',
-                  text: `Plan approved, but failed to read plan file: ${(error as Error).message}. Please proceed if you know the plan.`,
-                },
-              ],
-            });
-          }
-        } else {
-          yield this.createEvent(AgentEventType.MESSAGE, {
-            role: 'user',
-            parts: [{type: 'text', text: 'Plan declined.'}],
-          });
-        }
-      } else {
-        const toolCall = this.history.find(
-          (e) =>
-            e.type === AgentEventType.TOOL_CALL && e.requestId === requestId,
-        ) as ToolCallEvent;
-
-        if (toolCall) {
-          const isAccepted =
-            isUserInputResponseEvent(userInput) &&
-            (userInput as UserInputResponseEvent).action === 'accept';
-
-          if (isAccepted) {
-            const tool = this.tools.find((t) => t.name === toolCall.name);
-            if (tool && isFunctionalTool(tool)) {
-              try {
-                logger.debug(
-                  `[CliAgent] Executing tool ${toolCall.name} after confirmation`,
-                );
-                const result = await tool.execute(toolCall.args);
-                yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-                  role: 'user',
-                  requestId: toolCall.requestId,
-                  name: toolCall.name,
-                  result: result as Record<string, unknown> | string,
-                  parts: [
-                    {
-                      type: 'function_response',
-                      id: toolCall.requestId,
-                      name: toolCall.name,
-                      response:
-                        typeof result === 'object'
-                          ? (result as Record<string, unknown>)
-                          : {result},
-                    },
-                  ],
-                });
-              } catch (error: unknown) {
-                logger.error(
-                  `[CliAgent] Tool execution failed: ${(error as Error).message}`,
-                );
-                yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-                  role: 'user',
-                  requestId: toolCall.requestId,
-                  name: toolCall.name,
-                  error: (error as Error).message,
-                  result: {},
-                  parts: [
-                    {
-                      type: 'function_response',
-                      id: toolCall.requestId,
-                      name: toolCall.name,
-                      response: {error: (error as Error).message},
-                    },
-                  ],
-                });
-              }
-            }
-          } else {
-            logger.debug(
-              `[CliAgent] Tool ${toolCall.name} execution declined by user`,
-            );
-            yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-              role: 'user',
-              requestId: toolCall.requestId,
-              name: toolCall.name,
-              error: 'User declined tool execution',
-              result: {},
-              parts: [
-                {
-                  type: 'function_response',
-                  id: toolCall.requestId,
-                  name: toolCall.name,
-                  response: {error: 'User declined tool execution'},
-                },
-              ],
-            });
-          }
-        } else {
-          if (isUserInputResponseEvent(userInput)) {
-            yield this.createEvent(userInput.type, userInput);
-          }
-        }
-      }
+      yield* this.handleResume(lastEvent, userInput);
     }
 
     if (!skipInitialEvents) {
@@ -308,8 +186,10 @@ export class CliAgent implements Agent {
       const toolCalls: ToolCallEvent[] = [];
 
       for (const tool of this.tools) {
-        const processedRequest: LlmRequest | undefined =
-          await tool.processLlmRequest(llmRequest!);
+        let processedRequest: LlmRequest | undefined;
+        if (typeof tool.processLlmRequest === 'function') {
+          processedRequest = await tool.processLlmRequest(llmRequest!);
+        }
 
         if (processedRequest) {
           llmRequest = processedRequest;
@@ -339,84 +219,9 @@ export class CliAgent implements Agent {
       }
 
       for (const toolCall of toolCalls) {
-        let tool: Tool | undefined;
-        for (const possibleTool of this.tools) {
-          if (isToolset(possibleTool)) {
-            const tools = await possibleTool.getTools();
-            tool = tools.find((t) => t.name === toolCall.name);
-            if (tool) {
-              break;
-            }
-          } else if (possibleTool.name === toolCall.name) {
-            tool = possibleTool;
-            break;
-          }
-        }
-
-        if (!tool) {
-          logger.error(`[CliAgent] Tool not found: ${toolCall.name}`);
-          yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-            role: 'user',
-            requestId: toolCall.requestId,
-            name: toolCall.name,
-            error: `Tool ${toolCall.name} not found`,
-            result: {},
-          });
-          continue;
-        }
-
-        const policy = this.toolPolicies[toolCall.name] || DEFAULT_POLICY;
-        if (policy.confirmationRequired) {
-          logger.debug(
-            `[CliAgent] Tool ${toolCall.name} requires confirmation`,
-          );
-          yield this.createEvent(AgentEventType.USER_INPUT_REQUEST, {
-            role: 'agent',
-            requestId: toolCall.requestId,
-            message: `Do you want to allow execution of tool ${toolCall.name}?`,
-          });
+        const shouldStop = yield* this.findAndExecuteTool(toolCall);
+        if (shouldStop) {
           return;
-        }
-
-        try {
-          logger.debug(`[CliAgent] Executing tool ${toolCall.name}`);
-          const result = await tool.execute(toolCall.args);
-          yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-            role: 'user',
-            requestId: toolCall.requestId,
-            name: toolCall.name,
-            result: result as Record<string, unknown> | string,
-            parts: [
-              {
-                type: 'function_response',
-                id: toolCall.requestId,
-                name: toolCall.name,
-                response:
-                  typeof result === 'object'
-                    ? (result as Record<string, unknown>)
-                    : {result},
-              },
-            ],
-          });
-        } catch (error: unknown) {
-          logger.error(
-            `[CliAgent] Tool execution failed: ${(error as Error).message}`,
-          );
-          yield this.createEvent(AgentEventType.TOOL_RESPONSE, {
-            role: 'user',
-            requestId: toolCall.requestId,
-            name: toolCall.name,
-            error: (error as Error).message,
-            result: {},
-            parts: [
-              {
-                type: 'function_response',
-                id: toolCall.requestId,
-                name: toolCall.name,
-                response: {error: (error as Error).message},
-              },
-            ],
-          });
         }
       }
     }
@@ -426,6 +231,199 @@ export class CliAgent implements Agent {
       type: AgentEventType.END,
       reason: AgentEndReason.COMPLETED,
     });
+  }
+
+  private async findTool(name: string): Promise<Tool | undefined> {
+    for (const possibleTool of this.tools) {
+      if (isToolset(possibleTool)) {
+        const tools = await possibleTool.getTools();
+        const tool = tools.find((t) => t.name === name);
+        if (tool) {
+          return tool;
+        }
+      } else if (possibleTool.name === name) {
+        return possibleTool;
+      }
+    }
+    return undefined;
+  }
+
+  private createToolResponseEvent(
+    requestId: string,
+    name: string,
+    result: Record<string, unknown> | string,
+    error?: string,
+  ): AgentEvent {
+    const response = error
+      ? {error}
+      : typeof result === 'object'
+        ? result
+        : {result};
+
+    return this.createEvent(AgentEventType.TOOL_RESPONSE, {
+      role: 'user',
+      requestId,
+      name,
+      error,
+      result: typeof result === 'object' ? result : {result},
+      parts: [
+        {
+          type: 'function_response',
+          id: requestId,
+          name,
+          response,
+        },
+      ],
+    });
+  }
+
+  private async *handleResume(
+    lastEvent: AgentEvent,
+    userInput: UserInput,
+  ): AsyncGenerator<AgentEvent, void, unknown> {
+    if (!isUserInputRequestEvent(lastEvent)) {
+      return;
+    }
+
+    const requestId = lastEvent.requestId;
+    if (lastEvent.requestSchema?.['type'] === 'plan_approval') {
+      const isAccepted =
+        isUserInputResponseEvent(userInput) && userInput.action === 'accept';
+
+      if (isAccepted) {
+        const planFilePath = lastEvent.requestSchema?.[
+          'planFilePath'
+        ] as string;
+        try {
+          const planContent = await fs.readFile(planFilePath, 'utf-8');
+          yield this.createEvent(AgentEventType.MESSAGE, {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                text: `Plan approved. Please execute the following plan:\n\n${planContent}`,
+              },
+            ],
+          });
+        } catch (error: unknown) {
+          logger.error(`Failed to read plan file: ${(error as Error).message}`);
+          yield this.createEvent(AgentEventType.MESSAGE, {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                text: `Plan approved, but failed to read plan file: ${(error as Error).message}. Please proceed if you know the plan.`,
+              },
+            ],
+          });
+        }
+      } else {
+        yield this.createEvent(AgentEventType.MESSAGE, {
+          role: 'user',
+          parts: [{type: 'text', text: 'Plan declined.'}],
+        });
+      }
+    } else {
+      const toolCall = this.history.find(
+        (e) => e.type === AgentEventType.TOOL_CALL && e.requestId === requestId,
+      ) as ToolCallEvent;
+
+      if (toolCall) {
+        const isAccepted =
+          isUserInputResponseEvent(userInput) &&
+          (userInput as UserInputResponseEvent).action === 'accept';
+
+        if (isAccepted) {
+          const tool = await this.findTool(toolCall.name);
+          if (tool) {
+            try {
+              logger.debug(
+                `[CliAgent] Executing tool ${toolCall.name} after confirmation`,
+              );
+              const result = await tool.execute(toolCall.args);
+              yield this.createToolResponseEvent(
+                toolCall.requestId,
+                toolCall.name,
+                result as Record<string, unknown> | string,
+              );
+            } catch (error: unknown) {
+              logger.error(
+                `[CliAgent] Tool execution failed: ${(error as Error).message}`,
+              );
+              yield this.createToolResponseEvent(
+                toolCall.requestId,
+                toolCall.name,
+                {},
+                (error as Error).message,
+              );
+            }
+          }
+        } else {
+          logger.debug(
+            `[CliAgent] Tool ${toolCall.name} execution declined by user`,
+          );
+          yield this.createToolResponseEvent(
+            toolCall.requestId,
+            toolCall.name,
+            {},
+            'User declined tool execution',
+          );
+        }
+      } else {
+        if (isUserInputResponseEvent(userInput)) {
+          yield this.createEvent(userInput.type, userInput);
+        }
+      }
+    }
+  }
+
+  private async *findAndExecuteTool(
+    toolCall: ToolCallEvent,
+  ): AsyncGenerator<AgentEvent, boolean, unknown> {
+    const tool = await this.findTool(toolCall.name);
+
+    if (!tool) {
+      logger.error(`[CliAgent] Tool not found: ${toolCall.name}`);
+      yield this.createToolResponseEvent(
+        toolCall.requestId,
+        toolCall.name,
+        {},
+        `Tool ${toolCall.name} not found`,
+      );
+      return false;
+    }
+
+    const policy = this.toolPolicies[toolCall.name] || DEFAULT_POLICY;
+    if (policy.confirmationRequired) {
+      logger.debug(`[CliAgent] Tool ${toolCall.name} requires confirmation`);
+      yield this.createEvent(AgentEventType.USER_INPUT_REQUEST, {
+        role: 'agent',
+        requestId: toolCall.requestId,
+        message: `Do you want to allow execution of tool ${toolCall.name}?`,
+      });
+      return true;
+    }
+
+    try {
+      logger.debug(`[CliAgent] Executing tool ${toolCall.name}`);
+      const result = await tool.execute(toolCall.args);
+      yield this.createToolResponseEvent(
+        toolCall.requestId,
+        toolCall.name,
+        result as Record<string, unknown> | string,
+      );
+    } catch (error: unknown) {
+      logger.error(
+        `[CliAgent] Tool execution failed: ${(error as Error).message}`,
+      );
+      yield this.createToolResponseEvent(
+        toolCall.requestId,
+        toolCall.name,
+        {},
+        (error as Error).message,
+      );
+    }
+    return false;
   }
 
   private createEvent(
