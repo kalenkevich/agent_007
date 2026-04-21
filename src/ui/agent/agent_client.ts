@@ -1,0 +1,87 @@
+import {type AgentEvent, AgentEventType} from '../../agent/agent_event.js';
+import {type UserInput, UserCommandType} from '../../user_input.js';
+
+declare global {
+  interface Window {
+    electronAPI: {
+      sendUserInput: (
+        msg: UserInput,
+      ) => Promise<{success: boolean; error?: string}>;
+      initSession: () => Promise<{
+        success: boolean;
+        error?: string;
+        needApiKey?: boolean;
+      }>;
+      submitApiKey: (
+        key: string,
+      ) => Promise<{success: boolean; error?: string}>;
+      onAgentEvent: (callback: (event: AgentEvent) => void) => void;
+    };
+  }
+}
+
+export class AgentClient {
+  private get api() {
+    // eslint-disable-next-line
+    return window.electronAPI;
+  }
+
+  onAgentEvent(callback: (event: AgentEvent) => void) {
+    if (this.api) {
+      this.api.onAgentEvent(callback);
+    } else {
+      console.error('electronAPI is not available');
+    }
+  }
+
+  async initSession() {
+    if (this.api) {
+      return await this.api.initSession();
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async sendUserInput(msg: UserInput) {
+    if (this.api) {
+      return await this.api.sendUserInput(msg);
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async sendPlan(task: string) {
+    if (this.api) {
+      return await this.api.sendUserInput({
+        command: UserCommandType.PLAN,
+        task,
+      });
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async sendUserInputResponse(
+    requestId: string,
+    action: 'accept' | 'decline' | 'cancel',
+  ) {
+    if (this.api) {
+      return await this.api.sendUserInput({
+        id: crypto.randomUUID(),
+        streamId: '',
+        timestamp: new Date().toISOString(),
+        role: 'user',
+        type: AgentEventType.USER_INPUT_RESPONSE,
+        requestId,
+        action,
+      });
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async submitApiKey(key: string) {
+    if (this.api) {
+      return await this.api.submitApiKey(key);
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+}
+
+export const agentClient = new AgentClient();

@@ -3,8 +3,12 @@ import type {Config} from './config.js';
 import {configStore} from './config_store.js';
 
 export async function loadConfig(): Promise<Config> {
-  const geminiApiKey =
+  let geminiApiKey =
     process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+
+  if (!geminiApiKey) {
+    geminiApiKey = (await configStore.getApiKey()) || '';
+  }
 
   let thinkingLevel = process.env.THINKING_LEVEL as
     | ThinkingConfig['level']
