@@ -6,6 +6,7 @@ interface SidebarProps {
   isThinking: boolean;
   onSelectSession: (sessionId: string) => void;
   onNewSession: () => void;
+  onDeleteSession: (sessionId: string) => void;
   activeSessionId?: string;
 }
 
@@ -15,6 +16,7 @@ export function Sidebar({
   isThinking,
   onSelectSession,
   onNewSession,
+  onDeleteSession,
   activeSessionId,
 }: SidebarProps) {
   return (
@@ -48,10 +50,7 @@ export function Sidebar({
         <p className="status-detail">Connecting via Local Neural Engine</p>
       </div>
 
-      <button
-        className="btn btn-new-session"
-        onClick={onNewSession}
-      >
+      <button className="btn btn-new-session" onClick={onNewSession}>
         + New Session
       </button>
 
@@ -74,6 +73,30 @@ export function Sidebar({
                   {new Date(session.timestamp).toLocaleDateString()}
                 </span>
               </div>
+              <button
+                className="btn-delete-session"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteSession(session.id);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  marginLeft: 'auto',
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#ff4d4f')}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = 'var(--text-muted)')
+                }
+                title="Delete Session">
+                🗑️
+              </button>
             </div>
           ))}
         </div>

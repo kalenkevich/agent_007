@@ -13,6 +13,7 @@ enum IpcEvents {
   SELECT_SESSION = 'select-session',
   START_NEW_SESSION = 'start-new-session',
   GET_CURRENT_SESSION = 'get-current-session',
+  DELETE_SESSION = 'delete-session',
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -28,6 +29,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectSession: (sessionId: string) =>
     ipcRenderer.invoke(IpcEvents.SELECT_SESSION, sessionId),
   getCurrentSession: () => ipcRenderer.invoke(IpcEvents.GET_CURRENT_SESSION),
+  deleteSession: (sessionId: string) =>
+    ipcRenderer.invoke(IpcEvents.DELETE_SESSION, sessionId),
   onAgentEvent: (callback: (event: AgentEvent | ErrorEvent) => void) => {
     ipcRenderer.on(
       IpcEvents.AGENT_EVENT,

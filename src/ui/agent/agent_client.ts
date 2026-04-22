@@ -45,6 +45,10 @@ declare global {
         session?: Session;
         error?: string;
       }>;
+      deleteSession: (sessionId: string) => Promise<{
+        success: boolean;
+        error?: string;
+      }>;
       onAgentEvent: (callback: (event: AgentEvent) => void) => void;
     };
   }
@@ -141,6 +145,13 @@ export class AgentClient {
   async getCurrentSession() {
     if (this.api) {
       return await this.api.getCurrentSession();
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async deleteSession(sessionId: string) {
+    if (this.api) {
+      return await this.api.deleteSession(sessionId);
     }
     return {success: false, error: 'electronAPI not available'};
   }

@@ -13,6 +13,7 @@ import {Sidebar} from '../components/Sidebar';
 import {ChatHeader} from '../components/ChatHeader';
 import {MessageList} from '../components/MessageList';
 import {ChatInput} from '../components/ChatInput';
+import {ConfirmationDialog} from '../components/ConfirmationDialog';
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -28,6 +29,7 @@ export default function App() {
   );
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
 
   const messageStreamRef = useRef<HTMLDivElement>(null);
   const activeStreamMessageIdRef = useRef<string | null>(null);
@@ -184,6 +186,33 @@ export default function App() {
     }
   };
 
+  const handleDeleteSession = (sessionId: string) => {
+    setDeleteSessionId(sessionId);
+  };
+
+  const handleConfirmDelete = async (sessionId: string) => {
+    try {
+      const res = await agentClient.deleteSession(sessionId);
+      if (res.success) {
+        const sessionRes = await agentClient.getSessions();
+        if (sessionRes.success && sessionRes.sessions) {
+          setSessions(sessionRes.sessions);
+        }
+
+        if (sessionId === activeSessionId) {
+          setActiveSessionId(undefined);
+          setMessages([]);
+          setPendingUserInput(null);
+          setIsThinking(false);
+          setIsLoading(false);
+        }
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      appendMessage(`IPC Error: ${errorMessage}`, false);
+    }
+  };
+
   const handleNewSession = async () => {
     setActiveSessionId(undefined);
     setMessages([]);
@@ -219,6 +248,7 @@ export default function App() {
           isThinking={isThinking}
           onSelectSession={handleSelectSession}
           onNewSession={handleNewSession}
+          onDeleteSession={handleDeleteSession}
           activeSessionId={activeSessionId}
         />
 
@@ -240,6 +270,19 @@ export default function App() {
           />
         </main>
       </div>
+
+      <ConfirmationDialog
+        isOpen={!!deleteSessionId}
+        title="Delete Session"
+        message="Are you sure you want to delete this session? This action cannot be undone."
+        onConfirm={async () => {
+          if (deleteSessionId) {
+            await handleConfirmDelete(deleteSessionId);
+            setDeleteSessionId(null);
+          }
+        }}
+        onCancel={() => setDeleteSessionId(null)}
+      />
     </>
   );
 }

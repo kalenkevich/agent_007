@@ -8,9 +8,5 @@ export interface SessionMetadata {
 }
 
 export interface Session extends SessionMetadata {
-  id: string;
-  title?: string;
   events: AgentEvent[];
-  agentName: string;
-  timestamp: string;
 }

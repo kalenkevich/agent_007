@@ -92,6 +92,17 @@ export class SessionFileService {
     return session;
   }
 
+  async deleteSession(sessionId: string): Promise<void> {
+    await this.init();
+    const unlock = await this.lock(sessionId);
+    try {
+      const sessionDir = path.join(this.rootDir, sessionId);
+      await fs.rm(sessionDir, {recursive: true, force: true});
+    } finally {
+      unlock();
+    }
+  }
+
   async updateSession(
     sessionId: string,
     {title}: {title: string},

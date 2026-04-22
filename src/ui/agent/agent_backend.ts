@@ -18,6 +18,7 @@ enum IpcEvents {
   SELECT_SESSION = 'select-session',
   START_NEW_SESSION = 'start-new-session',
   GET_CURRENT_SESSION = 'get-current-session',
+  DELETE_SESSION = 'delete-session',
 }
 
 export class AgentBackend {
@@ -174,6 +175,24 @@ export class AgentBackend {
           }
         }
         return {success: false, error: 'No active session'};
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    });
+
+    ipcMain.handle(IpcEvents.DELETE_SESSION, async (event, sessionId: string) => {
+      try {
+        await this.sessionService.deleteSession(sessionId);
+        if (this.agentRuns.has(sessionId)) {
+          this.agentRuns.delete(sessionId);
+        }
+        if (this.currentAgentRun?.getSessionId() === sessionId) {
+          this.currentAgentRun = undefined;
+        }
+        return {success: true};
       } catch (err: unknown) {
         return {
           success: false,
