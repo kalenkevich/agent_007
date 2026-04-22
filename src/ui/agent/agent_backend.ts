@@ -17,6 +17,7 @@ enum IpcEvents {
   GET_SESSION = 'get-session',
   SELECT_SESSION = 'select-session',
   START_NEW_SESSION = 'start-new-session',
+  GET_CURRENT_SESSION = 'get-current-session',
 }
 
 export class AgentBackend {
@@ -79,7 +80,8 @@ export class AgentBackend {
           return {success: false, error: 'API key missing', needApiKey: true};
         }
 
-        return {success: true};
+        const sessionId = this.currentAgentRun?.getSessionId();
+        return {success: true, sessionId};
       } catch (err: unknown) {
         return {
           success: false,
@@ -161,6 +163,24 @@ export class AgentBackend {
         }
       },
     );
+
+    ipcMain.handle(IpcEvents.GET_CURRENT_SESSION, async () => {
+      try {
+        if (this.currentAgentRun) {
+          const sessionId = this.currentAgentRun.getSessionId();
+          if (sessionId) {
+            const session = await this.sessionService.getSession(sessionId);
+            return {success: true, session};
+          }
+        }
+        return {success: false, error: 'No active session'};
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    });
   }
 }
 

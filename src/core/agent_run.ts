@@ -40,6 +40,10 @@ export class AgentRun extends EventEmitter {
     this.sessionService = new SessionFileService();
   }
 
+  public getSessionId(): string | undefined {
+    return this.sessionId;
+  }
+
   private async init() {
     if (this.initialized) {
       return;

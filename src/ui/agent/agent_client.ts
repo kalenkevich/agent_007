@@ -19,6 +19,7 @@ declare global {
         success: boolean;
         error?: string;
         needApiKey?: boolean;
+        sessionId?: string;
       }>;
       submitApiKey: (
         key: string,
@@ -35,6 +36,11 @@ declare global {
       }>;
       startNewSession: () => Promise<{success: boolean; error?: string}>;
       selectSession: (sessionId: string) => Promise<{
+        success: boolean;
+        session?: Session;
+        error?: string;
+      }>;
+      getCurrentSession: () => Promise<{
         success: boolean;
         session?: Session;
         error?: string;
@@ -128,6 +134,13 @@ export class AgentClient {
   async selectSession(sessionId: string) {
     if (this.api) {
       return await this.api.selectSession(sessionId);
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async getCurrentSession() {
+    if (this.api) {
+      return await this.api.getCurrentSession();
     }
     return {success: false, error: 'electronAPI not available'};
   }

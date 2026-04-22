@@ -70,15 +70,16 @@ export default function App() {
       activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
     });
 
-    agentClient.getSessions().then((res) => {
-      if (res.success && res.sessions) {
-        setSessions(res.sessions);
-      }
-    });
-
     agentClient.initSession().then((res) => {
       if (res && !res.success && res.needApiKey) {
         setShowApiKeyPrompt(true);
+      } else if (res && res.success && res.sessionId) {
+        setActiveSessionId(res.sessionId);
+        agentClient.getSessions().then((sessionRes) => {
+          if (sessionRes.success && sessionRes.sessions) {
+            setSessions(sessionRes.sessions);
+          }
+        });
       }
     });
   }, []);
@@ -222,7 +223,7 @@ export default function App() {
         />
 
         <main className="chat-area">
-          <ChatHeader />
+          <ChatHeader session={sessions.find((s) => s.id === activeSessionId)} />
 
           <MessageList messages={messages} messageStreamRef={messageStreamRef} />
 

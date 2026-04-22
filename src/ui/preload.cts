@@ -10,8 +10,10 @@ enum IpcEvents {
   AGENT_EVENT = 'agent-event',
   GET_SESSIONS = 'get-sessions',
   GET_SESSION = 'get-session',
+  SELECT_SESSION = 'select-session',
+  START_NEW_SESSION = 'start-new-session',
+  GET_CURRENT_SESSION = 'get-current-session',
 }
-
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sendUserInput: (message: UserInput) =>
@@ -22,9 +24,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSessions: () => ipcRenderer.invoke(IpcEvents.GET_SESSIONS),
   getSession: (sessionId: string) =>
     ipcRenderer.invoke(IpcEvents.GET_SESSION, sessionId),
-  startNewSession: () => ipcRenderer.invoke('start-new-session'),
+  startNewSession: () => ipcRenderer.invoke(IpcEvents.START_NEW_SESSION),
   selectSession: (sessionId: string) =>
-    ipcRenderer.invoke('select-session', sessionId),
+    ipcRenderer.invoke(IpcEvents.SELECT_SESSION, sessionId),
+  getCurrentSession: () => ipcRenderer.invoke(IpcEvents.GET_CURRENT_SESSION),
   onAgentEvent: (callback: (event: AgentEvent | ErrorEvent) => void) => {
     ipcRenderer.on(
       IpcEvents.AGENT_EVENT,
