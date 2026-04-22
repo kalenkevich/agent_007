@@ -32,6 +32,11 @@ export interface LlmResponse {
   turnComplete?: boolean;
 
   /**
+   * Indicates whether the event is final.
+   */
+  final?: boolean;
+
+  /**
    * Error code if the response is an error. Code varies by model.
    */
   errorCode?: string;

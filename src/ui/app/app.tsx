@@ -9,11 +9,11 @@ import {agentClient} from '../agent/agent_client';
 import {ChatMessageType, type ChatMessage} from '../chat/chat_message';
 import {type ChatState} from '../chat/chat_state';
 import {processEvent} from '../chat/event_processor';
-import {Sidebar} from '../components/Sidebar';
 import {ChatHeader} from '../components/ChatHeader';
-import {MessageList} from '../components/MessageList';
 import {ChatInput} from '../components/ChatInput';
 import {ConfirmationDialog} from '../components/ConfirmationDialog';
+import {MessageList} from '../components/MessageList';
+import {Sidebar} from '../components/Sidebar';
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -51,16 +51,14 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Scroll to bottom when messages update
+    // Scroll to bottom when messages or loading state update
     if (messageStreamRef.current) {
       messageStreamRef.current.scrollTo({
         top: messageStreamRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
-  }, [messages]);
-
-
+  }, [messages, isLoading]);
 
   const appendMessage = (content: string, isUser: boolean) => {
     setMessages((prev) => [
@@ -71,7 +69,7 @@ export default function App() {
         author: isUser ? ContentRole.USER : ContentRole.AGENT,
         type: ChatMessageType.TEXT,
         content,
-        completed: true,
+        final: true,
       },
     ]);
   };
@@ -118,29 +116,29 @@ export default function App() {
   const handleSubmitApiKey = async () => {
     if (!apiKeyInput.trim()) return;
     try {
+      setIsLoading(true);
       const res = await agentClient.submitApiKey(apiKeyInput.trim());
       if (res.success) {
         setShowApiKeyPrompt(false);
         const initRes = await agentClient.initSession();
         if (!initRes.success) {
           appendMessage(`Error initializing session: ${initRes.error}`, false);
+          setIsLoading(false);
         } else if (initRes.sessionId) {
           handleSelectSession(initRes.sessionId);
-          agentClient.getSessions().then((sessionRes) => {
-            if (sessionRes.success && sessionRes.sessions) {
-              setSessions(sessionRes.sessions);
-            }
-          });
         }
       } else {
         appendMessage(`Error saving API key: ${res.error}`, false);
+        setIsLoading(false);
       }
     } catch (err) {
       appendMessage(`Error: ${err}`, false);
+      setIsLoading(false);
     }
   };
 
   const handleSelectSession = async (sessionId: string) => {
+    setIsLoading(true);
     setActiveSessionId(sessionId);
     try {
       const res = await agentClient.selectSession(sessionId);
@@ -166,6 +164,7 @@ export default function App() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       appendMessage(`IPC Error: ${errorMessage}`, false);
+      setIsLoading(false);
     }
   };
 
@@ -201,6 +200,7 @@ export default function App() {
 
   const handleConfirmDelete = async (sessionId: string) => {
     try {
+      setIsLoading(true);
       const res = await agentClient.deleteSession(sessionId);
       if (res.success) {
         const sessionRes = await agentClient.getSessions();
@@ -214,15 +214,21 @@ export default function App() {
           setPendingUserInput(null);
           setIsThinking(false);
           setIsLoading(false);
+        } else {
+          setIsLoading(false);
         }
+      } else {
+        setIsLoading(false);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       appendMessage(`IPC Error: ${errorMessage}`, false);
+      setIsLoading(false);
     }
   };
 
   const handleNewSession = async () => {
+    setIsLoading(true);
     setActiveSessionId(undefined);
     setMessages([]);
     try {
@@ -233,9 +239,11 @@ export default function App() {
           setSessions(sessionRes.sessions);
         }
       }
+      setIsLoading(false);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       appendMessage(`IPC Error: ${errorMessage}`, false);
+      setIsLoading(false);
     }
   };
 
@@ -262,9 +270,15 @@ export default function App() {
         />
 
         <main className="chat-area">
-          <ChatHeader session={sessions.find((s) => s.id === activeSessionId)} />
+          <ChatHeader
+            session={sessions.find((s) => s.id === activeSessionId)}
+          />
 
-          <MessageList messages={messages} messageStreamRef={messageStreamRef} />
+          <MessageList
+            messages={messages}
+            isLoading={isLoading}
+            messageStreamRef={messageStreamRef}
+          />
 
           <ChatInput
             inputValue={inputValue}

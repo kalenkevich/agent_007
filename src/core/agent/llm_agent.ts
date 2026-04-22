@@ -142,6 +142,8 @@ export class LlmAgent implements Agent {
       yield this.createEvent(AgentEventType.MESSAGE, {
         role: ContentRole.USER,
         parts: userContent,
+        partial: false,
+        final: true,
       });
     }
 
@@ -236,6 +238,7 @@ export class LlmAgent implements Agent {
       role: ContentRole.AGENT,
       type: AgentEventType.END,
       reason: AgentEndReason.COMPLETED,
+      final: true,
     });
   }
 

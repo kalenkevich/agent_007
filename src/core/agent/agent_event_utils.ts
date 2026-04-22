@@ -8,6 +8,7 @@ import {
   isAgentStartEvent,
   isUsageEvent,
 } from './agent_event.js';
+import {assumeExhaustiveAllowing} from '../../common/index.js';
 
 export function getContentFromAgentEvent(
   agentEvent: AgentEvent,
@@ -38,6 +39,7 @@ export function llmResponseToAgentEvents(
         errorMessage: response.errorMessage || 'Unknown error',
         statusCode: 500,
         partial: response.partial,
+        final: response.final,
       },
     ];
   }
@@ -45,42 +47,82 @@ export function llmResponseToAgentEvents(
   const events: Partial<AgentEvent>[] = [];
 
   for (const part of response.content?.parts ?? []) {
-    if (part.type === 'text' || part.type === 'thought') {
-      const contentEvent: Partial<AgentEvent> = {
-        type: AgentEventType.MESSAGE,
-        role: ContentRole.AGENT,
-        parts: [part],
-        partial: response.partial,
-      };
-      events.push(contentEvent);
-      continue;
-    }
+    switch (part.type) {
+      case 'text':
+      case 'thought': {
+        const contentEvent: Partial<AgentEvent> = {
+          type: AgentEventType.MESSAGE,
+          role: ContentRole.AGENT,
+          parts: [part],
+          partial: response.partial,
+          final: response.final,
+        };
+        events.push(contentEvent);
+        break;
+      }
+      case 'function_call': {
+        const contentEvent: Partial<AgentEvent> = {
+          type: AgentEventType.TOOL_CALL,
+          role: ContentRole.AGENT,
+          parts: [part],
+          requestId: part.id,
+          name: part.name,
+          args: part.args,
+          partial: response.partial,
+          final: response.final,
+        };
+        events.push(contentEvent);
+        break;
+      }
+      case 'function_response': {
+        const contentEvent: Partial<AgentEvent> = {
+          type: AgentEventType.TOOL_RESPONSE,
+          role: ContentRole.AGENT,
+          parts: [part],
+          requestId: part.id,
+          name: part.name,
+          result: part.response,
+          partial: response.partial,
+          final: response.final,
+        };
+        events.push(contentEvent);
+        break;
+      }
+      case 'executable_code': {
+        const contentEvent: Partial<AgentEvent> = {
+          type: AgentEventType.TOOL_CALL,
+          role: ContentRole.AGENT,
+          parts: [part],
+          requestId: 'executable_code',
+          name: part.language,
+          args: Array.isArray(part.args)
+            ? {code: part.code, args: part.args}
+            : {...(part.args as object), code: part.code},
+          partial: response.partial,
+          final: response.final,
+        };
+        events.push(contentEvent);
+        break;
+      }
+      case 'code_execution_result': {
+        const contentEvent: Partial<AgentEvent> = {
+          type: AgentEventType.TOOL_RESPONSE,
+          role: ContentRole.AGENT,
+          parts: [part],
+          requestId: part.id ?? 'executable_code',
+          name: 'code_execution_result',
+          result: part.result ?? '',
+          error: part.error,
+          partial: response.partial,
+          final: response.final,
+        };
+        events.push(contentEvent);
+        break;
+      }
 
-    if (part.type === 'function_call') {
-      const contentEvent: Partial<AgentEvent> = {
-        type: AgentEventType.TOOL_CALL,
-        role: ContentRole.AGENT,
-        parts: [part],
-        requestId: part.id,
-        name: part.name,
-        args: part.args,
-        partial: response.partial,
-      };
-      events.push(contentEvent);
-      continue;
-    }
-
-    if (part.type === 'function_response') {
-      const contentEvent: Partial<AgentEvent> = {
-        type: AgentEventType.TOOL_RESPONSE,
-        role: ContentRole.AGENT,
-        parts: [part],
-        requestId: part.id,
-        name: part.name,
-        result: part.response,
-        partial: response.partial,
-      };
-      events.push(contentEvent);
+      default:
+        assumeExhaustiveAllowing<'media'>(part.type);
+        break;
     }
   }
 

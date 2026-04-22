@@ -17,7 +17,7 @@ export function MessageItem({msg}: MessageItemProps) {
       <div className="msg-content">
         {msg.thinkingText && msg.thinkingText.length > 0 && (
           <details
-            open={!msg.completed}
+            open={!msg.final}
             style={{
               fontStyle: 'italic',
               opacity: 0.7,
@@ -31,10 +31,10 @@ export function MessageItem({msg}: MessageItemProps) {
               style={{
                 outline: 'none',
                 userSelect: 'none',
-                marginBottom: !msg.completed ? '8px' : '0px',
+                marginBottom: !msg.final ? '8px' : '0px',
               }}>
               💭 Thinking Process{' '}
-              {msg.completed ? '(Finished - click to expand)' : '...'}
+              {msg.final ? '(Finished - click to expand)' : '...'}
             </summary>
             <div style={{whiteSpace: 'pre-wrap'}}>
               {msg.thinkingText.join('\n')}

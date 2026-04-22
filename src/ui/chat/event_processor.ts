@@ -14,7 +14,6 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
     }
 
     case AgentEventType.MESSAGE: {
-      newState.isLoading = false;
       if (event.parts) {
         let addedThought = '';
         let addedText = '';
@@ -29,26 +28,64 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           }
         }
 
-        // Stream accumulation logic
-        if (newState.activeStreamMessageId) {
+        const activeMsg = newState.messages.find(
+          (m) => m.id === newState.activeStreamMessageId,
+        );
+        const targetRole = event.role;
+
+        if (targetRole === ContentRole.USER) {
+          const userInvIdx = [...newState.messages]
+            .reverse()
+            .findIndex((m) => m.invocationId === 'user-invocation');
+          if (userInvIdx !== -1) {
+            const idx = newState.messages.length - 1 - userInvIdx;
+            newState.messages = newState.messages.map((msg, i) => {
+              if (i === idx) {
+                return {
+                  ...msg,
+                  invocationId: event.streamId,
+                  content: addedText,
+                  thinkingText: addedThought ? [addedThought] : [],
+                  final: true,
+                };
+              }
+              return msg;
+            });
+            break;
+          }
+        }
+
+        if (
+          activeMsg &&
+          activeMsg.type === ChatMessageType.TEXT &&
+          activeMsg.author === targetRole
+        ) {
           newState.messages = newState.messages.map((msg) => {
             if (
               msg.id === newState.activeStreamMessageId &&
               msg.type === ChatMessageType.TEXT
             ) {
-              const updatedThinking = [...(msg.thinkingText || [])];
-              if (addedThought) {
-                if (updatedThinking.length > 0) {
-                  updatedThinking[updatedThinking.length - 1] += addedThought;
-                } else {
-                  updatedThinking.push(addedThought);
+              if (!event.partial) {
+                return {
+                  ...msg,
+                  thinkingText: addedThought ? [addedThought] : [],
+                  content: addedText,
+                };
+              } else {
+                const updatedThinking = [...(msg.thinkingText || [])];
+                if (addedThought) {
+                  if (updatedThinking.length > 0) {
+                    updatedThinking[updatedThinking.length - 1] += addedThought;
+                  } else {
+                    updatedThinking.push(addedThought);
+                  }
                 }
+                return {
+                  ...msg,
+                  thinkingText: updatedThinking,
+                  content: msg.content + addedText,
+                };
               }
-              return {
-                ...msg,
-                thinkingText: updatedThinking,
-                content: msg.content + addedText,
-              };
             }
             return msg;
           });
@@ -60,11 +97,11 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
             {
               id: newId,
               invocationId: event.streamId,
-              author: event.role ?? ContentRole.AGENT,
+              author: targetRole,
               type: ChatMessageType.TEXT,
               content: addedText,
               thinkingText: addedThought ? [addedThought] : [],
-              completed: false,
+              final: false,
             },
           ];
         }
@@ -73,7 +110,6 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
     }
 
     case AgentEventType.COMPACTION: {
-      newState.isLoading = false;
       newState.messages = [
         ...newState.messages,
         {
@@ -86,7 +122,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
               ?.map((p) => (p.type === 'text' ? p.text : ''))
               .join('\n') || ''
           }`,
-          completed: true,
+          final: true,
         },
       ];
       break;
@@ -100,7 +136,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           if (msg.id === newState.activeStreamMessageId) {
             return {
               ...msg,
-              completed: true,
+              final: true,
             };
           }
           return msg;
@@ -121,33 +157,53 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           author: event.role ?? ContentRole.AGENT,
           type: ChatMessageType.TEXT,
           content: `⚠️ [Error]: ${event.errorMessage}`,
-          completed: true,
+          final: true,
         },
       ];
       break;
     }
 
     case AgentEventType.TOOL_CALL: {
-      newState.isLoading = false;
-      newState.messages = [
-        ...newState.messages,
-        {
-          id: crypto.randomUUID(),
-          invocationId: event.streamId,
-          author: event.role ?? ContentRole.AGENT,
-          type: ChatMessageType.TOOL_EXECUTION,
-          functionId: event.requestId,
-          functionName: event.name,
-          functionArgs: event.args,
-          status: ToolExecutionStatus.EXECUTING,
-          completed: false,
-        },
-      ];
+      const existingIndex = newState.messages.findIndex(
+        (msg) =>
+          msg.type === ChatMessageType.TOOL_EXECUTION &&
+          msg.functionId === event.requestId,
+      );
+
+      if (existingIndex >= 0) {
+        newState.messages = newState.messages.map((msg, idx) => {
+          if (
+            idx === existingIndex &&
+            msg.type === ChatMessageType.TOOL_EXECUTION
+          ) {
+            return {
+              ...msg,
+              functionName: event.name,
+              functionArgs: event.args,
+            };
+          }
+          return msg;
+        });
+      } else {
+        newState.messages = [
+          ...newState.messages,
+          {
+            id: crypto.randomUUID(),
+            invocationId: event.streamId,
+            author: event.role ?? ContentRole.AGENT,
+            type: ChatMessageType.TOOL_EXECUTION,
+            functionId: event.requestId,
+            functionName: event.name,
+            functionArgs: event.args,
+            status: ToolExecutionStatus.EXECUTING,
+            final: false,
+          },
+        ];
+      }
       break;
     }
 
     case AgentEventType.TOOL_RESPONSE: {
-      newState.isLoading = false;
       let found = false;
       newState.messages = newState.messages.map((msg) => {
         if (
@@ -169,7 +225,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
               typeof event.result === 'object' && event.result
                 ? event.result
                 : {},
-            completed: true,
+            final: true,
           };
         }
         return msg;
@@ -198,7 +254,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
               typeof event.result === 'object' && event.result
                 ? event.result
                 : {},
-            completed: true,
+            final: true,
           },
         ];
       }
@@ -217,7 +273,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           type: ChatMessageType.TOOL_CONFIRMATION,
           content: `❓ [User Input Required]: ${event.message}`,
           requestId: event.requestId,
-          completed: true,
+          final: true,
         },
       ];
       break;

@@ -256,6 +256,7 @@ export class StreamingResponseAggregator {
     }
 
     llmResponse.partial = true;
+    llmResponse.final = false;
     yield llmResponse;
   }
 
@@ -290,6 +291,7 @@ export class StreamingResponseAggregator {
       usageMetadata: this.usageMetadata,
       finishReason: finishReason,
       partial: false,
+      final: true,
     };
   }
 }

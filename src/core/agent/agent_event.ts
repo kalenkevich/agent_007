@@ -46,6 +46,7 @@ export interface BaseAgentEvent {
   role: ContentRole;
   parts?: ContentPart[];
   partial?: boolean;
+  final?: boolean;
 }
 
 export interface AgentStartEvent extends BaseAgentEvent {

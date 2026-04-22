@@ -9,14 +9,14 @@ describe('event_processor', () => {
     isLoading: false,
     isThinking: false,
     pendingUserInput: null,
-    activeStreamMessageId: null,
+    activeStreamMessageId: undefined,
   };
 
   it('should handle START event', () => {
     const event: AgentEvent = {type: 'START'};
     const newState = processEvent(initialState, event);
     expect(newState.isLoading).toBe(true);
-    expect(newState.activeStreamMessageId).toBeNull();
+    expect(newState.activeStreamMessageId).toBeUndefined();
   });
 
   it('should handle MESSAGE event with stream accumulation', () => {
@@ -32,6 +32,7 @@ describe('event_processor', () => {
 
     const event2: AgentEvent = {
       type: 'MESSAGE',
+      partial: true,
       parts: [{type: 'text', text: ' World'}],
     };
 
@@ -39,6 +40,44 @@ describe('event_processor', () => {
     expect(state2.messages.length).toBe(1);
     expect(state2.messages[0].content).toBe('Hello World');
     expect(state2.activeStreamMessageId).toBe(state1.activeStreamMessageId);
+
+    const event3: AgentEvent = {
+      type: 'MESSAGE',
+      final: true,
+      parts: [{type: 'text', text: 'A completely new message content.'}],
+    };
+
+    const state3 = processEvent(state2, event3);
+    expect(state3.messages.length).toBe(1);
+    expect(state3.messages[0].content).toBe(
+      'A completely new message content.',
+    );
+    expect(state3.activeStreamMessageId).toBe(state1.activeStreamMessageId);
+  });
+
+  it('should handle MESSAGE events with different roles', () => {
+    const event1: AgentEvent = {
+      type: 'MESSAGE',
+      role: 'user',
+      parts: [{type: 'text', text: 'Hello'}],
+    };
+
+    const state1 = processEvent(initialState, event1);
+    expect(state1.messages.length).toBe(1);
+    expect(state1.messages[0].content).toBe('Hello');
+    expect(state1.messages[0].author).toBe('user');
+
+    const event2: AgentEvent = {
+      type: 'MESSAGE',
+      role: 'agent',
+      parts: [{type: 'text', text: 'Hi there'}],
+    };
+
+    const state2 = processEvent(state1, event2);
+    expect(state2.messages.length).toBe(2);
+    expect(state2.messages[1].content).toBe('Hi there');
+    expect(state2.messages[1].author).toBe('agent');
+    expect(state2.activeStreamMessageId).toBe(state2.messages[1].id);
   });
 
   it('should handle COMPACTION event', () => {
@@ -49,7 +88,7 @@ describe('event_processor', () => {
     };
     const newState = processEvent(initialState, event);
     expect(newState.messages.length).toBe(1);
-    expect(newState.messages[0].type).toBe('compaction');
+    expect(newState.messages[0].type).toBe('text');
     expect(newState.messages[0].content).toContain('Compacted content');
   });
 
@@ -64,7 +103,7 @@ describe('event_processor', () => {
     const newState = processEvent(state, event);
     expect(newState.isLoading).toBe(false);
     expect(newState.isThinking).toBe(false);
-    expect(newState.activeStreamMessageId).toBeNull();
+    expect(newState.activeStreamMessageId).toBeUndefined();
   });
 
   it('should handle ERROR event', () => {
@@ -74,7 +113,9 @@ describe('event_processor', () => {
     };
     const newState = processEvent(initialState, event);
     expect(newState.messages.length).toBe(1);
-    expect(newState.messages[0].type).toBe('error');
-    expect(newState.messages[0].content).toContain('Something went wrong');
+    expect(newState.messages[0].type).toBe('text');
+    expect(newState.messages[0].content).toContain(
+      '⚠️ [Error]: Something went wrong',
+    );
   });
 });

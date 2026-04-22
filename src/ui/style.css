@@ -549,3 +549,37 @@ input#user-input {
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(255, 77, 79, 0.5);
 }
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.loading-dot {
+  animation: blink 1.4s infinite both;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0.2;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}

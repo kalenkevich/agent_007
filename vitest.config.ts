@@ -10,12 +10,40 @@ export default defineConfig({
           environment: 'node',
           include: ['tests/unit/**/*_test.ts'],
         },
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, './src'),
+            '@agent007/core': path.resolve(__dirname, './src/core/index.ts'),
+            '@agent007/core/node': path.resolve(
+              __dirname,
+              './src/core/node.ts',
+            ),
+            '@agent007/common': path.resolve(
+              __dirname,
+              './src/common/index.ts',
+            ),
+          },
+        },
       },
       {
         test: {
           name: 'integration',
           environment: 'node',
           include: ['tests/integration/**/*_test.ts'],
+        },
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, './src'),
+            '@agent007/core': path.resolve(__dirname, './src/core/index.ts'),
+            '@agent007/core/node': path.resolve(
+              __dirname,
+              './src/core/node.ts',
+            ),
+            '@agent007/common': path.resolve(
+              __dirname,
+              './src/common/index.ts',
+            ),
+          },
         },
       },
       {
@@ -24,16 +52,25 @@ export default defineConfig({
           environment: 'node',
           include: ['tests/e2e/**/*_test.ts'],
         },
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, './src'),
+            '@agent007/core': path.resolve(__dirname, './src/core/index.ts'),
+            '@agent007/core/node': path.resolve(
+              __dirname,
+              './src/core/node.ts',
+            ),
+            '@agent007/common': path.resolve(
+              __dirname,
+              './src/common/index.ts',
+            ),
+          },
+        },
       },
     ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json'],
-    },
-    alias: {
-      '@agent007/core': path.resolve(__dirname, './src/core'),
-      '@agent007/core/node': path.resolve(__dirname, './src/core/node.ts'),
-      '@agent007/common': path.resolve(__dirname, './src/common'),
     },
   },
 });

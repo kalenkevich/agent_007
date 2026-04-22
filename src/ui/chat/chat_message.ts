@@ -38,7 +38,7 @@ export interface BaseChatMessage {
   author: ContentRole;
   authorName?: string;
   attachments?: ChatArtifact[];
-  completed: boolean;
+  final: boolean;
   thinkingText?: string[];
 }
 
