@@ -1,7 +1,7 @@
 import {BrowserWindow, ipcMain} from 'electron';
 import {
-  AgentLoop,
-  AgentLoopType,
+  AgentRun,
+  AgentRunType,
   SessionFileService,
   configStore,
   loadConfig,
@@ -15,11 +15,14 @@ enum IpcEvents {
   AGENT_EVENT = 'agent-event',
   GET_SESSIONS = 'get-sessions',
   GET_SESSION = 'get-session',
+  SELECT_SESSION = 'select-session',
+  START_NEW_SESSION = 'start-new-session',
 }
 
 export class AgentBackend {
   private mainWindow?: BrowserWindow;
-  private loop?: AgentLoop;
+  private currentAgentRun?: AgentRun;
+  private agentRuns = new Map<string, AgentRun>();
   private initialized = false;
   private config?: Config;
   private sessionService = new SessionFileService();
@@ -36,28 +39,32 @@ export class AgentBackend {
 
     try {
       this.config = await loadConfig();
-      this.loop = new AgentLoop(this.config);
-      this.setupLoopListener();
+      const session = await this.sessionService.createSession(
+        'Coding Agent',
+        [],
+      );
+      this.currentAgentRun = this.createLoop(session.id);
       this.initialized = true;
     } catch (error) {
       console.error('Failed to initialize agent loop in AppBackend:', error);
     }
   }
 
-  private setupLoopListener() {
-    if (this.loop) {
-      this.loop.on(AgentLoopType.AGENT_EVENT, (event) => {
-        if (this.mainWindow) {
-          this.mainWindow.webContents.send(IpcEvents.AGENT_EVENT, event);
-        }
-      });
-    }
+  private createLoop(sessionId: string): AgentRun {
+    const loop = new AgentRun(this.config!, sessionId);
+    loop.on(AgentRunType.AGENT_EVENT, (event) => {
+      if (this.mainWindow) {
+        this.mainWindow.webContents.send(IpcEvents.AGENT_EVENT, event);
+      }
+    });
+    this.agentRuns.set(sessionId, loop);
+    return loop;
   }
 
   private registerHandlers() {
     ipcMain.handle(IpcEvents.SEND_USER_INPUT, async (event, userInput) => {
-      if (this.loop) {
-        this.loop.run(userInput).catch((err) => {
+      if (this.currentAgentRun) {
+        this.currentAgentRun.run(userInput).catch((err) => {
           console.error('Agent run error:', err);
         });
         return {success: true};
@@ -116,6 +123,44 @@ export class AgentBackend {
         };
       }
     });
+
+    ipcMain.handle(IpcEvents.START_NEW_SESSION, async () => {
+      try {
+        this.config = await loadConfig();
+        const session = await this.sessionService.createSession(
+          'Coding Agent',
+          [],
+        );
+        this.currentAgentRun = this.createLoop(session.id);
+        return {success: true};
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    });
+
+    ipcMain.handle(
+      IpcEvents.SELECT_SESSION,
+      async (event, sessionId: string) => {
+        try {
+          this.config = await loadConfig();
+          if (this.agentRuns.has(sessionId)) {
+            this.currentAgentRun = this.agentRuns.get(sessionId);
+          } else {
+            this.currentAgentRun = this.createLoop(sessionId);
+          }
+          const session = await this.sessionService.getSession(sessionId);
+          return {success: true, session};
+        } catch (err: unknown) {
+          return {
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          };
+        }
+      },
+    );
   }
 }
 

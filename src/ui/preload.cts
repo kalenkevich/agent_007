@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSessions: () => ipcRenderer.invoke(IpcEvents.GET_SESSIONS),
   getSession: (sessionId: string) =>
     ipcRenderer.invoke(IpcEvents.GET_SESSION, sessionId),
+  startNewSession: () => ipcRenderer.invoke('start-new-session'),
+  selectSession: (sessionId: string) =>
+    ipcRenderer.invoke('select-session', sessionId),
   onAgentEvent: (callback: (event: AgentEvent | ErrorEvent) => void) => {
     ipcRenderer.on(
       IpcEvents.AGENT_EVENT,

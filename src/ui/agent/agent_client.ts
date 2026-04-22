@@ -33,6 +33,12 @@ declare global {
         session?: Session;
         error?: string;
       }>;
+      startNewSession: () => Promise<{success: boolean; error?: string}>;
+      selectSession: (sessionId: string) => Promise<{
+        success: boolean;
+        session?: Session;
+        error?: string;
+      }>;
       onAgentEvent: (callback: (event: AgentEvent) => void) => void;
     };
   }
@@ -108,6 +114,20 @@ export class AgentClient {
   async getSession(sessionId: string) {
     if (this.api) {
       return await this.api.getSession(sessionId);
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async startNewSession() {
+    if (this.api) {
+      return await this.api.startNewSession();
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async selectSession(sessionId: string) {
+    if (this.api) {
+      return await this.api.selectSession(sessionId);
     }
     return {success: false, error: 'electronAPI not available'};
   }

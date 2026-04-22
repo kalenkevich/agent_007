@@ -1,7 +1,7 @@
 import {
   AgentEventType,
-  AgentLoop,
-  AgentLoopType,
+  AgentRun,
+  AgentRunType,
   ContentRole,
   loadConfig,
   type AgentEvent,
@@ -32,10 +32,10 @@ export async function runNoninteractiveCommand(options: RunCommandOptions) {
 
   console.log(`Using model: ${config.models.main.modelName}`);
 
-  const loop = new AgentLoop(config);
+  const loop = new AgentRun(config);
   const lastPrintedToolCalls = new Map<string, string>();
 
-  loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
+  loop.on(AgentRunType.AGENT_EVENT, (event: AgentEvent) => {
     switch (event.type) {
       case AgentEventType.START:
         console.log('\n--- Agent Started ---');

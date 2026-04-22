@@ -19,11 +19,11 @@ import {SessionFileService} from './session/session_file_service.js';
 import type {UserInput} from './user_input.js';
 import {Run} from './utils/run.js';
 
-export enum AgentLoopType {
+export enum AgentRunType {
   AGENT_EVENT = 'AGENT_EVENT',
 }
 
-export class AgentLoop extends EventEmitter {
+export class AgentRun extends EventEmitter {
   private agent?: Agent;
   private initialized = false;
   private currentRun?: Run;
@@ -85,12 +85,12 @@ export class AgentLoop extends EventEmitter {
     }
 
     this.initialized = true;
-    logger.debug('[CoreAgentLoop] initialized');
+    logger.debug('[CoreAgentRun] initialized');
   }
 
   async run(userInput: UserInput) {
     logger.debug(
-      '[CoreAgentLoop] run called with input:',
+      '[CoreAgentRun] run called with input:',
       JSON.stringify(userInput, null, 2),
     );
     await this.currentRun?.wait();
@@ -108,7 +108,7 @@ export class AgentLoop extends EventEmitter {
           this.sessionService.appendEvent(this.sessionId, event);
         }
 
-        this.emit(AgentLoopType.AGENT_EVENT, event);
+        this.emit(AgentRunType.AGENT_EVENT, event);
       }
 
       if (!this.sessionTitleGenerated && this.sessionId) {
@@ -134,12 +134,12 @@ export class AgentLoop extends EventEmitter {
               title,
             });
             this.sessionTitleGenerated = true;
-            logger.debug(`[CoreAgentLoop] Generated session title: ${title}`);
+            logger.debug(`[CoreAgentRun] Generated session title: ${title}`);
           }
         }
       }
     } catch (e: unknown) {
-      logger.error('[CoreAgentLoop] run error:', e);
+      logger.error('[CoreAgentRun] run error:', e);
       const error = e as Error;
       const errorEvent: ErrorEvent = {
         id: randomUUID(),
@@ -156,7 +156,7 @@ export class AgentLoop extends EventEmitter {
         this.sessionService.appendEvent(this.sessionId, errorEvent);
       }
 
-      this.emit(AgentLoopType.AGENT_EVENT, errorEvent);
+      this.emit(AgentRunType.AGENT_EVENT, errorEvent);
     } finally {
       this.currentRun.finish();
       this.currentRun = undefined;

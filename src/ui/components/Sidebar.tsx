@@ -5,6 +5,7 @@ interface SidebarProps {
   isLoading: boolean;
   isThinking: boolean;
   onSelectSession: (sessionId: string) => void;
+  onNewSession: () => void;
   activeSessionId?: string;
 }
 
@@ -13,6 +14,7 @@ export function Sidebar({
   isLoading,
   isThinking,
   onSelectSession,
+  onNewSession,
   activeSessionId,
 }: SidebarProps) {
   return (
@@ -45,6 +47,13 @@ export function Sidebar({
         </div>
         <p className="status-detail">Connecting via Local Neural Engine</p>
       </div>
+
+      <button
+        className="btn btn-new-session"
+        onClick={onNewSession}
+      >
+        + New Session
+      </button>
 
       <div className="sessions-list">
         <h3>Active Sessions</h3>

@@ -1,7 +1,7 @@
 import {
   AgentEventType,
-  AgentLoop,
-  AgentLoopType,
+  AgentRun,
+  AgentRunType,
   ContentRole,
   InitProjectCommandHandler,
   SessionFileService,
@@ -109,14 +109,14 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
     }
   }
 
-  const loop = new AgentLoop(config, sessionId);
+  const loop = new AgentRun(config, sessionId);
   const loader = new TerminalLoader();
   let hasStreamed = false;
   let isThinking = false;
   const lastPrintedToolCalls = new Map<string, string>();
   let pendingUserInputRequest: UserInputRequestEvent | null = null;
 
-  loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
+  loop.on(AgentRunType.AGENT_EVENT, (event: AgentEvent) => {
     switch (event.type) {
       case AgentEventType.START:
         loader.startLoading();

@@ -157,7 +157,7 @@ export default function App() {
   const handleSelectSession = async (sessionId: string) => {
     setActiveSessionId(sessionId);
     try {
-      const res = await agentClient.getSession(sessionId);
+      const res = await agentClient.selectSession(sessionId);
       if (res.success && res.session) {
         let state: ChatState = {
           messages: [],
@@ -183,6 +183,23 @@ export default function App() {
     }
   };
 
+  const handleNewSession = async () => {
+    setActiveSessionId(undefined);
+    setMessages([]);
+    try {
+      const res = await agentClient.startNewSession();
+      if (res.success) {
+        const sessionRes = await agentClient.getSessions();
+        if (sessionRes.success && sessionRes.sessions) {
+          setSessions(sessionRes.sessions);
+        }
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      appendMessage(`IPC Error: ${errorMessage}`, false);
+    }
+  };
+
   return (
     <>
       {/* Draggable title bar for desktop window */}
@@ -200,6 +217,7 @@ export default function App() {
           isLoading={isLoading}
           isThinking={isThinking}
           onSelectSession={handleSelectSession}
+          onNewSession={handleNewSession}
           activeSessionId={activeSessionId}
         />
 

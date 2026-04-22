@@ -1,4 +1,4 @@
-export {AgentLoop, AgentLoopType} from './agent_loop.js';
+export {AgentRun, AgentRunType} from './agent_run.js';
 export {InitProjectCommandHandler} from './command/init_project_command_handler.js';
 export {loadConfig} from './config/config_loader.js';
 export {configStore} from './config/config_store.js';

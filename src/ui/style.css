@@ -217,6 +217,24 @@ body {
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+
+.btn-new-session {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none;
+  text-align: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 242, 254, 0.2);
+  padding: 0.75rem;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-new-session:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 15px rgba(0, 242, 254, 0.35);
+}
+
 .quick-actions {
   display: flex;
   flex-direction: column;
