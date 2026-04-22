@@ -1,3 +1,9 @@
+import {
+  PromptInput,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from '@/components/ai-elements/prompt-input';
+
 interface ChatInputProps {
   inputValue: string;
   setInputValue: (val: string) => void;
@@ -59,58 +65,34 @@ export function ChatInput({
           </div>
         </div>
       ) : (
-        <div className="input-wrapper">
-          <input
-            type="text"
+        <PromptInput className="input-wrapper">
+          <PromptInputTextarea
             id="user-input"
             placeholder="Type your command..."
             autoComplete="off"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 handleSend(inputValue);
               }
             }}
           />
-          {isLoading && (
-            <button
-              id="btn-abort"
-              className="btn-danger"
-              style={{
-                padding: '0 1rem',
-                borderRadius: '12px',
-                fontWeight: 600,
-                boxShadow: '0 4px 12px rgba(255, 77, 79, 0.3)',
-                cursor: 'pointer',
-                height: '44px',
-                border: 'none',
-              }}
-              onClick={onAbort}
-            >
-              Abort
-            </button>
-          )}
-          <button
-            className="btn-send"
-            id="btn-send"
-            onClick={() => handleSend(inputValue)}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-                d="M2 12L22 2M2 12l10 4M2 12l7-9M22 2L12 22"
+          <div style={{display: 'flex', gap: '0.5rem', alignSelf: 'flex-end'}}>
+            {isLoading && (
+              <PromptInputSubmit
+                id="btn-abort"
+                status="streaming"
+                onClick={onAbort}
               />
-            </svg>
-          </button>
-        </div>
+            )}
+            <PromptInputSubmit
+              id="btn-send"
+              onClick={() => handleSend(inputValue)}
+            />
+          </div>
+        </PromptInput>
       )}
     </footer>
   );

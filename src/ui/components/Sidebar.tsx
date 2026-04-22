@@ -1,4 +1,16 @@
+import {
+  Sidebar as SidebarContainer,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ai-elements/sidebar';
+import {Tooltip} from '@/components/ai-elements/tooltip';
 import {type SessionMetadata} from '@agent007/core';
+import {Folder, Plus, Trash2} from 'lucide-react';
 
 function formatSessionTimestamp(timestamp: string): string {
   const now = new Date();
@@ -46,7 +58,6 @@ function formatSessionTimestamp(timestamp: string): string {
   return target.toLocaleDateString();
 }
 
-
 interface SidebarProps {
   sessions: SessionMetadata[];
   isLoading: boolean;
@@ -59,103 +70,102 @@ interface SidebarProps {
 
 export function Sidebar({
   sessions,
-  isLoading,
-  isThinking,
   onSelectSession,
   onNewSession,
   onDeleteSession,
   activeSessionId,
 }: SidebarProps) {
   return (
-    <aside className="sidebar glass-panel">
-      <div className="brand">
-        <div className="logo-icon">🤖</div>
-        <h1>
-          Agent<span className="gradient-text">007</span>
-        </h1>
-      </div>
-
-      <div className="status-card">
-        <div className="status-indicator">
-          <span
-            className="pulse-dot"
+    <SidebarContainer>
+      <SidebarHeader>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+          <div style={{fontSize: '1.5rem'}}>🤖</div>
+          <h1
             style={{
-              background: isLoading || isThinking ? '#ffbc00' : '#00ff88',
-              boxShadow:
-                isLoading || isThinking
-                  ? '0 0 12px #ffbc00'
-                  : '0 0 12px #00ff88',
-            }}></span>
-          <span className="status-text">
-            {isLoading
-              ? 'Loading...'
-              : isThinking
-                ? 'Thinking...'
-                : 'Secure & Active'}
-          </span>
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              margin: 0,
+              color: '#fafafa',
+            }}>
+            Agent<span style={{color: '#00f2fe'}}>007</span>
+          </h1>
         </div>
-        <p className="status-detail">Connecting via Local Neural Engine</p>
-      </div>
+      </SidebarHeader>
 
-      <button className="btn btn-new-session" onClick={onNewSession}>
-        + New Session
-      </button>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarMenuButton onClick={onNewSession} active={false}>
+            <Plus size={16} />
+            <span>New Session</span>
+          </SidebarMenuButton>
+        </SidebarGroup>
 
-      <div className="sessions-list">
-        <h3>Active Sessions</h3>
-        <div className="sessions-scroll">
-          {[...sessions]
-            .sort(
-              (a, b) =>
-                new Date(b.timestamp).getTime() -
-                new Date(a.timestamp).getTime(),
-            )
-            .map((session) => (
-              <div
-                key={session.id}
-                className={`session-item ${
-                  session.id === activeSessionId ? 'active' : ''
-                }`}
-                onClick={() => onSelectSession(session.id)}>
-                <span className="session-icon">📁</span>
-                <div className="session-details">
-                  <p className="session-title">
-                    {session.title || `Session ${session.id.substring(0, 6)}`}
-                  </p>
-                  <span className="session-meta">
-                    {formatSessionTimestamp(session.timestamp)}
-                  </span>
-                </div>
-                <button
-                  className="btn-delete-session"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteSession(session.id);
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    marginLeft: 'auto',
-                    padding: '0.25rem',
-                    borderRadius: '4px',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = '#ff4d4f')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = 'var(--text-muted)')
-                  }
-                  title="Delete Session">
-                  🗑️
-                </button>
-              </div>
-            ))}
-        </div>
-      </div>
-    </aside>
+        <SidebarGroup>
+          <SidebarGroupLabel>Active Sessions</SidebarGroupLabel>
+          <SidebarMenu>
+            {[...sessions]
+              .sort(
+                (a, b) =>
+                  new Date(b.timestamp).getTime() -
+                  new Date(a.timestamp).getTime(),
+              )
+              .map((session) => (
+                <SidebarMenuItem key={session.id}>
+                  <SidebarMenuButton
+                    active={session.id === activeSessionId}
+                    onClick={() => onSelectSession(session.id)}>
+                    <Folder size={16} />
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flex: 1,
+                        overflow: 'hidden',
+                      }}>
+                      <Tooltip
+                        content={
+                          session.title ||
+                          `Session ${session.id.substring(0, 6)}`
+                        }>
+                        <span
+                          style={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}>
+                          {session.title ||
+                            `Session ${session.id.substring(0, 6)}`}
+                        </span>
+                      </Tooltip>
+                      <span style={{fontSize: '0.75rem', color: '#737373'}}>
+                        {formatSessionTimestamp(session.timestamp)}
+                      </span>
+                    </div>
+                    <Trash2
+                      size={14}
+                      style={{
+                        marginLeft: 'auto',
+                        color: '#737373',
+                        cursor: 'pointer',
+                        transition: 'color 0.15s',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteSession(session.id);
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.color = '#ef4444')
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = '#737373')
+                      }
+                    />
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+    </SidebarContainer>
   );
 }

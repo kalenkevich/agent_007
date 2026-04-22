@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ai-elements/select';
 import {type SessionMetadata, ToolExecutionPolicyType} from '@agent007/core';
 
 interface ChatHeaderProps {
@@ -29,6 +36,17 @@ export function ChatHeader({
     ? session.title || `Session ${session.id.substring(0, 6)}`
     : 'Coding Agent';
 
+  const getPolicyName = (policy: string) => {
+    switch (policy) {
+      case ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION:
+        return 'Always Request Confirmation';
+      case ToolExecutionPolicyType.ALWAYS_ALLOW_EXECUTION:
+        return 'Always Allow Execution';
+      default:
+        return policy;
+    }
+  };
+
   return (
     <header className="chat-header glass-panel">
       <div className="header-info">
@@ -46,20 +64,21 @@ export function ChatHeader({
       </div>
       <div className="policy-selector">
         <label htmlFor="policy-select">Tool Policy: </label>
-        <select
-          id="policy-select"
-          value={toolPolicy}
-          onChange={(e) => onToolPolicyChange(e.target.value)}
-          className="policy-dropdown">
-          <option value={ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION}>
-            Always Request Confirmation
-          </option>
-          <option value={ToolExecutionPolicyType.ALWAYS_ALLOW_EXECUTION}>
-            Always Allow Execution
-          </option>
-        </select>
+        <Select value={toolPolicy} onValueChange={onToolPolicyChange}>
+          <SelectTrigger>
+            <SelectValue>{getPolicyName(toolPolicy)}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              value={ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION}>
+              Always Request Confirmation
+            </SelectItem>
+            <SelectItem value={ToolExecutionPolicyType.ALWAYS_ALLOW_EXECUTION}>
+              Always Allow Execution
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </header>
   );
 }
-

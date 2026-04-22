@@ -1,4 +1,6 @@
-import React, { createContext, useContext } from 'react';
+import {Tooltip} from '@/components/ai-elements/tooltip';
+import {Check, ShieldAlert, X} from 'lucide-react';
+import React, {createContext, useContext} from 'react';
 
 export interface ConfirmationProps {
   children: React.ReactNode;
@@ -6,9 +8,11 @@ export interface ConfirmationProps {
   className?: string;
 }
 
-const ConfirmationContext = createContext<'approval-requested' | 'approval-responded' | 'output-denied'>('approval-requested');
+const ConfirmationContext = createContext<
+  'approval-requested' | 'approval-responded' | 'output-denied'
+>('approval-requested');
 
-export function Confirmation({ children, state, className }: ConfirmationProps) {
+export function Confirmation({children, state, className}: ConfirmationProps) {
   return (
     <ConfirmationContext.Provider value={state}>
       <div
@@ -29,16 +33,16 @@ export function Confirmation({ children, state, className }: ConfirmationProps) 
           flexDirection: 'column',
           gap: '1rem',
           maxWidth: '100%',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
-        }}
-      >
+          boxShadow:
+            '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+        }}>
         {children}
       </div>
     </ConfirmationContext.Provider>
   );
 }
 
-export function ConfirmationTitle({ children }: { children: React.ReactNode }) {
+export function ConfirmationTitle({children}: {children: React.ReactNode}) {
   return (
     <div
       style={{
@@ -49,14 +53,14 @@ export function ConfirmationTitle({ children }: { children: React.ReactNode }) {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-      }}
-    >
+      }}>
+      <ShieldAlert size={16} style={{color: '#fcd34d'}} />
       {children}
     </div>
   );
 }
 
-export function ConfirmationRequest({ children }: { children: React.ReactNode }) {
+export function ConfirmationRequest({children}: {children: React.ReactNode}) {
   const state = useContext(ConfirmationContext);
   if (state !== 'approval-requested') return null;
 
@@ -70,14 +74,13 @@ export function ConfirmationRequest({ children }: { children: React.ReactNode })
         border: '1px solid #262626',
         color: '#e5e5e5',
         lineHeight: 1.6,
-      }}
-    >
+      }}>
       {children}
     </div>
   );
 }
 
-export function ConfirmationAccepted({ children }: { children: React.ReactNode }) {
+export function ConfirmationAccepted({children}: {children: React.ReactNode}) {
   const state = useContext(ConfirmationContext);
   if (state !== 'approval-responded') return null;
 
@@ -93,14 +96,14 @@ export function ConfirmationAccepted({ children }: { children: React.ReactNode }
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-      }}
-    >
+      }}>
+      <Check size={16} />
       {children}
     </div>
   );
 }
 
-export function ConfirmationRejected({ children }: { children: React.ReactNode }) {
+export function ConfirmationRejected({children}: {children: React.ReactNode}) {
   const state = useContext(ConfirmationContext);
   if (state !== 'output-denied') return null;
 
@@ -116,14 +119,20 @@ export function ConfirmationRejected({ children }: { children: React.ReactNode }
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-      }}
-    >
+      }}>
+      <X size={16} />
       {children}
     </div>
   );
 }
 
-export function ConfirmationActions({ children, className }: { children: React.ReactNode; className?: string }) {
+export function ConfirmationActions({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   const state = useContext(ConfirmationContext);
   if (state !== 'approval-requested') return null;
 
@@ -134,8 +143,7 @@ export function ConfirmationActions({ children, className }: { children: React.R
         display: 'flex',
         gap: '12px',
         marginTop: '12px',
-      }}
-    >
+      }}>
       {children}
     </div>
   );
@@ -150,22 +158,30 @@ export function ConfirmationAction({
   onClick?: () => void;
   variant?: 'default' | 'outline';
 }) {
+  const tooltipContent =
+    variant === 'default' ? 'Approve this action' : 'Decline this action';
+
   return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: 1,
-        background: variant === 'default' ? '#1e3a8a' : 'transparent',
-        color: variant === 'default' ? '#ffffff' : '#d1d5db',
-        border: variant === 'default' ? '1px solid #1d4ed8' : '1px solid rgba(255, 255, 255, 0.2)',
-        padding: '8px',
-        borderRadius: '0.375rem',
-        fontWeight: 600,
-        cursor: 'pointer',
-        transition: 'all 0.15s ease-in-out',
-      }}
-    >
-      {children}
-    </button>
+    <Tooltip content={tooltipContent}>
+      <button
+        onClick={onClick}
+        style={{
+          flex: 1,
+          background: variant === 'default' ? '#1e3a8a' : 'transparent',
+          color: variant === 'default' ? '#ffffff' : '#d1d5db',
+          border:
+            variant === 'default'
+              ? '1px solid #1d4ed8'
+              : '1px solid rgba(255, 255, 255, 0.2)',
+          padding: '8px',
+          borderRadius: '0.375rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.15s ease-in-out',
+          width: '100%',
+        }}>
+        {children}
+      </button>
+    </Tooltip>
   );
 }
