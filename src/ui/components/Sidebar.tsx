@@ -1,32 +1,20 @@
 import {type SessionMetadata} from '@agent007/core';
-import {useEffect, useState} from 'react';
-import {agentClient} from '../agent/agent_client';
 
 interface SidebarProps {
+  sessions: SessionMetadata[];
   isLoading: boolean;
   isThinking: boolean;
-  onQuickAction: (cmd: string) => void;
   onSelectSession: (sessionId: string) => void;
   activeSessionId?: string;
 }
 
 export function Sidebar({
+  sessions,
   isLoading,
   isThinking,
-  onQuickAction,
   onSelectSession,
   activeSessionId,
 }: SidebarProps) {
-  const [sessions, setSessions] = useState<SessionMetadata[]>([]);
-
-  useEffect(() => {
-    agentClient.getSessions().then((res) => {
-      if (res.success && res.sessions) {
-        setSessions(res.sessions);
-      }
-    });
-  }, []);
-
   return (
     <aside className="sidebar glass-panel">
       <div className="brand">
@@ -67,8 +55,7 @@ export function Sidebar({
               className={`session-item ${
                 session.id === activeSessionId ? 'active' : ''
               }`}
-              onClick={() => onSelectSession(session.id)}
-            >
+              onClick={() => onSelectSession(session.id)}>
               <span className="session-icon">📁</span>
               <div className="session-details">
                 <p className="session-title">
@@ -81,35 +68,6 @@ export function Sidebar({
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="quick-actions">
-        <h3>Quick Commands</h3>
-        <button
-          className="btn btn-action"
-          onClick={() => onQuickAction('Who are you?')}>
-          Identity Check
-        </button>
-        <button
-          className="btn btn-action"
-          onClick={() => onQuickAction('Analyze current workspace')}>
-          Scan Workspace
-        </button>
-        <button
-          className="btn btn-action"
-          onClick={() => onQuickAction('/init')}>
-          Initialize Project
-        </button>
-        <button
-          className="btn btn-action"
-          onClick={() => onQuickAction('/plan refactor authentication module')}>
-          Plan Refactor
-        </button>
-      </div>
-
-      <div className="system-info">
-        <p>System Architecture: Node.js/ES2022</p>
-        <p>Interface: React & Electron</p>
       </div>
     </aside>
   );

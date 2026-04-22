@@ -2,6 +2,7 @@ import {
   ContentRole,
   isUserInputRequestEvent,
   type AgentEvent,
+  type SessionMetadata,
 } from '@agent007/core';
 import {useEffect, useRef, useState} from 'react';
 import {agentClient} from '../agent/agent_client';
@@ -15,6 +16,7 @@ import {ChatInput} from '../components/ChatInput';
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessions, setSessions] = useState<SessionMetadata[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -66,6 +68,12 @@ export default function App() {
       setIsThinking(newState.isThinking);
       setPendingUserInput(newState.pendingUserInput);
       activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
+    });
+
+    agentClient.getSessions().then((res) => {
+      if (res.success && res.sessions) {
+        setSessions(res.sessions);
+      }
     });
 
     agentClient.initSession().then((res) => {
@@ -146,10 +154,6 @@ export default function App() {
     }
   };
 
-  const handleQuickAction = (cmd: string) => {
-    handleSend(cmd);
-  };
-
   const handleSelectSession = async (sessionId: string) => {
     setActiveSessionId(sessionId);
     try {
@@ -192,9 +196,9 @@ export default function App() {
 
       <div className="app-container">
         <Sidebar
+          sessions={sessions}
           isLoading={isLoading}
           isThinking={isThinking}
-          onQuickAction={handleQuickAction}
           onSelectSession={handleSelectSession}
           activeSessionId={activeSessionId}
         />
