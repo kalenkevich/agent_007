@@ -96,7 +96,7 @@ export class AgentClient {
     if (this.api) {
       return await this.api.sendUserInput({
         id: crypto.randomUUID(),
-        streamId: '',
+        invocationId: '',
         timestamp: new Date().toISOString(),
         role: ContentRole.USER,
         type: AgentEventType.USER_INPUT_RESPONSE,

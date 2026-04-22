@@ -239,7 +239,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         await loop.run({
           type: AgentEventType.USER_INPUT_RESPONSE,
           id: randomUUID(),
-          streamId: (request as UserInputRequestEvent).streamId,
+          invocationId: (request as UserInputRequestEvent).invocationId,
           timestamp: new Date().toISOString(),
           role: ContentRole.USER,
           requestId: (request as UserInputRequestEvent).requestId,
@@ -279,7 +279,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           await loop.run({
             type: AgentEventType.USER_INPUT_RESPONSE,
             id: randomUUID(),
-            streamId: (request as UserInputRequestEvent).streamId,
+            invocationId: (request as UserInputRequestEvent).invocationId,
             timestamp: new Date().toISOString(),
             role: ContentRole.USER,
             requestId: (request as UserInputRequestEvent).requestId,
@@ -308,7 +308,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         await loop.run({
           type: AgentEventType.USER_INPUT_RESPONSE,
           id: randomUUID(),
-          streamId: (request as UserInputRequestEvent).streamId,
+          invocationId: (request as UserInputRequestEvent).invocationId,
           timestamp: new Date().toISOString(),
           role: ContentRole.USER,
           requestId: (request as UserInputRequestEvent).requestId,

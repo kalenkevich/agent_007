@@ -18,14 +18,14 @@ export interface CompactionProcessorOptions {
   model: LlmModel;
   compactionConfig?: CompactionConfig;
   requestBuilderOptions: BasicRequestProcessorOptions;
-  streamId: string;
+  invocationId: string;
 }
 
 export class CompactionProcessor implements RequestProcessor {
   constructor(private options: CompactionProcessorOptions) {}
 
   async process(state: AgentState): Promise<AgentState> {
-    const {compactionConfig, model, streamId} = this.options;
+    const {compactionConfig, model, invocationId} = this.options;
 
     if (!compactionConfig?.enabled || !state.llmRequest) {
       return state;
@@ -56,7 +56,7 @@ export class CompactionProcessor implements RequestProcessor {
             newHistoryContent.splice(0, removeCount);
 
             events.push(
-              this.createEvent(AgentEventType.COMPACTION, streamId, {
+              this.createEvent(AgentEventType.COMPACTION, invocationId, {
                 role: ContentRole.AGENT,
                 strategy: 'truncate',
                 parts: [
@@ -99,7 +99,7 @@ export class CompactionProcessor implements RequestProcessor {
             ];
 
             events.push(
-              this.createEvent(AgentEventType.COMPACTION, streamId, {
+              this.createEvent(AgentEventType.COMPACTION, invocationId, {
                 role: ContentRole.AGENT,
                 strategy: 'summarize',
                 parts: [
@@ -151,13 +151,13 @@ export class CompactionProcessor implements RequestProcessor {
 
   private createEvent(
     type: AgentEventType,
-    streamId: string,
+    invocationId: string,
     data: Partial<AgentEvent> = {},
   ): AgentEvent {
     return {
       type,
       id: randomUUID(),
-      streamId,
+      invocationId,
       timestamp: new Date().toISOString(),
       ...data,
     } as AgentEvent;

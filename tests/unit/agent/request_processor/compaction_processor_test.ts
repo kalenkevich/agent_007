@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import {AgentEventType} from '../../../../src/agent/agent_event.js';
-import {CompactionProcessor} from '../../../../src/agent/request_processor/compaction_processor.js';
+import {AgentEventType} from '../../../../src/core/agent/agent_event.js';
+import {CompactionProcessor} from '../../../../src/core/agent/request_processor/compaction_processor.js';
 
 describe('CompactionProcessor', () => {
   const mockModel = {
@@ -21,7 +21,7 @@ describe('CompactionProcessor', () => {
         maxTokens: 1000,
       },
       requestBuilderOptions: {} as any,
-      streamId: '123',
+      invocationId: '123',
     });
 
     const state = {
@@ -49,7 +49,7 @@ describe('CompactionProcessor', () => {
         triggerThreshold: 0.8,
       },
       requestBuilderOptions: {} as any,
-      streamId: '123',
+      invocationId: '123',
     });
 
     const state = {
@@ -83,7 +83,7 @@ describe('CompactionProcessor', () => {
         instructions: 'test',
         tools: [],
       } as any,
-      streamId: '123',
+      invocationId: '123',
     });
 
     const state = {

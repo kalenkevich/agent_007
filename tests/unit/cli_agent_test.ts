@@ -1,8 +1,8 @@
 import {describe, expect, it, vi} from 'vitest';
-import {AgentEventType} from '../../src/agent/agent_event.js';
-import {CliAgent} from '../../src/agent/cli_agent/cli_agent.js';
-import type {Tool} from '../../src/tools/tool.js';
-import type {ToolCallPolicy} from '../../src/tools/tool_call_policy.js';
+import {AgentEventType} from '../../src/core/agent/agent_event.js';
+import {LlmAgent as CliAgent} from '../../src/core/agent/llm_agent.js';
+import type {Tool} from '../../src/core/tools/tool.js';
+import type {ToolCallPolicy} from '../../src/core/tools/tool_call_policy.js';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = (await importOriginal()) as any;
@@ -94,19 +94,19 @@ describe('CliAgent - Tool Confirmation', () => {
       tools: [mockTool],
     });
 
-    const streamId = 'stream_123';
+    const invocationId = 'stream_123';
     (agent as any).history = [
-      {type: AgentEventType.START, streamId, id: '1'} as any,
+      {type: AgentEventType.START, invocationId, id: '1'} as any,
       {
         type: AgentEventType.MESSAGE,
-        streamId,
+        invocationId,
         id: '2',
         role: 'user',
         parts: [{type: 'text', text: 'hello'}],
       } as any,
       {
         type: AgentEventType.TOOL_CALL,
-        streamId,
+        invocationId,
         id: '3',
         requestId: 'call_123',
         name: 'test_tool',
@@ -114,7 +114,7 @@ describe('CliAgent - Tool Confirmation', () => {
       } as any,
       {
         type: AgentEventType.USER_INPUT_REQUEST,
-        streamId,
+        invocationId,
         id: '4',
         requestId: 'call_123',
         message: 'Confirm?',
@@ -134,13 +134,13 @@ describe('CliAgent - Tool Confirmation', () => {
         ],
       },
     ];
-    (agent as any).streamId = streamId;
+    (agent as any).invocationId = invocationId;
 
     const events: any[] = [];
     for await (const event of agent.run({
       type: AgentEventType.USER_INPUT_RESPONSE,
       id: 'resp_123',
-      streamId,
+      invocationId,
       timestamp: new Date().toISOString(),
       role: 'user',
       requestId: 'call_123',
@@ -188,19 +188,19 @@ describe('CliAgent - Tool Confirmation', () => {
       tools: [mockTool],
     });
 
-    const streamId = 'stream_123';
+    const invocationId = 'stream_123';
     (agent as any).history = [
-      {type: AgentEventType.START, streamId, id: '1'} as any,
+      {type: AgentEventType.START, invocationId, id: '1'} as any,
       {
         type: AgentEventType.MESSAGE,
-        streamId,
+        invocationId,
         id: '2',
         role: 'user',
         parts: [{type: 'text', text: 'hello'}],
       } as any,
       {
         type: AgentEventType.TOOL_CALL,
-        streamId,
+        invocationId,
         id: '3',
         requestId: 'call_123',
         name: 'test_tool',
@@ -208,7 +208,7 @@ describe('CliAgent - Tool Confirmation', () => {
       } as any,
       {
         type: AgentEventType.USER_INPUT_REQUEST,
-        streamId,
+        invocationId,
         id: '4',
         requestId: 'call_123',
         message: 'Confirm?',
@@ -228,13 +228,13 @@ describe('CliAgent - Tool Confirmation', () => {
         ],
       },
     ];
-    (agent as any).streamId = streamId;
+    (agent as any).invocationId = invocationId;
 
     const events: any[] = [];
     for await (const event of agent.run({
       type: AgentEventType.USER_INPUT_RESPONSE,
       id: 'resp_456',
-      streamId,
+      invocationId,
       timestamp: new Date().toISOString(),
       role: 'user',
       requestId: 'call_123',
@@ -432,11 +432,11 @@ describe('CliAgent - Plan Execution', () => {
       model: mockModel as any,
     });
 
-    const streamId = 'stream_123';
+    const invocationId = 'stream_123';
     (agent as any).history = [
       {
         type: AgentEventType.USER_INPUT_REQUEST,
-        streamId,
+        invocationId,
         id: '1',
         requestId: 'req_123',
         message: 'Do you approve this plan?',
@@ -446,7 +446,7 @@ describe('CliAgent - Plan Execution', () => {
         },
       } as any,
     ];
-    (agent as any).streamId = streamId;
+    (agent as any).invocationId = invocationId;
     (agent as any).historyContent = [
       {
         role: 'agent',
@@ -458,7 +458,7 @@ describe('CliAgent - Plan Execution', () => {
     for await (const event of agent.run({
       type: AgentEventType.USER_INPUT_RESPONSE,
       id: 'resp_123',
-      streamId,
+      invocationId,
       timestamp: new Date().toISOString(),
       role: 'user',
       requestId: 'req_123',

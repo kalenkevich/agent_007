@@ -1,13 +1,13 @@
 import {describe, expect, it, vi} from 'vitest';
-import {AgentEventType} from '../../src/agent/agent_event.js';
-import {CliAgent} from '../../src/agent/cli_agent/cli_agent.js';
-import {AgentLoopType, CoreAgentLoop} from '../../src/core/loop.js';
+import {AgentEventType} from '../../src/core/agent/agent_event.js';
+import {LlmAgent} from '../../src/core/agent/llm_agent.js';
+import {AgentRun, AgentRunType} from '../../src/core/agent_run.js';
 
-vi.mock('../../src/agent/cli_agent/cli_agent.js');
+vi.mock('../../src/core/agent/llm_agent.js');
 
 vi.mock('../../src/model/adaptive_model.js');
 
-vi.mock('../../src/session/session_file_service.js', () => {
+vi.mock('../../src/core/session/session_file_service.js', () => {
   return {
     SessionFileService: class {
       getSession = vi.fn().mockResolvedValue({events: [], title: undefined});
@@ -19,19 +19,19 @@ vi.mock('../../src/session/session_file_service.js', () => {
   };
 });
 
-describe('CoreAgentLoop', () => {
+describe('AgentRun', () => {
   it('should yield events on success', async () => {
     const mockAgent = {
       run: vi.fn().mockImplementation(async function* () {
-        yield {type: AgentEventType.START, streamId: '123'};
-        yield {type: AgentEventType.END, streamId: '123'};
+        yield {type: AgentEventType.START, invocationId: '123'};
+        yield {type: AgentEventType.END, invocationId: '123'};
       }),
     };
-    vi.mocked(CliAgent).mockImplementation(function () {
+    vi.mocked(LlmAgent).mockImplementation(function () {
       return mockAgent as any;
     });
 
-    const loop = new CoreAgentLoop({
+    const loop = new AgentRun({
       models: {
         main: {modelName: 'gemini-3.1-pro-preview', apiKey: 'dummy'},
         util: {modelName: 'gemini-3-flash-preview', apiKey: 'dummy'},
@@ -39,7 +39,7 @@ describe('CoreAgentLoop', () => {
     } as any);
 
     const events: any[] = [];
-    loop.on(AgentLoopType.AGENT_EVENT, (event) => {
+    loop.on(AgentRunType.AGENT_EVENT, (event) => {
       events.push(event);
     });
 
@@ -53,15 +53,15 @@ describe('CoreAgentLoop', () => {
   it('should handle errors and emit ERROR event', async () => {
     const mockAgent = {
       run: vi.fn().mockImplementation(async function* () {
-        yield {type: AgentEventType.START, streamId: '123'};
+        yield {type: AgentEventType.START, invocationId: '123'};
         throw new Error('Test error');
       }),
     };
-    vi.mocked(CliAgent).mockImplementation(function () {
+    vi.mocked(LlmAgent).mockImplementation(function () {
       return mockAgent as any;
     });
 
-    const loop = new CoreAgentLoop({
+    const loop = new AgentRun({
       models: {
         main: {modelName: 'gemini-3.1-pro-preview', apiKey: 'dummy'},
         util: {modelName: 'gemini-3-flash-preview', apiKey: 'dummy'},
@@ -69,7 +69,7 @@ describe('CoreAgentLoop', () => {
     } as any);
 
     const events: any[] = [];
-    loop.on(AgentLoopType.AGENT_EVENT, (event) => {
+    loop.on(AgentRunType.AGENT_EVENT, (event) => {
       events.push(event);
     });
 
@@ -79,20 +79,20 @@ describe('CoreAgentLoop', () => {
     expect(events[0].type).toBe(AgentEventType.START);
     expect(events[1].type).toBe(AgentEventType.ERROR);
     expect(events[1].errorMessage).toBe('Test error');
-    expect(events[1].streamId).toBe('123'); // Should use last seen streamId
+    expect(events[1].invocationId).toBe('123'); // Should use last seen invocationId
   });
 
-  it('should fallback to unknown streamId if error occurs before any event', async () => {
+  it('should fallback to unknown invocationId if error occurs before any event', async () => {
     const mockAgent = {
       run: vi.fn().mockImplementation(async function* () {
         throw new Error('Immediate error');
       }),
     };
-    vi.mocked(CliAgent).mockImplementation(function () {
+    vi.mocked(LlmAgent).mockImplementation(function () {
       return mockAgent as any;
     });
 
-    const loop = new CoreAgentLoop({
+    const loop = new AgentRun({
       models: {
         main: {modelName: 'gemini-3.1-pro-preview', apiKey: 'dummy'},
         util: {modelName: 'gemini-3-flash-preview', apiKey: 'dummy'},
@@ -100,7 +100,7 @@ describe('CoreAgentLoop', () => {
     } as any);
 
     const events: any[] = [];
-    loop.on(AgentLoopType.AGENT_EVENT, (event) => {
+    loop.on(AgentRunType.AGENT_EVENT, (event) => {
       events.push(event);
     });
 
@@ -109,21 +109,21 @@ describe('CoreAgentLoop', () => {
     expect(events.length).toBe(1);
     expect(events[0].type).toBe(AgentEventType.ERROR);
     expect(events[0].errorMessage).toBe('Immediate error');
-    expect(events[0].streamId).toBe('unknown');
+    expect(events[0].invocationId).toBe('unknown');
   });
 
   it('should append events to session service', async () => {
     const mockAgent = {
       run: vi.fn().mockImplementation(async function* () {
-        yield {type: AgentEventType.START, streamId: '123'};
-        yield {type: AgentEventType.END, streamId: '123'};
+        yield {type: AgentEventType.START, invocationId: '123'};
+        yield {type: AgentEventType.END, invocationId: '123'};
       }),
     };
-    vi.mocked(CliAgent).mockImplementation(function () {
+    vi.mocked(LlmAgent).mockImplementation(function () {
       return mockAgent as any;
     });
 
-    const loop = new CoreAgentLoop({
+    const loop = new AgentRun({
       models: {
         main: {modelName: 'gemini-3.1-pro-preview', apiKey: 'dummy'},
         util: {modelName: 'gemini-3-flash-preview', apiKey: 'dummy'},

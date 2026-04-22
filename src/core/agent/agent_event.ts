@@ -41,7 +41,7 @@ export interface BaseAgentEvent {
   // Event unique id
   id: string;
   // Agent stream / execution id
-  streamId: string;
+  invocationId: string;
   timestamp: string;
   role: ContentRole;
   parts?: ContentPart[];

@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest';
-import {AgentEventType, type AgentEvent} from '../../src/agent/agent_event.js';
-import {UtilLlm} from '../../src/model/util_llm.js';
+import {AgentEventType, type AgentEvent} from '../../src/core/agent/agent_event.js';
+import {UtilLlm} from '../../src/core/model/util_llm.js';
 
 describe('UtilLlm', () => {
   it('should generate a session title', async () => {
@@ -20,7 +20,7 @@ describe('UtilLlm', () => {
     const events: AgentEvent[] = [
       {
         id: '1',
-        streamId: 's1',
+        invocationId: 's1',
         timestamp: '...',
         role: 'user',
         type: AgentEventType.MESSAGE,
@@ -28,7 +28,7 @@ describe('UtilLlm', () => {
       },
       {
         id: '2',
-        streamId: 's1',
+        invocationId: 's1',
         timestamp: '...',
         role: 'agent',
         type: AgentEventType.MESSAGE,

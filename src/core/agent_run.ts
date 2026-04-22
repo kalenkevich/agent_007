@@ -103,10 +103,10 @@ export class AgentRun extends EventEmitter {
 
     await this.init();
 
-    let streamId = 'unknown';
+    let invocationId = 'unknown';
     try {
       for await (const event of this.agent!.run(userInput)) {
-        streamId = event.streamId;
+        invocationId = event.invocationId;
 
         if (this.sessionId) {
           this.sessionService.appendEvent(this.sessionId, event);
@@ -147,7 +147,7 @@ export class AgentRun extends EventEmitter {
       const error = e as Error;
       const errorEvent: ErrorEvent = {
         id: randomUUID(),
-        streamId: streamId,
+        invocationId: invocationId,
         timestamp: new Date().toISOString(),
         role: ContentRole.AGENT,
         type: AgentEventType.ERROR,

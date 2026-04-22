@@ -1,8 +1,8 @@
 import {describe, expect, it} from 'vitest';
-import {AgentEventType, type AgentEvent} from '../../src/agent/agent_event.js';
-import {loadConfig} from '../../src/config/config_loader.js';
-import {AdaptiveLlmModel} from '../../src/model/adaptive_model.js';
-import {UtilLlm} from '../../src/model/util_llm.js';
+import {AgentEventType, type AgentEvent} from '../../src/core/agent/agent_event.js';
+import {loadConfig} from '../../src/core/config/config_loader.js';
+import {AdaptiveLlmModel} from '../../src/core/model/adaptive_model.js';
+import {UtilLlm} from '../../src/core/model/util_llm.js';
 
 describe('UtilLlm Integration', () => {
   it('should generate a session title using real model', async () => {
@@ -17,7 +17,7 @@ describe('UtilLlm Integration', () => {
     const events: AgentEvent[] = [
       {
         id: '1',
-        streamId: 's1',
+        invocationId: 's1',
         timestamp: new Date().toISOString(),
         role: 'user',
         type: AgentEventType.MESSAGE,
@@ -25,7 +25,7 @@ describe('UtilLlm Integration', () => {
       },
       {
         id: '2',
-        streamId: 's1',
+        invocationId: 's1',
         timestamp: new Date().toISOString(),
         role: 'agent',
         type: AgentEventType.MESSAGE,

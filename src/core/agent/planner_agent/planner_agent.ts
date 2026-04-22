@@ -25,7 +25,7 @@ export class PlannerAgent implements Agent {
   readonly model: LlmModel;
   readonly tools?: ToolUnion[];
 
-  private streamId?: string;
+  private invocationId?: string;
   private history: AgentEvent[] = [];
   private abortController?: AbortController;
 
@@ -36,7 +36,7 @@ export class PlannerAgent implements Agent {
 
   async *run(userInput: UserInput): AsyncGenerator<AgentEvent, void, unknown> {
     this.abortController = new AbortController();
-    this.streamId = randomUUID();
+    this.invocationId = randomUUID();
 
     yield this.createEvent(AgentEventType.START);
 
@@ -114,7 +114,7 @@ Respond ONLY with the plan.`;
     const event = {
       type,
       id: randomUUID(),
-      streamId: this.streamId!,
+      invocationId: this.invocationId!,
       timestamp: new Date().toISOString(),
       ...data,
     } as AgentEvent;

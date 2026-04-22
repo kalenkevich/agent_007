@@ -43,7 +43,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
               if (i === idx) {
                 return {
                   ...msg,
-                  invocationId: event.streamId,
+                  invocationId: event.invocationId,
                   content: addedText,
                   thinkingText: addedThought ? [addedThought] : [],
                   final: true,
@@ -96,7 +96,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
             ...newState.messages,
             {
               id: newId,
-              invocationId: event.streamId,
+              invocationId: event.invocationId,
               author: targetRole,
               type: ChatMessageType.TEXT,
               content: addedText,
@@ -114,7 +114,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
         ...newState.messages,
         {
           id: crypto.randomUUID(),
-          invocationId: event.streamId,
+          invocationId: event.invocationId,
           author: event.role ?? ContentRole.AGENT,
           type: ChatMessageType.TEXT,
           content: `[Compaction Strategy: ${event.strategy}]\n${
@@ -153,7 +153,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
         ...newState.messages,
         {
           id: crypto.randomUUID(),
-          invocationId: event.streamId,
+          invocationId: event.invocationId,
           author: event.role ?? ContentRole.AGENT,
           type: ChatMessageType.TEXT,
           content: `⚠️ [Error]: ${event.errorMessage}`,
@@ -189,7 +189,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           ...newState.messages,
           {
             id: crypto.randomUUID(),
-            invocationId: event.streamId,
+            invocationId: event.invocationId,
             author: event.role ?? ContentRole.AGENT,
             type: ChatMessageType.TOOL_EXECUTION,
             functionId: event.requestId,
@@ -236,7 +236,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           ...newState.messages,
           {
             id: crypto.randomUUID(),
-            invocationId: event.streamId,
+            invocationId: event.invocationId,
             author: event.role ?? ContentRole.AGENT,
             type: ChatMessageType.TOOL_EXECUTION,
             functionId: event.requestId,
@@ -268,7 +268,7 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
         ...newState.messages,
         {
           id: crypto.randomUUID(),
-          invocationId: event.streamId,
+          invocationId: event.invocationId,
           author: event.role ?? ContentRole.AGENT,
           type: ChatMessageType.TOOL_CONFIRMATION,
           content: `❓ [User Input Required]: ${event.message}`,

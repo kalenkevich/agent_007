@@ -63,7 +63,7 @@ export class LlmAgent implements Agent {
   readonly tools: ToolUnion[];
 
   readonly model: LlmModel;
-  private streamId?: string;
+  private invocationId?: string;
   private history: AgentEvent[] = [];
   private historyContent: Content[] = [];
   private thinkingConfig?: ThinkingConfig;
@@ -127,7 +127,7 @@ export class LlmAgent implements Agent {
 
     if (lastEvent && lastEvent.type === AgentEventType.USER_INPUT_REQUEST) {
       logger.debug('[CliAgent] Resuming from USER_INPUT_REQUEST');
-      this.streamId = lastEvent.streamId;
+      this.invocationId = lastEvent.invocationId;
       skipInitialEvents = true;
 
       yield* this.handleResume(lastEvent, userInput);
@@ -136,7 +136,7 @@ export class LlmAgent implements Agent {
     if (!skipInitialEvents) {
       const userContent = toContentParts(userInput as ContentPart[]);
       this.abortController = new AbortController();
-      this.streamId = randomUUID();
+      this.invocationId = randomUUID();
 
       yield this.createEvent(AgentEventType.START);
       yield this.createEvent(AgentEventType.MESSAGE, {
@@ -168,7 +168,7 @@ export class LlmAgent implements Agent {
           tools: this.tools,
           thinkingConfig: this.thinkingConfig,
         },
-        streamId: this.streamId!,
+        invocationId: this.invocationId!,
       });
 
       let state: AgentState = {
@@ -442,7 +442,7 @@ export class LlmAgent implements Agent {
     return {
       type,
       id: randomUUID(),
-      streamId: this.streamId!,
+      invocationId: this.invocationId!,
       timestamp: new Date().toISOString(),
       ...data,
     } as AgentEvent;
