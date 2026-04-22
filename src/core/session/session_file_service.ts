@@ -82,6 +82,7 @@ export class SessionFileService {
     await fs.mkdir(sessionDir, {recursive: true});
 
     await saveToFile(getSessionMetadataFileName(this.rootDir, session.id), {
+      id: session.id,
       title: session.title,
       agentName: session.agentName,
       timestamp: session.timestamp,
@@ -139,9 +140,13 @@ export class SessionFileService {
     const result = await Promise.all(
       folders.map(async (f) => {
         try {
-          return await loadFileData<SessionMetadata>(
+          const data = await loadFileData<SessionMetadata>(
             path.join(this.rootDir, f, 'metadata.json'),
           );
+          if (data) {
+            data.id = f;
+          }
+          return data;
         } catch (e) {
           console.warn(
             `Failed to load metadata for session in folder ${f}:`,

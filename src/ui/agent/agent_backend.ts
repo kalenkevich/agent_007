@@ -2,6 +2,7 @@ import {BrowserWindow, ipcMain} from 'electron';
 import {
   AgentLoop,
   AgentLoopType,
+  SessionFileService,
   configStore,
   loadConfig,
   type Config,
@@ -12,6 +13,8 @@ enum IpcEvents {
   INIT_SESSION = 'init-session',
   SUBMIT_API_KEY = 'submit-api-key',
   AGENT_EVENT = 'agent-event',
+  GET_SESSIONS = 'get-sessions',
+  GET_SESSION = 'get-session',
 }
 
 export class AgentBackend {
@@ -19,6 +22,7 @@ export class AgentBackend {
   private loop?: AgentLoop;
   private initialized = false;
   private config?: Config;
+  private sessionService = new SessionFileService();
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow;
@@ -88,5 +92,31 @@ export class AgentBackend {
         };
       }
     });
+
+    ipcMain.handle(IpcEvents.GET_SESSIONS, async () => {
+      try {
+        const sessions = await this.sessionService.listSessions();
+        return {success: true, sessions};
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    });
+
+    ipcMain.handle(IpcEvents.GET_SESSION, async (event, sessionId: string) => {
+      try {
+        const session = await this.sessionService.getSession(sessionId);
+        return {success: true, session};
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    });
   }
 }
+
+

@@ -8,6 +8,10 @@ import {agentClient} from '../agent/agent_client';
 import {ChatMessageType, type ChatMessage} from '../chat/chat_message';
 import {type ChatState} from '../chat/chat_state';
 import {processEvent} from '../chat/event_processor';
+import {Sidebar} from '../components/Sidebar';
+import {ChatHeader} from '../components/ChatHeader';
+import {MessageList} from '../components/MessageList';
+import {ChatInput} from '../components/ChatInput';
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -16,6 +20,9 @@ export default function App() {
   const [isThinking, setIsThinking] = useState(false);
   const [pendingUserInput, setPendingUserInput] = useState<AgentEvent | null>(
     null,
+  );
+  const [activeSessionId, setActiveSessionId] = useState<string | undefined>(
+    undefined,
   );
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -143,6 +150,35 @@ export default function App() {
     handleSend(cmd);
   };
 
+  const handleSelectSession = async (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    try {
+      const res = await agentClient.getSession(sessionId);
+      if (res.success && res.session) {
+        let state: ChatState = {
+          messages: [],
+          isLoading: false,
+          isThinking: false,
+          pendingUserInput: null,
+          activeStreamMessageId: undefined,
+        };
+
+        for (const ev of res.session.events) {
+          state = processEvent(state, ev);
+        }
+
+        setMessages(state.messages);
+        setIsLoading(state.isLoading);
+        setIsThinking(state.isThinking);
+        setPendingUserInput(state.pendingUserInput);
+        activeStreamMessageIdRef.current = state.activeStreamMessageId || null;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      appendMessage(`IPC Error: ${errorMessage}`, false);
+    }
+  };
+
   return (
     <>
       {/* Draggable title bar for desktop window */}
@@ -155,224 +191,30 @@ export default function App() {
       <div className="orb orb-secondary"></div>
 
       <div className="app-container">
-        {/* Sidebar / Profile Panel */}
-        <aside className="sidebar glass-panel">
-          <div className="brand">
-            <div className="logo-icon">🤖</div>
-            <h1>
-              Agent<span className="gradient-text">007</span>
-            </h1>
-          </div>
+        <Sidebar
+          isLoading={isLoading}
+          isThinking={isThinking}
+          onQuickAction={handleQuickAction}
+          onSelectSession={handleSelectSession}
+          activeSessionId={activeSessionId}
+        />
 
-          <div className="status-card">
-            <div className="status-indicator">
-              <span
-                className="pulse-dot"
-                style={{
-                  background: isLoading || isThinking ? '#ffbc00' : '#00ff88',
-                  boxShadow:
-                    isLoading || isThinking
-                      ? '0 0 12px #ffbc00'
-                      : '0 0 12px #00ff88',
-                }}></span>
-              <span className="status-text">
-                {isLoading
-                  ? 'Loading...'
-                  : isThinking
-                    ? 'Thinking...'
-                    : 'Secure & Active'}
-              </span>
-            </div>
-            <p className="status-detail">Connecting via Local Neural Engine</p>
-          </div>
-
-          <div className="quick-actions">
-            <h3>Quick Commands</h3>
-            <button
-              className="btn btn-action"
-              onClick={() => handleQuickAction('Who are you?')}>
-              Identity Check
-            </button>
-            <button
-              className="btn btn-action"
-              onClick={() => handleQuickAction('Analyze current workspace')}>
-              Scan Workspace
-            </button>
-            <button
-              className="btn btn-action"
-              onClick={() => handleQuickAction('/init')}>
-              Initialize Project
-            </button>
-            <button
-              className="btn btn-action"
-              onClick={() =>
-                handleQuickAction('/plan refactor authentication module')
-              }>
-              Plan Refactor
-            </button>
-          </div>
-
-          <div className="system-info">
-            <p>System Architecture: Node.js/ES2022</p>
-            <p>Interface: React & Electron</p>
-          </div>
-        </aside>
-
-        {/* Main Chat Panel */}
         <main className="chat-area">
-          <header className="chat-header glass-panel">
-            <div className="header-info">
-              <h2>Agent Console</h2>
-              <p>Model: Default Gemini Llm</p>
-            </div>
-          </header>
+          <ChatHeader />
 
-          {/* Message Stream */}
-          <div
-            className="message-stream"
-            id="message-stream"
-            ref={messageStreamRef}>
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`message ${msg.author === ContentRole.USER ? 'user-msg' : 'system-msg'}`}>
-                <div className="avatar">
-                  {msg.author === ContentRole.USER ? '👤' : '🤖'}
-                </div>
-                <div className="msg-content">
-                  {msg.thinkingText && msg.thinkingText.length > 0 && (
-                    <div
-                      style={{
-                        fontStyle: 'italic',
-                        opacity: 0.7,
-                        marginBottom: '8px',
-                        padding: '8px',
-                        background: 'rgba(0,0,0,0.2)',
-                        borderRadius: '8px',
-                      }}>
-                      💭 {msg.thinkingText.join('\n')}
-                    </div>
-                  )}
-                  {msg.content && (
-                    <div style={{whiteSpace: 'pre-wrap'}}>{msg.content}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <MessageList messages={messages} messageStreamRef={messageStreamRef} />
 
-          {/* Interactive Input Area */}
-          <footer className="chat-footer glass-panel">
-            {showApiKeyPrompt ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  background: 'rgba(0,0,0,0.4)',
-                  padding: '1rem',
-                  borderRadius: '16px',
-                }}>
-                <p style={{fontWeight: 600, color: '#00f2fe'}}>
-                  🔑 Please enter your Gemini API Key:
-                </p>
-                <div style={{display: 'flex', gap: '1rem'}}>
-                  <input
-                    type="password"
-                    placeholder="AIzaSy..."
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: '0.5rem',
-                      borderRadius: '8px',
-                      background: 'rgba(255,255,255,0.1)',
-                      color: '#fff',
-                    }}
-                  />
-                  <button
-                    className="btn btn-action"
-                    style={{background: '#00ff88', color: '#000'}}
-                    onClick={handleSubmitApiKey}>
-                    Submit
-                  </button>
-                </div>
-              </div>
-            ) : pendingUserInput ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  background: 'rgba(0,0,0,0.4)',
-                  padding: '1rem',
-                  borderRadius: '16px',
-                }}>
-                <p style={{fontWeight: 600, color: '#00f2fe'}}>
-                  ❓ {pendingUserInput.message}
-                </p>
-                <div style={{display: 'flex', gap: '1rem'}}>
-                  <button
-                    className="btn btn-action"
-                    style={{
-                      flex: 1,
-                      textAlign: 'center',
-                      background: '#00ff88',
-                      color: '#000',
-                    }}
-                    onClick={() => handleUserInputResponse('accept')}>
-                    Yes
-                  </button>
-                  <button
-                    className="btn btn-action"
-                    style={{
-                      flex: 1,
-                      textAlign: 'center',
-                      background: '#ff4444',
-                      color: '#fff',
-                    }}
-                    onClick={() => handleUserInputResponse('decline')}>
-                    No
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="input-wrapper">
-                <input
-                  type="text"
-                  id="user-input"
-                  placeholder="Type your command..."
-                  autoComplete="off"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSend(inputValue);
-                    }
-                  }}
-                />
-                <button
-                  className="btn-send"
-                  id="btn-send"
-                  onClick={() => handleSend(inputValue)}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
-                      d="M2 12L22 2M2 12l10 4M2 12l7-9M22 2L12 22"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </footer>
+          <ChatInput
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleSend={handleSend}
+            showApiKeyPrompt={showApiKeyPrompt}
+            apiKeyInput={apiKeyInput}
+            setApiKeyInput={setApiKeyInput}
+            handleSubmitApiKey={handleSubmitApiKey}
+            pendingUserInput={pendingUserInput}
+            handleUserInputResponse={handleUserInputResponse}
+          />
         </main>
       </div>
     </>

@@ -149,6 +149,74 @@ body {
   margin-top: 0.25rem;
 }
 
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sessions-list h3 {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sessions-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.session-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+
+.session-item.active {
+  background: rgba(138, 43, 226, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+}
+
+.session-icon {
+  font-size: 1.1rem;
+}
+
+.session-details {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.session-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
 .quick-actions {
   display: flex;
   flex-direction: column;

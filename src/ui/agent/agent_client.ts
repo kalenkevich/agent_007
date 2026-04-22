@@ -4,6 +4,8 @@ import {
   UserCommandType,
   UserInputAction,
   type AgentEvent,
+  type Session,
+  type SessionMetadata,
   type UserInput,
 } from '@agent007/core';
 
@@ -21,6 +23,16 @@ declare global {
       submitApiKey: (
         key: string,
       ) => Promise<{success: boolean; error?: string}>;
+      getSessions: () => Promise<{
+        success: boolean;
+        sessions?: SessionMetadata[];
+        error?: string;
+      }>;
+      getSession: (sessionId: string) => Promise<{
+        success: boolean;
+        session?: Session;
+        error?: string;
+      }>;
       onAgentEvent: (callback: (event: AgentEvent) => void) => void;
     };
   }
@@ -82,6 +94,20 @@ export class AgentClient {
   async submitApiKey(key: string) {
     if (this.api) {
       return await this.api.submitApiKey(key);
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async getSessions() {
+    if (this.api) {
+      return await this.api.getSessions();
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async getSession(sessionId: string) {
+    if (this.api) {
+      return await this.api.getSession(sessionId);
     }
     return {success: false, error: 'electronAPI not available'};
   }

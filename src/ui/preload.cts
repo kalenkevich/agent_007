@@ -8,7 +8,10 @@ enum IpcEvents {
   INIT_SESSION = 'init-session',
   SUBMIT_API_KEY = 'submit-api-key',
   AGENT_EVENT = 'agent-event',
+  GET_SESSIONS = 'get-sessions',
+  GET_SESSION = 'get-session',
 }
+
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sendUserInput: (message: UserInput) =>
@@ -16,6 +19,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   initSession: () => ipcRenderer.invoke(IpcEvents.INIT_SESSION),
   submitApiKey: (key: string) =>
     ipcRenderer.invoke(IpcEvents.SUBMIT_API_KEY, key),
+  getSessions: () => ipcRenderer.invoke(IpcEvents.GET_SESSIONS),
+  getSession: (sessionId: string) =>
+    ipcRenderer.invoke(IpcEvents.GET_SESSION, sessionId),
   onAgentEvent: (callback: (event: AgentEvent | ErrorEvent) => void) => {
     ipcRenderer.on(
       IpcEvents.AGENT_EVENT,
