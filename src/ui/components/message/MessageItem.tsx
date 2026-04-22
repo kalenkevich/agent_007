@@ -4,10 +4,12 @@ import {
   type ChatMessage,
   type ToolConfirmationChatMessage,
   type ToolExecutionChatMessage,
+  type ThinkingChatMessage,
 } from '../../chat/chat_message';
 import {TextMessage} from './TextMessage';
 import {ToolConfirmationMessage} from './ToolConfirmationMessage';
 import {ToolExecutionMessage} from './ToolExecutionMessage';
+import {ThinkingMessage} from './ThinkingMessage';
 
 interface MessageItemProps {
   msg: ChatMessage;
@@ -30,6 +32,9 @@ export function MessageItem({msg, onUserInputResponse}: MessageItemProps) {
           onUserInputResponse={onUserInputResponse}
         />
       );
+    }
+    case ChatMessageType.THINKING: {
+      return <ThinkingMessage msg={msg as ThinkingChatMessage} />;
     }
     default: {
       // assumeExhaustive(msg.type);

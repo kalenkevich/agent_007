@@ -162,4 +162,32 @@ describe('event_processor', () => {
       cost: {amount: 0.001, currency: 'USD'},
     });
   });
+  it('should handle MESSAGE events with separate thinking messages', () => {
+    const event1: AgentEvent = {
+      type: 'MESSAGE',
+      role: 'agent',
+      partial: true,
+      parts: [{type: 'thought', thought: 'Thinking process...'}],
+    } as AgentEvent;
+
+    const state1 = processEvent(initialState, event1);
+    expect(state1.messages.length).toBe(1);
+    expect(state1.messages[0].type).toBe('thinking');
+    expect(state1.messages[0].content).toBe('Thinking process...');
+    expect(state1.activeStreamMessageId).toBe(state1.messages[0].id);
+
+    const event2: AgentEvent = {
+      type: 'MESSAGE',
+      role: 'agent',
+      partial: true,
+      parts: [{type: 'text', text: 'Final result'}],
+    } as AgentEvent;
+
+    const state2 = processEvent(state1, event2);
+    expect(state2.messages.length).toBe(2);
+    expect(state2.messages[0].final).toBe(true); // Old thinking message is now final
+    expect(state2.messages[1].type).toBe('text');
+    expect(state2.messages[1].content).toBe('Final result');
+    expect(state2.activeStreamMessageId).toBe(state2.messages[1].id);
+  });
 });

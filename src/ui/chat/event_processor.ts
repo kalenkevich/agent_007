@@ -15,22 +15,6 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
 
     case AgentEventType.MESSAGE: {
       if (event.parts) {
-        let addedThought = '';
-        let addedText = '';
-
-        for (const part of event.parts) {
-          if (part.type === 'thought') {
-            addedThought += part.thought;
-            newState.isThinking = true;
-          } else if (part.type === 'text') {
-            addedText += part.text;
-            newState.isThinking = false;
-          }
-        }
-
-        const activeMsg = newState.messages.find(
-          (m) => m.id === newState.activeStreamMessageId,
-        );
         const targetRole = event.role;
 
         if (targetRole === ContentRole.USER) {
@@ -41,11 +25,11 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
             const idx = newState.messages.length - 1 - userInvIdx;
             newState.messages = newState.messages.map((msg, i) => {
               if (i === idx) {
+                const text = event.parts?.map(p => p.type === 'text' ? p.text : '').join('') || '';
                 return {
                   ...msg,
                   invocationId: event.invocationId,
-                  content: addedText,
-                  thinkingText: addedThought ? [addedThought] : [],
+                  content: text,
                   final: true,
                 };
               }
@@ -55,55 +39,67 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           }
         }
 
-        if (
-          activeMsg &&
-          activeMsg.type === ChatMessageType.TEXT &&
-          activeMsg.author === targetRole
-        ) {
-          newState.messages = newState.messages.map((msg) => {
-            if (
-              msg.id === newState.activeStreamMessageId &&
-              msg.type === ChatMessageType.TEXT
-            ) {
-              if (!event.partial) {
-                return {
-                  ...msg,
-                  thinkingText: addedThought ? [addedThought] : [],
-                  content: addedText,
-                };
-              } else {
-                const updatedThinking = [...(msg.thinkingText || [])];
-                if (addedThought) {
-                  if (updatedThinking.length > 0) {
-                    updatedThinking[updatedThinking.length - 1] += addedThought;
-                  } else {
-                    updatedThinking.push(addedThought);
-                  }
+        for (const part of event.parts) {
+          const isThought = part.type === 'thought';
+          const partContent = isThought ? part.thought : (part.type === 'text' ? part.text : '');
+          if (!partContent) continue;
+
+          if (isThought) {
+            newState.isThinking = true;
+          } else {
+            newState.isThinking = false;
+          }
+
+          const activeMsg = newState.messages.find(
+            (m) => m.id === newState.activeStreamMessageId,
+          );
+
+          const targetType = isThought ? ChatMessageType.THINKING : ChatMessageType.TEXT;
+
+          if (activeMsg && activeMsg.type === targetType && activeMsg.author === targetRole) {
+            newState.messages = newState.messages.map((msg) => {
+              if (msg.id === newState.activeStreamMessageId && msg.type === targetType) {
+                if (!event.partial) {
+                  return {
+                    ...msg,
+                    content: partContent,
+                  };
+                } else {
+                  return {
+                    ...msg,
+                    content: msg.content + partContent,
+                  };
                 }
-                return {
-                  ...msg,
-                  thinkingText: updatedThinking,
-                  content: msg.content + addedText,
-                };
               }
+              return msg;
+            });
+          } else {
+            if (activeMsg) {
+              newState.messages = newState.messages.map((msg) => {
+                if (msg.id === newState.activeStreamMessageId) {
+                  return {
+                    ...msg,
+                    final: true,
+                  };
+                }
+                return msg;
+              });
             }
-            return msg;
-          });
-        } else {
-          const newId = crypto.randomUUID();
-          newState.activeStreamMessageId = newId;
-          newState.messages = [
-            ...newState.messages,
-            {
-              id: newId,
-              invocationId: event.invocationId,
-              author: targetRole,
-              type: ChatMessageType.TEXT,
-              content: addedText,
-              thinkingText: addedThought ? [addedThought] : [],
-              final: false,
-            },
-          ];
+
+            const newId = crypto.randomUUID();
+            newState.activeStreamMessageId = newId;
+            newState.messages = [
+              ...newState.messages,
+              {
+                id: newId,
+                invocationId: event.invocationId,
+                author: targetRole,
+                type: targetType,
+                content: partContent,
+                final: false,
+              },
+            ];
+          }
         }
       }
       break;

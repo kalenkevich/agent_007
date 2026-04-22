@@ -6,7 +6,7 @@ interface CollapsibleContextProps {
 }
 
 const CollapsibleContext = createContext<CollapsibleContextProps | undefined>(
-  undefined
+  undefined,
 );
 
 export interface CollapsibleProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -56,8 +56,7 @@ export function Collapsible({
   );
 }
 
-export interface CollapsibleTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface CollapsibleTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
@@ -72,13 +71,13 @@ export function CollapsibleTrigger({
   const context = useContext(CollapsibleContext);
   if (!context) {
     throw new Error(
-      'CollapsibleTrigger must be used within a Collapsible component'
+      'CollapsibleTrigger must be used within a Collapsible component',
     );
   }
 
   return (
     <button
-      onClick={e => {
+      onClick={(e) => {
         context.setOpen(!context.open);
         onClick?.(e);
       }}
@@ -112,8 +111,7 @@ export function CollapsibleTrigger({
   );
 }
 
-export interface CollapsibleContentProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface CollapsibleContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
@@ -125,7 +123,7 @@ export function CollapsibleContent({
   const context = useContext(CollapsibleContext);
   if (!context) {
     throw new Error(
-      'CollapsibleContent must be used within a Collapsible component'
+      'CollapsibleContent must be used within a Collapsible component',
     );
   }
 

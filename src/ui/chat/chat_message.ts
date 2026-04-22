@@ -6,7 +6,8 @@ import {ContentRole, UserInputAction} from '@agent007/core';
 export type ChatMessage =
   | TextChatMessage
   | ToolExecutionChatMessage
-  | ToolConfirmationChatMessage;
+  | ToolConfirmationChatMessage
+  | ThinkingChatMessage;
 
 /**
  * Chat message type enum.
@@ -15,6 +16,7 @@ export enum ChatMessageType {
   TEXT = 'text',
   TOOL_CONFIRMATION = 'tool_confirmation',
   TOOL_EXECUTION = 'tool_execution',
+  THINKING = 'thinking',
 }
 
 /**
@@ -39,7 +41,6 @@ export interface BaseChatMessage {
   authorName?: string;
   attachments?: ChatArtifact[];
   final: boolean;
-  thinkingText?: string[];
 }
 
 /**
@@ -95,4 +96,12 @@ export interface ToolExecutionChatMessage extends BaseChatMessage {
   structuredResponse?: string; // JSON string of the structured response.
   confirmationText?: string;
   confirmationStatus?: ToolConfirmationStatus;
+}
+
+/**
+ * Thinking chat message interface.
+ */
+export interface ThinkingChatMessage extends BaseChatMessage {
+  type: ChatMessageType.THINKING;
+  content: string;
 }

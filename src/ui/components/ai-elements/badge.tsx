@@ -78,7 +78,7 @@ export function Badge({
   };
 
   return (
-    <span style={{ ...getStyles(), ...style }} {...props}>
+    <span style={{...getStyles(), ...style}} {...props}>
       {children}
     </span>
   );

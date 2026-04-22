@@ -61,9 +61,11 @@ export const getStatusBadge = (state: ToolHeaderProps['state']) => {
   }
 };
 
-import {Collapsible, CollapsibleContent, CollapsibleTrigger} from './collapsible';
-
-
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from './collapsible';
 
 export function Tool({children, className}: ToolProps) {
   return (
