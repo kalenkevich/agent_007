@@ -11,9 +11,10 @@ import {BUILD_IN_TOOLS} from '../tools/build_in/index.js';
 import {SkillToolset} from '../tools/skills/skill_toolset.js';
 import type {Tool, ToolUnion} from '../tools/tool.js';
 import {
-  type ToolCallPolicy,
-  DEFAULT_POLICY,
-} from '../tools/tool_call_policy.js';
+  type ToolExecutionPolicy,
+  ToolExecutionPolicyType,
+  executePolicy,
+} from '../tools/tool_execution_policy.js';
 import {isToolset} from '../tools/toolset.js';
 import {
   type UserInput,
@@ -50,7 +51,7 @@ export interface LlmAgentOptions {
   skills?: Skill[];
   thinkingConfig?: ThinkingConfig;
   compactionConfig?: CompactionConfig;
-  toolPolicies?: Record<string, ToolCallPolicy>;
+  toolExecutionPolicy?: ToolExecutionPolicy;
   tools?: ToolUnion[];
   instructions?: string;
 }
@@ -67,7 +68,7 @@ export class LlmAgent implements Agent {
   private history: AgentEvent[] = [];
   private historyContent: Content[] = [];
   private thinkingConfig?: ThinkingConfig;
-  private toolPolicies: Record<string, ToolCallPolicy>;
+  private toolExecutionPolicy: ToolExecutionPolicy;
   private compactionConfig?: CompactionConfig;
   private abortController?: AbortController;
 
@@ -81,7 +82,9 @@ export class LlmAgent implements Agent {
     this.historyContent = this.history
       .map((c) => getContentFromAgentEvent(c))
       .filter(Boolean) as Content[];
-    this.toolPolicies = options.toolPolicies || {};
+    this.toolExecutionPolicy = options.toolExecutionPolicy || {
+      type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION,
+    };
     this.tools = options.tools || [
       ...BUILD_IN_TOOLS,
       new SkillToolset(options.skills || [], {
@@ -420,8 +423,11 @@ export class LlmAgent implements Agent {
       return false;
     }
 
-    const policy = this.toolPolicies[toolCall.name] || DEFAULT_POLICY;
-    if (policy.confirmationRequired) {
+    const shouldConfirm = await executePolicy(this.toolExecutionPolicy, {
+      toolName: toolCall.name,
+      args: toolCall.args as Record<string, unknown>,
+    });
+    if (shouldConfirm) {
       logger.debug(`[CliAgent] Tool ${toolCall.name} requires confirmation`);
       yield this.createEvent(AgentEventType.USER_INPUT_REQUEST, {
         role: ContentRole.AGENT,
@@ -468,6 +474,19 @@ export class LlmAgent implements Agent {
 
   getHistory(): AgentEvent[] {
     return [...this.history];
+  }
+
+  updateToolExecutionPolicy(policy: ToolExecutionPolicy) {
+    this.toolExecutionPolicy = policy;
+    const event = this.createEvent(
+      AgentEventType.UPDATE_TOOL_EXECUTION_POLICY,
+      {
+        role: ContentRole.AGENT,
+        policy,
+        final: true,
+      },
+    );
+    this.history.push(event);
   }
 
   async abort(): Promise<void> {

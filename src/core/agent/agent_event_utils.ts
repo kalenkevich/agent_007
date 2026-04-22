@@ -10,6 +10,7 @@ import {
   isUsageEvent,
   isUserInputRequestEvent,
   isUserInputResponseEvent,
+  isUpdateToolExecutionPolicyEvent,
 } from './agent_event.js';
 
 export function getContentFromAgentEvent(
@@ -21,6 +22,7 @@ export function getContentFromAgentEvent(
     isAgentEndEvent(agentEvent) ||
     isUserInputRequestEvent(agentEvent) ||
     isUserInputResponseEvent(agentEvent) ||
+    isUpdateToolExecutionPolicyEvent(agentEvent) ||
     agentEvent.partial
   ) {
     return undefined;

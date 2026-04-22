@@ -297,7 +297,9 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
     }
 
     default: {
-      assumeExhaustiveAllowing<AgentEventType.USAGE>(event.type);
+      assumeExhaustiveAllowing<
+        AgentEventType.USAGE | AgentEventType.UPDATE_TOOL_EXECUTION_POLICY
+      >(event.type);
       break;
     }
   }

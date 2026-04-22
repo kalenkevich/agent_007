@@ -2,7 +2,9 @@ import {describe, expect, it, vi} from 'vitest';
 import {AgentEventType} from '../../src/core/agent/agent_event.js';
 import {LlmAgent as CliAgent} from '../../src/core/agent/llm_agent.js';
 import type {Tool} from '../../src/core/tools/tool.js';
-import type {ToolCallPolicy} from '../../src/core/tools/tool_call_policy.js';
+import {
+  ToolExecutionPolicies,
+} from '../../src/core/tools/tool_execution_policy.js';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = (await importOriginal()) as any;
@@ -41,11 +43,13 @@ describe('CliAgent - Tool Confirmation', () => {
       toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy: ToolCallPolicy = {confirmationRequired: true};
+    const policy = ToolExecutionPolicies.perTool({
+      test_tool: ToolExecutionPolicies.alwaysRequestConfirmation(),
+    });
 
     const agent = new CliAgent({
       model: mockModel as any,
-      toolPolicies: {test_tool: policy},
+      toolExecutionPolicy: policy,
       tools: [mockTool],
     });
 
@@ -86,11 +90,13 @@ describe('CliAgent - Tool Confirmation', () => {
       toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy: ToolCallPolicy = {confirmationRequired: true};
+    const policy = ToolExecutionPolicies.perTool({
+      test_tool: ToolExecutionPolicies.alwaysRequestConfirmation(),
+    });
 
     const agent = new CliAgent({
       model: mockModel as any,
-      toolPolicies: {test_tool: policy},
+      toolExecutionPolicy: policy,
       tools: [mockTool],
     });
 
@@ -181,11 +187,13 @@ describe('CliAgent - Tool Confirmation', () => {
       toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy: ToolCallPolicy = {confirmationRequired: true};
+    const policy = ToolExecutionPolicies.perTool({
+      test_tool: ToolExecutionPolicies.alwaysRequestConfirmation(),
+    });
 
     const agent = new CliAgent({
       model: mockModel as any,
-      toolPolicies: {test_tool: policy},
+      toolExecutionPolicy: policy,
       tools: [mockTool],
     });
 

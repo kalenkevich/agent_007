@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import {type AgentEvent} from '../agent/agent_event.js';
 import {APP_FILE_DIR} from '../config/app_dir.js';
 import type {Session, SessionMetadata} from './session.js';
+import {type ToolExecutionPolicy} from '../tools/tool_execution_policy.js';
 
 export class SessionFileService {
   private rootDir: string;
@@ -68,6 +69,7 @@ export class SessionFileService {
   async createSession(
     agentName: string,
     events: AgentEvent[],
+    toolExecutionPolicy?: ToolExecutionPolicy,
   ): Promise<Session> {
     await this.init();
 
@@ -76,6 +78,7 @@ export class SessionFileService {
       agentName: agentName,
       events: events,
       timestamp: new Date().toISOString(),
+      toolExecutionPolicy,
     };
 
     const sessionDir = path.join(this.rootDir, session.id);
@@ -86,6 +89,7 @@ export class SessionFileService {
       title: session.title,
       agentName: session.agentName,
       timestamp: session.timestamp,
+      toolExecutionPolicy: session.toolExecutionPolicy,
     });
     await saveToFile(getSessionFileName(this.rootDir, session.id), session);
 
@@ -105,7 +109,7 @@ export class SessionFileService {
 
   async updateSession(
     sessionId: string,
-    {title}: {title: string},
+    updates: Partial<SessionMetadata>,
   ): Promise<void> {
     await this.init();
     const unlock = await this.lock(sessionId);
@@ -117,7 +121,7 @@ export class SessionFileService {
         return;
       }
 
-      sessionMeta.title = title;
+      Object.assign(sessionMeta, updates);
       await saveToFile(metaFilePath, sessionMeta);
     } finally {
       unlock();

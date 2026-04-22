@@ -1,5 +1,6 @@
 import {type ContentPart, ContentRole} from '../content.js';
 import {UserInputAction} from '../user_input.js';
+import {type ToolExecutionPolicy} from '../tools/tool_execution_policy.js';
 
 export enum AgentEventType {
   START = 'START',
@@ -12,6 +13,7 @@ export enum AgentEventType {
   ERROR = 'ERROR',
   USAGE = 'USAGE',
   COMPACTION = 'COMPACTION',
+  UPDATE_TOOL_EXECUTION_POLICY = 'UPDATE_TOOL_EXECUTION_POLICY',
 }
 
 export enum AgentEndReason {
@@ -35,7 +37,8 @@ export type AgentEvent =
   | UserInputResponseEvent
   | ErrorEvent
   | UsageEvent
-  | CompactionEvent;
+  | CompactionEvent
+  | UpdateToolExecutionPolicyEvent;
 
 export interface BaseAgentEvent {
   // Event unique id
@@ -169,4 +172,15 @@ export interface CompactionEvent extends BaseAgentEvent {
 
 export function isCompactionEvent(event: AgentEvent): event is CompactionEvent {
   return event.type === AgentEventType.COMPACTION;
+}
+
+export interface UpdateToolExecutionPolicyEvent extends BaseAgentEvent {
+  type: AgentEventType.UPDATE_TOOL_EXECUTION_POLICY;
+  policy: ToolExecutionPolicy;
+}
+
+export function isUpdateToolExecutionPolicyEvent(
+  event: AgentEvent,
+): event is UpdateToolExecutionPolicyEvent {
+  return event.type === AgentEventType.UPDATE_TOOL_EXECUTION_POLICY;
 }

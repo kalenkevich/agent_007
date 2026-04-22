@@ -1,5 +1,10 @@
 import type {IpcRendererEvent} from 'electron';
-import type {AgentEvent, ErrorEvent, UserInput} from '@agent007/core';
+import type {
+  AgentEvent,
+  ErrorEvent,
+  UserInput,
+  ToolExecutionPolicy,
+} from '@agent007/core';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const {contextBridge, ipcRenderer} = require('electron');
 
@@ -14,6 +19,7 @@ enum IpcEvents {
   START_NEW_SESSION = 'start-new-session',
   GET_CURRENT_SESSION = 'get-current-session',
   DELETE_SESSION = 'delete-session',
+  UPDATE_TOOL_EXECUTION_POLICY = 'update-tool-execution-policy',
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -31,6 +37,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCurrentSession: () => ipcRenderer.invoke(IpcEvents.GET_CURRENT_SESSION),
   deleteSession: (sessionId: string) =>
     ipcRenderer.invoke(IpcEvents.DELETE_SESSION, sessionId),
+  updateToolExecutionPolicy: (policy: ToolExecutionPolicy) =>
+    ipcRenderer.invoke(IpcEvents.UPDATE_TOOL_EXECUTION_POLICY, policy),
   onAgentEvent: (callback: (event: AgentEvent | ErrorEvent) => void) => {
     ipcRenderer.on(
       IpcEvents.AGENT_EVENT,

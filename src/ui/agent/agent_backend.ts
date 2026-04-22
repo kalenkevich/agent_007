@@ -5,6 +5,7 @@ import {
   SessionFileService,
   configStore,
   loadConfig,
+  type ToolExecutionPolicy,
   type Config,
 } from '../../core/node.js';
 
@@ -19,6 +20,7 @@ enum IpcEvents {
   START_NEW_SESSION = 'start-new-session',
   GET_CURRENT_SESSION = 'get-current-session',
   DELETE_SESSION = 'delete-session',
+  UPDATE_TOOL_EXECUTION_POLICY = 'update-tool-execution-policy',
 }
 
 export class AgentBackend {
@@ -216,5 +218,24 @@ export class AgentBackend {
         }
       },
     );
+
+    ipcMain.handle(
+      IpcEvents.UPDATE_TOOL_EXECUTION_POLICY,
+      async (event, policy: ToolExecutionPolicy) => {
+        try {
+          if (!this.currentAgentRun) {
+            return {success: false, error: 'No active session'};
+          }
+          this.currentAgentRun.updateToolExecutionPolicy(policy);
+          return {success: true};
+        } catch (err: unknown) {
+          return {
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          };
+        }
+      },
+    );
   }
 }
+

@@ -2,6 +2,7 @@ import {
   UserCommandType,
   UserInputAction,
   UserInputType,
+  type ToolExecutionPolicy,
   type AgentEvent,
   type Session,
   type SessionMetadata,
@@ -48,6 +49,9 @@ declare global {
         success: boolean;
         error?: string;
       }>;
+      updateToolExecutionPolicy: (
+        policy: ToolExecutionPolicy,
+      ) => Promise<{success: boolean; error?: string}>;
       onAgentEvent: (callback: (event: AgentEvent) => void) => void;
     };
   }
@@ -147,6 +151,13 @@ export class AgentClient {
   async deleteSession(sessionId: string) {
     if (this.api) {
       return await this.api.deleteSession(sessionId);
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async updateToolExecutionPolicy(policy: ToolExecutionPolicy) {
+    if (this.api) {
+      return await this.api.updateToolExecutionPolicy(policy);
     }
     return {success: false, error: 'electronAPI not available'};
   }

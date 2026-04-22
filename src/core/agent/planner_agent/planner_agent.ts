@@ -129,4 +129,6 @@ Respond ONLY with the plan.`;
   async abort(): Promise<void> {
     this.abortController?.abort();
   }
+
+  updateToolExecutionPolicy(): void {}
 }

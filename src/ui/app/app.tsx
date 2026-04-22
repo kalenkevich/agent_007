@@ -2,7 +2,9 @@ import {
   ContentRole,
   type AgentEvent,
   type SessionMetadata,
+  AgentEventType,
   UserInputAction,
+  ToolExecutionPolicyType,
 } from '@agent007/core';
 import {useEffect, useRef, useState} from 'react';
 import {agentClient} from '../agent/agent_client';
@@ -28,6 +30,20 @@ export default function App() {
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+  const handleToolPolicyChange = async (policyType: string) => {
+    try {
+      await agentClient.updateToolExecutionPolicy({
+        type: policyType as ToolExecutionPolicyType,
+      });
+      const sessionRes = await agentClient.getSessions();
+      if (sessionRes.success && sessionRes.sessions) {
+        setSessions(sessionRes.sessions);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      appendMessage(`IPC Error: ${errorMessage}`, false);
+    }
+  };
 
   const messageStreamRef = useRef<HTMLDivElement>(null);
   const activeStreamMessageIdRef = useRef<string | null>(null);
@@ -160,6 +176,14 @@ export default function App() {
   useEffect(() => {
     // Set up event listener for agent responses
     agentClient.onAgentEvent((event: AgentEvent) => {
+      if (event.type === AgentEventType.UPDATE_TOOL_EXECUTION_POLICY) {
+        agentClient.getSessions().then((sessionRes) => {
+          if (sessionRes.success && sessionRes.sessions) {
+            setSessions(sessionRes.sessions);
+          }
+        });
+      }
+
       const newState = processEvent(chatStateRef.current, event);
 
       setMessages(newState.messages);
@@ -221,6 +245,10 @@ export default function App() {
     try {
       const res = await agentClient.startNewSession();
       if (res.success) {
+        const currentRes = await agentClient.getCurrentSession();
+        if (currentRes.success && currentRes.session) {
+          handleSelectSession(currentRes.session.id);
+        }
         const sessionRes = await agentClient.getSessions();
         if (sessionRes.success && sessionRes.sessions) {
           setSessions(sessionRes.sessions);
@@ -233,6 +261,11 @@ export default function App() {
       setIsLoading(false);
     }
   };
+
+  const activeSession = sessions.find((s) => s.id === activeSessionId);
+  const toolPolicy =
+    activeSession?.toolExecutionPolicy?.type ??
+    ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION;
 
   return (
     <>
@@ -258,7 +291,9 @@ export default function App() {
 
         <main className="chat-area">
           <ChatHeader
-            session={sessions.find((s) => s.id === activeSessionId)}
+            session={activeSession}
+            toolPolicy={toolPolicy}
+            onToolPolicyChange={handleToolPolicyChange}
           />
 
           <MessageList

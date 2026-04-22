@@ -12,6 +12,11 @@ export {ContentRole, type Content, type ContentPart} from './content.js';
 export {type ThinkingConfig} from './model/request.js';
 export {type Session, type SessionMetadata} from './session/session.js';
 export {
+  ToolExecutionPolicyType,
+  type ToolExecutionPolicy,
+} from './tools/tool_execution_policy.js';
+
+export {
   UserCommandType,
   UserInputAction,
   UserInputType,

@@ -18,6 +18,10 @@ import {projectService} from './project/project_service.js';
 import {SessionFileService} from './session/session_file_service.js';
 import type {UserInput} from './user_input.js';
 import {Run} from './utils/run.js';
+import {
+  ToolExecutionPolicyType,
+  type ToolExecutionPolicy,
+} from './tools/tool_execution_policy.js';
 
 export enum AgentRunType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -50,9 +54,13 @@ export class AgentRun extends EventEmitter {
     }
 
     let history: AgentEvent[] = [];
+    let toolExecutionPolicy: ToolExecutionPolicy = { type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION };
     if (this.sessionId) {
       const session = await this.sessionService.getSession(this.sessionId);
       history = session.events;
+      if (session.toolExecutionPolicy) {
+        toolExecutionPolicy = session.toolExecutionPolicy;
+      }
     }
 
     const model = new AdaptiveLlmModel(this.config.models);
@@ -71,6 +79,7 @@ export class AgentRun extends EventEmitter {
       thinkingConfig: this.config.thinkingConfig,
       history,
       instructions,
+      toolExecutionPolicy,
     });
 
     const utilModelConfig = this.config.models.util;
@@ -82,8 +91,9 @@ export class AgentRun extends EventEmitter {
 
     if (!this.sessionId) {
       const session = await this.sessionService.createSession(
-        this.agent.name,
+        this.agent!.name,
         [],
+        toolExecutionPolicy,
       );
       this.sessionId = session.id;
     }
@@ -164,6 +174,15 @@ export class AgentRun extends EventEmitter {
     } finally {
       this.currentRun.finish();
       this.currentRun = undefined;
+    }
+  }
+
+  updateToolExecutionPolicy(policy: ToolExecutionPolicy) {
+    this.agent?.updateToolExecutionPolicy(policy);
+    if (this.sessionId) {
+      this.sessionService.updateSession(this.sessionId, {
+        toolExecutionPolicy: policy,
+      });
     }
   }
 
