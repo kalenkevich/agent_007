@@ -7,18 +7,22 @@ import {
   type AgentEvent,
   type CompactionEvent,
   type UserInputRequestEvent,
-} from '../agent/agent_event.js';
-import {InitProjectCommandHandler} from '../command/init_project_command_handler.js';
-import {loadConfig} from '../config/config_loader.js';
-import {configStore} from '../config/config_store.js';
-import {AgentLoopType, CoreAgentLoop} from '../core/loop.js';
-import {projectService} from '../core/project_service.js';
-import type {ThinkingConfig} from '../model/request.js';
-import type {Session, SessionMetadata} from '../session/session.js';
-import {SessionFileService} from '../session/session_file_service.js';
-import {UserCommandType} from '../user_input.js';
+  InitProjectCommandHandler,
+  loadConfig,
+  configStore,
+  AgentLoopType,
+  AgentLoop,
+  projectService,
+  type ThinkingConfig,
+  type Session,
+  type SessionMetadata,
+  SessionFileService,
+  UserCommandType,
+  isYes,
+  parseUserAction,
+  ContentRole,
+} from '@agent007/core';
 import {TerminalLoader} from './loader.js';
-import {isYes, parseUserAction} from './prompt_utils.js';
 import {checkAndPromptVersion} from './version_check.js';
 
 export interface RunCommandOptions {
@@ -105,7 +109,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
     }
   }
 
-  const loop = new CoreAgentLoop(config, sessionId);
+  const loop = new AgentLoop(config, sessionId);
   const loader = new TerminalLoader();
   let hasStreamed = false;
   let isThinking = false;
@@ -120,7 +124,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         lastPrintedToolCalls.clear();
         break;
       case AgentEventType.MESSAGE: {
-        if (event.role === 'agent' && event.parts) {
+        if (event.role === ContentRole.AGENT && event.parts) {
           if (event.partial === true) {
             hasStreamed = true;
             loader.stopLoading();
@@ -237,7 +241,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           id: randomUUID(),
           streamId: (request as UserInputRequestEvent).streamId,
           timestamp: new Date().toISOString(),
-          role: 'user',
+          role: ContentRole.USER,
           requestId: (request as UserInputRequestEvent).requestId,
           action,
         });
@@ -277,7 +281,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
             id: randomUUID(),
             streamId: (request as UserInputRequestEvent).streamId,
             timestamp: new Date().toISOString(),
-            role: 'user',
+            role: ContentRole.USER,
             requestId: (request as UserInputRequestEvent).requestId,
             action,
           });
@@ -306,7 +310,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           id: randomUUID(),
           streamId: (request as UserInputRequestEvent).streamId,
           timestamp: new Date().toISOString(),
-          role: 'user',
+          role: ContentRole.USER,
           requestId: (request as UserInputRequestEvent).requestId,
           action,
         });

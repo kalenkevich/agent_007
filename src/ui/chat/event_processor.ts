@@ -1,37 +1,19 @@
-import {type AgentEvent} from '../../agent/agent_event.js';
-
-export interface ChatMessage {
-  id: string;
-  content: string;
-  thought?: string;
-  isUser: boolean;
-  type?:
-    | 'default'
-    | 'compaction'
-    | 'tool_call'
-    | 'tool_response'
-    | 'error'
-    | 'user_input_request';
-}
-
-export interface ChatState {
-  messages: ChatMessage[];
-  isLoading: boolean;
-  isThinking: boolean;
-  pendingUserInput: AgentEvent | null;
-  activeStreamMessageId: string | null;
-}
+import {assumeExhaustiveAllowing} from '@agent007/common';
+import {AgentEventType, ContentRole, type AgentEvent} from '@agent007/core';
+import {ChatMessageType, ToolExecutionStatus} from './chat_message.js';
+import {type ChatState} from './chat_state.js';
 
 export function processEvent(state: ChatState, event: AgentEvent): ChatState {
   const newState = {...state};
 
   switch (event.type) {
-    case 'START':
+    case AgentEventType.START: {
       newState.isLoading = true;
-      newState.activeStreamMessageId = null;
+      newState.activeStreamMessageId = undefined;
       break;
+    }
 
-    case 'MESSAGE': {
+    case AgentEventType.MESSAGE: {
       newState.isLoading = false;
       if (event.parts) {
         let addedThought = '';
@@ -50,10 +32,21 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
         // Stream accumulation logic
         if (newState.activeStreamMessageId) {
           newState.messages = newState.messages.map((msg) => {
-            if (msg.id === newState.activeStreamMessageId) {
+            if (
+              msg.id === newState.activeStreamMessageId &&
+              msg.type === ChatMessageType.TEXT
+            ) {
+              const updatedThinking = [...(msg.thinkingText || [])];
+              if (addedThought) {
+                if (updatedThinking.length > 0) {
+                  updatedThinking[updatedThinking.length - 1] += addedThought;
+                } else {
+                  updatedThinking.push(addedThought);
+                }
+              }
               return {
                 ...msg,
-                thought: (msg.thought || '') + addedThought,
+                thinkingText: updatedThinking,
                 content: msg.content + addedText,
               };
             }
@@ -66,9 +59,12 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
             ...newState.messages,
             {
               id: newId,
+              invocationId: event.streamId,
+              author: event.role ?? ContentRole.AGENT,
+              type: ChatMessageType.TEXT,
               content: addedText,
-              thought: addedThought,
-              isUser: false,
+              thinkingText: addedThought ? [addedThought] : [],
+              completed: false,
             },
           ];
         }
@@ -76,91 +72,163 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
       break;
     }
 
-    case 'COMPACTION':
+    case AgentEventType.COMPACTION: {
       newState.isLoading = false;
       newState.messages = [
         ...newState.messages,
         {
           id: crypto.randomUUID(),
+          invocationId: event.streamId,
+          author: event.role ?? ContentRole.AGENT,
+          type: ChatMessageType.TEXT,
           content: `[Compaction Strategy: ${event.strategy}]\n${
             event.parts
               ?.map((p) => (p.type === 'text' ? p.text : ''))
               .join('\n') || ''
           }`,
-          isUser: false,
-          type: 'compaction',
+          completed: true,
         },
       ];
       break;
+    }
 
-    case 'END':
+    case AgentEventType.END: {
       newState.isLoading = false;
       newState.isThinking = false;
-      newState.activeStreamMessageId = null;
+      if (newState.activeStreamMessageId) {
+        newState.messages = newState.messages.map((msg) => {
+          if (msg.id === newState.activeStreamMessageId) {
+            return {
+              ...msg,
+              completed: true,
+            };
+          }
+          return msg;
+        });
+        newState.activeStreamMessageId = undefined;
+      }
       break;
+    }
 
-    case 'ERROR':
+    case AgentEventType.ERROR: {
       newState.isLoading = false;
       newState.isThinking = false;
       newState.messages = [
         ...newState.messages,
         {
           id: crypto.randomUUID(),
+          invocationId: event.streamId,
+          author: event.role ?? ContentRole.AGENT,
+          type: ChatMessageType.TEXT,
           content: `⚠️ [Error]: ${event.errorMessage}`,
-          isUser: false,
-          type: 'error',
+          completed: true,
         },
       ];
       break;
+    }
 
-    case 'TOOL_CALL':
+    case AgentEventType.TOOL_CALL: {
       newState.isLoading = false;
       newState.messages = [
         ...newState.messages,
         {
           id: crypto.randomUUID(),
-          content: `🛠️ [Executing Tool]: ${event.name}\n${JSON.stringify(event.args, null, 2)}`,
-          isUser: false,
-          type: 'tool_call',
+          invocationId: event.streamId,
+          author: event.role ?? ContentRole.AGENT,
+          type: ChatMessageType.TOOL_EXECUTION,
+          functionId: event.requestId,
+          functionName: event.name,
+          functionArgs: event.args,
+          status: ToolExecutionStatus.EXECUTING,
+          completed: false,
         },
       ];
       break;
+    }
 
-    case 'TOOL_RESPONSE':
+    case AgentEventType.TOOL_RESPONSE: {
       newState.isLoading = false;
-      newState.messages = [
-        ...newState.messages,
-        {
-          id: crypto.randomUUID(),
-          content: `✅ [Tool Response: ${event.name}]\n${
-            event.error
+      let found = false;
+      newState.messages = newState.messages.map((msg) => {
+        if (
+          msg.type === ChatMessageType.TOOL_EXECUTION &&
+          msg.functionId === event.requestId
+        ) {
+          found = true;
+          return {
+            ...msg,
+            status: event.error
+              ? ToolExecutionStatus.FAILURE
+              : ToolExecutionStatus.SUCCESS,
+            content: event.error
               ? `Error: ${event.error}`
               : typeof event.result === 'string'
                 ? event.result
-                : JSON.stringify(event.result, null, 2)
-          }`,
-          isUser: false,
-          type: 'tool_response',
-        },
-      ];
-      break;
+                : JSON.stringify(event.result, null, 2),
+            response:
+              typeof event.result === 'object' && event.result
+                ? event.result
+                : {},
+            completed: true,
+          };
+        }
+        return msg;
+      });
 
-    case 'USER_INPUT_REQUEST':
+      if (!found) {
+        newState.messages = [
+          ...newState.messages,
+          {
+            id: crypto.randomUUID(),
+            invocationId: event.streamId,
+            author: event.role ?? ContentRole.AGENT,
+            type: ChatMessageType.TOOL_EXECUTION,
+            functionId: event.requestId,
+            functionName: event.name,
+            functionArgs: {},
+            status: event.error
+              ? ToolExecutionStatus.FAILURE
+              : ToolExecutionStatus.SUCCESS,
+            content: event.error
+              ? `Error: ${event.error}`
+              : typeof event.result === 'string'
+                ? event.result
+                : JSON.stringify(event.result, null, 2),
+            response:
+              typeof event.result === 'object' && event.result
+                ? event.result
+                : {},
+            completed: true,
+          },
+        ];
+      }
+      break;
+    }
+
+    case AgentEventType.USER_INPUT_REQUEST: {
       newState.isLoading = false;
       newState.pendingUserInput = event;
       newState.messages = [
         ...newState.messages,
         {
           id: crypto.randomUUID(),
+          invocationId: event.streamId,
+          author: event.role ?? ContentRole.AGENT,
+          type: ChatMessageType.TOOL_CONFIRMATION,
           content: `❓ [User Input Required]: ${event.message}`,
-          isUser: false,
-          type: 'user_input_request',
+          requestId: event.requestId,
+          completed: true,
         },
       ];
       break;
+    }
 
-    default:
+    default: {
+      assumeExhaustiveAllowing<
+        AgentEventType.USER_INPUT_RESPONSE | AgentEventType.USAGE
+      >(event.type);
       break;
+    }
   }
 
   return newState;

@@ -1,5 +1,11 @@
-import {type AgentEvent, AgentEventType} from '../../agent/agent_event.js';
-import {type UserInput, UserCommandType} from '../../user_input.js';
+import {
+  AgentEventType,
+  ContentRole,
+  UserCommandType,
+  UserInputAction,
+  type AgentEvent,
+  type UserInput,
+} from '@agent007/core';
 
 declare global {
   interface Window {
@@ -58,16 +64,13 @@ export class AgentClient {
     return {success: false, error: 'electronAPI not available'};
   }
 
-  async sendUserInputResponse(
-    requestId: string,
-    action: 'accept' | 'decline' | 'cancel',
-  ) {
+  async sendUserInputResponse(requestId: string, action: UserInputAction) {
     if (this.api) {
       return await this.api.sendUserInput({
         id: crypto.randomUUID(),
         streamId: '',
         timestamp: new Date().toISOString(),
-        role: 'user',
+        role: ContentRole.USER,
         type: AgentEventType.USER_INPUT_RESPONSE,
         requestId,
         action,

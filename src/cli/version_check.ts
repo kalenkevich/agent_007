@@ -4,13 +4,13 @@ import {dirname, join} from 'node:path';
 import {stdin as input, stdout as output} from 'node:process';
 import {createInterface} from 'node:readline/promises';
 import {fileURLToPath} from 'node:url';
-import {isYes} from './prompt_utils.js';
+import {isYes} from '@agent007/core';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function getCurrentVersion(): string | null {
   try {
-    const pkgPath = join(__dirname, '../../package.json');
+    const pkgPath = join(__dirname, '../package.json');
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
     return pkg.version;
   } catch (error) {

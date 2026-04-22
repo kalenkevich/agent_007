@@ -1,6 +1,11 @@
-import {AgentEventType, type AgentEvent} from '../agent/agent_event.js';
-import {loadConfig} from '../config/config_loader.js';
-import {AgentLoopType, CoreAgentLoop} from '../core/loop.js';
+import {
+  AgentEventType,
+  AgentLoop,
+  AgentLoopType,
+  ContentRole,
+  loadConfig,
+  type AgentEvent,
+} from '@agent007/core';
 
 export interface RunCommandOptions {
   prompt?: string;
@@ -27,7 +32,7 @@ export async function runNoninteractiveCommand(options: RunCommandOptions) {
 
   console.log(`Using model: ${config.models.main.modelName}`);
 
-  const loop = new CoreAgentLoop(config);
+  const loop = new AgentLoop(config);
   const lastPrintedToolCalls = new Map<string, string>();
 
   loop.on(AgentLoopType.AGENT_EVENT, (event: AgentEvent) => {
@@ -37,7 +42,7 @@ export async function runNoninteractiveCommand(options: RunCommandOptions) {
         lastPrintedToolCalls.clear();
         break;
       case AgentEventType.MESSAGE:
-        if (event.role === 'agent' && event.parts) {
+        if (event.role === ContentRole.AGENT && event.parts) {
           for (const part of event.parts) {
             if ('text' in part && part.text) {
               process.stdout.write(part.text);

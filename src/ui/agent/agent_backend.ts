@@ -1,12 +1,18 @@
 import {BrowserWindow, ipcMain} from 'electron';
-import {loadConfig} from '../../config/config_loader.js';
-import {configStore} from '../../config/config_store.js';
-import {AgentLoopType, CoreAgentLoop} from '../../core/loop.js';
+import {
+  loadConfig,
+  configStore,
+  AgentLoopType,
+  AgentLoop,
+  type Config,
+} from '@agent007/core';
 import {IpcEvents} from '../ipc_events.js';
 
 export class AgentBackend {
-  private mainWindow: BrowserWindow | null = null;
-  private loop: CoreAgentLoop | null = null;
+  private mainWindow?: BrowserWindow;
+  private loop?: AgentLoop;
+  private initialized = false;
+  private config?: Config;
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow;
@@ -14,10 +20,15 @@ export class AgentBackend {
   }
 
   async initialize() {
+    if (this.initialized) {
+      return;
+    }
+
     try {
-      const config = await loadConfig();
-      this.loop = new CoreAgentLoop(config);
+      this.config = await loadConfig();
+      this.loop = new AgentLoop(this.config);
       this.setupLoopListener();
+      this.initialized = true;
     } catch (error) {
       console.error('Failed to initialize agent loop in AppBackend:', error);
     }
@@ -46,15 +57,11 @@ export class AgentBackend {
 
     ipcMain.handle(IpcEvents.INIT_SESSION, async () => {
       try {
-        const config = await loadConfig();
-        if (!config.models.main.apiKey) {
+        await this.initialize();
+        if (!this.config?.models.main.apiKey) {
           return {success: false, error: 'API key missing', needApiKey: true};
         }
 
-        if (!this.loop) {
-          this.loop = new CoreAgentLoop(config);
-          this.setupLoopListener();
-        }
         return {success: true};
       } catch (err: unknown) {
         return {

@@ -1,6 +1,5 @@
 import type {IpcRendererEvent} from 'electron';
-import type {AgentEvent, ErrorEvent} from '../agent/agent_event.js';
-import type {UserInput} from '../user_input.js';
+import type {AgentEvent, ErrorEvent, UserInput} from '@agent007/core';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const {IpcEvents} = require('./ipc_events.js');
 // eslint-disable-next-line @typescript-eslint/no-require-imports

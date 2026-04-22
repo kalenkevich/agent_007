@@ -27,7 +27,11 @@
     "verbatimModuleSyntax": true,
     "rootDir": "src",
     "outDir": "dist",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@agent007/core": ["./src/core/index.ts"],
+      "@agent007/common": ["./src/common/index.ts"],
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/ui/**/*.tsx"]    

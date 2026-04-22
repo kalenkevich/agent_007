@@ -11,14 +11,14 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "default": "./dist/core/index.js"
     }
   },
   "bin": {
-    "agent007": "./dist/cli_entrypoint.js",
-    "agent_007": "./dist/cli_entrypoint.js"
+    "agent007": "./dist/cli/cli_entrypoint.js",
+    "agent_007": "./dist/cli/cli_entrypoint.js"
   },
   "publishConfig": {
     "access": "public"
@@ -27,7 +27,7 @@
     "build": "npm run build:agent && npm run build:ui",
     "build:agent": "tsc",
     "build:ui": "vite build",
-    "start": "node ./dist/cli_entrypoint.js --debug",
+    "start": "node ./dist/cli/cli_entrypoint.js --debug",
     "start:ui": "electron ./dist/ui/main.js",
     "lint": "eslint **/**.ts",
     "lint:fix": "eslint --fix **/**.ts",
