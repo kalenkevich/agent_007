@@ -1,36 +1,70 @@
 import React from 'react';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ai-elements/dialog';
+import {dialogService} from './DialogService';
 
 interface ConfirmationDialogProps {
-  isOpen: boolean;
+  dialogId?: string;
+  isOpen?: boolean;
   title: string;
   message: string;
   onConfirm: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  confirmLabel?: string;
+  cancelLabel?: string;
 }
 
 export function ConfirmationDialog({
-  isOpen,
+  dialogId,
+  isOpen = true,
   title,
   message,
   onConfirm,
   onCancel,
+  confirmLabel,
+  cancelLabel = 'Cancel',
 }: ConfirmationDialogProps) {
-  if (!isOpen) return null;
+  const handleClose = () => {
+    if (onCancel) onCancel();
+    if (dialogId) {
+      dialogService.close(dialogId);
+    }
+  };
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog-content glass-panel">
-        <h3>{title}</h3>
-        <p>{message}</p>
-        <div className="dialog-actions">
-          <button className="btn-cancel" onClick={onCancel}>
-            Cancel
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <button className="btn-cancel" onClick={handleClose}>
+              {cancelLabel}
+            </button>
+          </DialogClose>
+          <button
+            className="btn-danger"
+            onClick={() => {
+              onConfirm();
+              handleClose();
+            }}>
+            {confirmLabel}
           </button>
-          <button className="btn-danger" onClick={onConfirm}>
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

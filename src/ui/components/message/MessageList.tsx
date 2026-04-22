@@ -1,7 +1,7 @@
 import {RefObject} from 'react';
 import {UserInputAction} from '@agent007/core';
-import {type ChatMessage} from '../chat/chat_message';
-import {MessageItem} from './message/MessageItem';
+import {type ChatMessage} from '../../chat/chat_message';
+import {MessageItem} from './MessageItem';
 
 interface MessageListProps {
   messages: ChatMessage[];

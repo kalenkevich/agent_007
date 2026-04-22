@@ -14,8 +14,9 @@ import {processEvent} from '../chat/event_processor';
 import {ChatHeader} from '../components/ChatHeader';
 import {ChatInput} from '../components/ChatInput';
 import {ConfirmationDialog} from '../components/ConfirmationDialog';
-import {MessageList} from '../components/MessageList';
+import {MessageList} from '../components/message/MessageList';
 import {Sidebar} from '../components/Sidebar';
+import { dialogService } from '../components/DialogService';
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -30,7 +31,7 @@ export default function App() {
   );
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
-  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+
 
   const handleToolPolicyChange = async (policyType: string) => {
     try {
@@ -213,7 +214,14 @@ export default function App() {
   }, []);
 
   const handleDeleteSession = (sessionId: string) => {
-    setDeleteSessionId(sessionId);
+    dialogService.open(ConfirmationDialog, {
+      title: 'Delete Session',
+      confirmLabel: 'Delete',
+      message: 'Are you sure you want to delete this session? This action cannot be undone.',
+      onConfirm: async () => {
+        await handleConfirmDelete(sessionId);
+      },
+    });
   };
 
   const handleConfirmDelete = async (sessionId: string) => {
@@ -333,19 +341,6 @@ export default function App() {
           />
         </main>
       </div>
-
-      <ConfirmationDialog
-        isOpen={!!deleteSessionId}
-        title="Delete Session"
-        message="Are you sure you want to delete this session? This action cannot be undone."
-        onConfirm={async () => {
-          if (deleteSessionId) {
-            await handleConfirmDelete(deleteSessionId);
-            setDeleteSessionId(null);
-          }
-        }}
-        onCancel={() => setDeleteSessionId(null)}
-      />
     </>
   );
 }
