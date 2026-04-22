@@ -21,7 +21,7 @@ import {
   isYes,
   parseUserAction,
   ContentRole,
-} from '@agent007/core';
+} from '@agent007/core/node';
 import {TerminalLoader} from './loader.js';
 import {checkAndPromptVersion} from './version_check.js';
 

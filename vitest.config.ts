@@ -32,9 +32,8 @@ export default defineConfig({
     },
     alias: {
       '@agent007/core': path.resolve(__dirname, './src/core'),
-      '@agent007/ui': path.resolve(__dirname, './src/ui'),
+      '@agent007/core/node': path.resolve(__dirname, './src/core/node.ts'),
       '@agent007/common': path.resolve(__dirname, './src/common'),
-      '@agent007/cli': path.resolve(__dirname, './src/cli'),
     },
   },
 });

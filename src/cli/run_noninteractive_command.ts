@@ -5,7 +5,7 @@ import {
   ContentRole,
   loadConfig,
   type AgentEvent,
-} from '@agent007/core';
+} from '@agent007/core/node';
 
 export interface RunCommandOptions {
   prompt?: string;

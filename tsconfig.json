@@ -29,6 +29,8 @@
     "outDir": "dist",
     "jsx": "react-jsx",
     "paths": {
+      "@/*": ["./src/*"],
+      "@agent007/core/node": ["./src/core/node.ts"],
       "@agent007/core": ["./src/core/index.ts"],
       "@agent007/common": ["./src/common/index.ts"],
     }

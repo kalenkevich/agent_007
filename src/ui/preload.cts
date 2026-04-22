@@ -1,9 +1,14 @@
 import type {IpcRendererEvent} from 'electron';
 import type {AgentEvent, ErrorEvent, UserInput} from '@agent007/core';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const {IpcEvents} = require('./ipc_events.js');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const {contextBridge, ipcRenderer} = require('electron');
+
+enum IpcEvents {
+  SEND_USER_INPUT = 'send-user-input',
+  INIT_SESSION = 'init-session',
+  SUBMIT_API_KEY = 'submit-api-key',
+  AGENT_EVENT = 'agent-event',
+}
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sendUserInput: (message: UserInput) =>

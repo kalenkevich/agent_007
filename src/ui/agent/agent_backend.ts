@@ -5,8 +5,14 @@ import {
   AgentLoopType,
   AgentLoop,
   type Config,
-} from '@agent007/core';
-import {IpcEvents} from '../ipc_events.js';
+} from '../../core/node.js';
+
+enum IpcEvents {
+  SEND_USER_INPUT = 'send-user-input',
+  INIT_SESSION = 'init-session',
+  SUBMIT_API_KEY = 'submit-api-key',
+  AGENT_EVENT = 'agent-event',
+}
 
 export class AgentBackend {
   private mainWindow?: BrowserWindow;
