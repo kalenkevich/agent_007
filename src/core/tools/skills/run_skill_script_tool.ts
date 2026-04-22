@@ -10,6 +10,7 @@ import {materializeFiles} from '../../utils/file_utils.js';
 import {FunctionalTool} from '../functional_tool.js';
 import {Type, type Schema} from '../schema.js';
 import type {SkillToolset} from './skill_toolset.js';
+import type {InvocationContext} from '../../agent/invocation_context.js';
 
 const ARGS_SCHEMA: Schema = {
   type: Type.OBJECT,
@@ -41,7 +42,10 @@ export class RunSkillScriptTool extends FunctionalTool {
       name: 'run_skill_script',
       description: "Executes a script from a skill's scripts/ directory.",
       params: ARGS_SCHEMA,
-      execute: async (_args: unknown): Promise<unknown> => {
+      execute: async (
+        _args: unknown,
+        _context?: InvocationContext,
+      ): Promise<unknown> => {
         const args = _args as {
           skill_name: string;
           script_path: string;

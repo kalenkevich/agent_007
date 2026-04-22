@@ -15,7 +15,10 @@ export {
   ToolExecutionPolicyType,
   type ToolExecutionPolicy,
 } from './tools/tool_execution_policy.js';
-
+export {type InvocationContext} from './agent/invocation_context.js';
+export {ToolRegistry} from './tools/tool_registry.js';
+export {FunctionalTool} from './tools/functional_tool.js';
+export {type Tool} from './tools/tool.js';
 export {
   UserCommandType,
   UserInputAction,

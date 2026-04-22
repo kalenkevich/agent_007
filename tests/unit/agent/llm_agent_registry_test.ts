@@ -63,7 +63,7 @@ describe('LlmAgent with ToolRegistry', () => {
       events.push(event);
     }
 
-    expect(mockTool.execute).toHaveBeenCalledWith({arg: 'abc'});
+    expect(mockTool.execute).toHaveBeenCalledWith({arg: 'abc'}, expect.any(Object));
     expect(events.find((e) => e.type === AgentEventType.TOOL_RESPONSE).result).toEqual({result: 'resolved!'});
   });
 });

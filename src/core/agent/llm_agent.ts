@@ -39,6 +39,7 @@ import {BasicRequestProcessor} from './request_processor/basic_request_processor
 import {CompactionProcessor} from './request_processor/compaction_processor.js';
 import type {AgentState} from './request_processor/request_processor.js';
 import {CLI_AGENT_SYSTEM_PROMPT} from './system_prompt.js';
+import {type InvocationContext} from './invocation_context.js';
 
 export interface LlmAgentOptions {
   id: string;
@@ -143,8 +144,13 @@ export class LlmAgent implements Agent {
       });
     }
 
-    let continueTurn = true;
+    const context: InvocationContext = {
+      invocationId: this.invocationId!,
+      abortSignal: this.abortController!.signal,
+      toolExecutionPolicy: this.toolExecutionPolicy,
+    };
 
+    let continueTurn = true;
     while (continueTurn) {
       const basicProcessor = new BasicRequestProcessor({
         agentName: this.name,
@@ -226,7 +232,7 @@ export class LlmAgent implements Agent {
       }
 
       for (const toolCall of toolCalls) {
-        const shouldStop = yield* this.findAndExecuteTool(toolCall);
+        const shouldStop = yield * this.findAndExecuteTool(toolCall, context);
         if (shouldStop) {
           return;
         }
@@ -408,6 +414,7 @@ export class LlmAgent implements Agent {
 
   private async *findAndExecuteTool(
     toolCall: ToolCallEvent,
+    context: InvocationContext,
   ): AsyncGenerator<AgentEvent, boolean, unknown> {
     const tool = await this.findTool(toolCall.name);
 
@@ -438,7 +445,7 @@ export class LlmAgent implements Agent {
 
     try {
       logger.debug(`[CliAgent] Executing tool ${toolCall.name}`);
-      const result = await tool.execute(toolCall.args);
+      const result = await tool.execute(toolCall.args, context);
       yield this.createToolResponseEvent(
         toolCall.requestId,
         toolCall.name,

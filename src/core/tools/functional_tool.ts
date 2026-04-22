@@ -1,3 +1,4 @@
+import type {InvocationContext} from '../agent/invocation_context.js';
 import type {LlmRequest} from '../model/request.js';
 import {type Schema, Type} from './schema.js';
 import type {
@@ -19,6 +20,7 @@ export interface FunctionalToolParams<
   output?: TOutputParameters;
   execute: (
     input: ToolInput<TInputParameters>,
+    context?: InvocationContext,
   ) => Promise<ToolOutput<TOutputParameters>> | ToolOutput<TOutputParameters>;
 }
 
@@ -45,6 +47,7 @@ export class FunctionalTool<
   public readonly output: TOutputParameters;
   private readonly executeFn: (
     input: ToolInput<TInputParameters>,
+    context?: InvocationContext,
   ) => Promise<ToolOutput<TOutputParameters>> | ToolOutput<TOutputParameters>;
 
   constructor(
@@ -62,8 +65,9 @@ export class FunctionalTool<
 
   async execute(
     input: ToolInput<TInputParameters>,
+    context?: InvocationContext,
   ): Promise<ToolOutput<TOutputParameters>> {
-    return this.executeFn(input);
+    return this.executeFn(input, context);
   }
 
   toFunctionDeclaration(): FunctionDeclaration {

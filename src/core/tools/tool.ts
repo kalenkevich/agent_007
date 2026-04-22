@@ -3,6 +3,7 @@ import {z as z4} from 'zod/v4';
 import type {LlmRequest} from '../model/request.js';
 import type {Schema} from './schema.js';
 import type {Toolset} from './toolset.js';
+import type {InvocationContext} from '../agent/invocation_context.js';
 
 export enum Behavior {
   UNSPECIFIED = 'UNSPECIFIED',
@@ -55,6 +56,7 @@ export type ToolExecuteFunction<
   TOutputParameters extends ToolOutputSchema = ToolOutputSchema,
 > = (
   input: ToolInput<TInputParameters>,
+  context?: InvocationContext,
 ) => Promise<ToolOutput<TOutputParameters>> | ToolOutput<TOutputParameters>;
 
 export interface Tool<
