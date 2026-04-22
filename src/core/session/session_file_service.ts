@@ -1,17 +1,20 @@
 import {randomUUID} from 'node:crypto';
-import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import {type AgentEvent} from '../agent/agent_event.js';
 import {APP_FILE_DIR} from '../config/app_dir.js';
 import type {Session, SessionMetadata} from './session.js';
 import {type ToolExecutionPolicy} from '../tools/tool_execution_policy.js';
+import {type Storage} from '../storage/storage.js';
+import {DiskStorage} from '../storage/disk_storage.js';
 
 export class SessionFileService {
   private rootDir: string;
   private initialized: boolean = false;
   private locks: Map<string, Promise<void>> = new Map();
+  private storage: Storage;
 
-  constructor() {
+  constructor(storage: Storage = new DiskStorage()) {
+    this.storage = storage;
     this.rootDir = path.join(APP_FILE_DIR, 'sessions');
   }
 
@@ -20,7 +23,8 @@ export class SessionFileService {
       return;
     }
 
-    await fs.mkdir(this.rootDir, {recursive: true});
+    await this.storage.mkdir(this.rootDir, {recursive: true});
+    this.initialized = true;
   }
 
   private async lock(sessionId: string): Promise<() => void> {
@@ -44,8 +48,8 @@ export class SessionFileService {
   async getSession(sessionId: string): Promise<Session> {
     const sessionFilePath = getSessionFileName(this.rootDir, sessionId);
     const metaFilePath = getSessionMetadataFileName(this.rootDir, sessionId);
-    const session = await loadFileData<Session>(sessionFilePath);
-    const sessionMeta = await loadFileData<SessionMetadata>(metaFilePath);
+    const session = await loadFileData<Session>(this.storage, sessionFilePath);
+    const sessionMeta = await loadFileData<SessionMetadata>(this.storage, metaFilePath);
 
     if (!session || !sessionMeta) {
       throw new Error(`Session ${sessionId} not found`);
@@ -61,7 +65,7 @@ export class SessionFileService {
     sessionId: string,
   ): Promise<SessionMetadata | undefined> {
     const metaFilePath = getSessionMetadataFileName(this.rootDir, sessionId);
-    const sessionMeta = await loadFileData<SessionMetadata>(metaFilePath);
+    const sessionMeta = await loadFileData<SessionMetadata>(this.storage, metaFilePath);
 
     return sessionMeta;
   }
@@ -82,16 +86,16 @@ export class SessionFileService {
     };
 
     const sessionDir = path.join(this.rootDir, session.id);
-    await fs.mkdir(sessionDir, {recursive: true});
+    await this.storage.mkdir(sessionDir, {recursive: true});
 
-    await saveToFile(getSessionMetadataFileName(this.rootDir, session.id), {
+    await saveToFile(this.storage, getSessionMetadataFileName(this.rootDir, session.id), {
       id: session.id,
       title: session.title,
       agentName: session.agentName,
       timestamp: session.timestamp,
       toolExecutionPolicy: session.toolExecutionPolicy,
     });
-    await saveToFile(getSessionFileName(this.rootDir, session.id), session);
+    await saveToFile(this.storage, getSessionFileName(this.rootDir, session.id), session);
 
     return session;
   }
@@ -101,7 +105,7 @@ export class SessionFileService {
     const unlock = await this.lock(sessionId);
     try {
       const sessionDir = path.join(this.rootDir, sessionId);
-      await fs.rm(sessionDir, {recursive: true, force: true});
+      await this.storage.rm(sessionDir, {recursive: true, force: true});
     } finally {
       unlock();
     }
@@ -115,14 +119,14 @@ export class SessionFileService {
     const unlock = await this.lock(sessionId);
     try {
       const metaFilePath = getSessionMetadataFileName(this.rootDir, sessionId);
-      const sessionMeta = (await loadFileData(metaFilePath)) as Session;
+      const sessionMeta = (await loadFileData(this.storage, metaFilePath)) as Session;
 
       if (!sessionMeta) {
         return;
       }
 
       Object.assign(sessionMeta, updates);
-      await saveToFile(metaFilePath, sessionMeta);
+      await saveToFile(this.storage, metaFilePath, sessionMeta);
     } finally {
       unlock();
     }
@@ -133,7 +137,7 @@ export class SessionFileService {
     const unlock = await this.lock(sessionId);
     try {
       const sessionFilePath = getSessionFileName(this.rootDir, sessionId);
-      const session = (await loadFileData(sessionFilePath)) as Session;
+      const session = (await loadFileData(this.storage, sessionFilePath)) as Session;
 
       if (!session) {
         return;
@@ -141,7 +145,7 @@ export class SessionFileService {
 
       session.events.push(agentEvent);
 
-      await saveToFile(sessionFilePath, session);
+      await saveToFile(this.storage, sessionFilePath, session);
     } finally {
       unlock();
     }
@@ -150,12 +154,13 @@ export class SessionFileService {
   async listSessions(): Promise<Array<SessionMetadata>> {
     await this.init();
 
-    const folders = await listFiles(this.rootDir);
+    const folders = await listFiles(this.storage, this.rootDir);
 
     const result = await Promise.all(
       folders.map(async (f) => {
         try {
           const data = await loadFileData<SessionMetadata>(
+            this.storage,
             path.join(this.rootDir, f, 'metadata.json'),
           );
           if (data) {
@@ -176,9 +181,9 @@ export class SessionFileService {
   }
 }
 
-export async function listFiles(folderPath: string): Promise<string[]> {
+export async function listFiles(storage: Storage, folderPath: string): Promise<string[]> {
   try {
-    return await fs.readdir(folderPath);
+    return await storage.readdir(folderPath);
   } catch (e) {
     console.error(`Failed to list files in folder ${folderPath}`, e);
 
@@ -197,12 +202,11 @@ export function getSessionMetadataFileName(
   return path.join(rootDir, sessionId, 'metadata.json');
 }
 
-export async function saveToFile<T>(filePath: string, data: T): Promise<void> {
+export async function saveToFile<T>(storage: Storage, filePath: string, data: T): Promise<void> {
   try {
-    await fs.writeFile(
+    await storage.writeFile(
       filePath,
       typeof data === 'string' ? data : JSON.stringify(data, null, 2),
-      {encoding: 'utf-8'},
     );
   } catch (e) {
     console.error(`Failed to write file ${filePath}:`, e);
@@ -212,10 +216,11 @@ export async function saveToFile<T>(filePath: string, data: T): Promise<void> {
 }
 
 export async function loadFileData<T>(
+  storage: Storage,
   filePath: string,
 ): Promise<T | undefined> {
   try {
-    return JSON.parse(await fs.readFile(filePath, {encoding: 'utf-8'})) as T;
+    return JSON.parse(await storage.readFile(filePath)) as T;
   } catch (e: unknown) {
     if ((e as {code: string}).code === 'ENOENT') {
       return undefined;

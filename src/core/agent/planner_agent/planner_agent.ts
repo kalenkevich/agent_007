@@ -1,5 +1,4 @@
 import {randomUUID} from 'node:crypto';
-import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {ContentRole} from '../../content.js';
@@ -14,10 +13,13 @@ import {
   AgentEndReason,
 } from '../agent_event.js';
 import {llmResponseToAgentEvents} from '../agent_event_utils.js';
+import {type Storage} from '../../storage/storage.js';
+import {DiskStorage} from '../../storage/disk_storage.js';
 
 export interface PlannerAgentOptions {
   model: LlmModel;
   tools?: ToolUnion[];
+  storage?: Storage;
 }
 
 export class PlannerAgent implements Agent {
@@ -28,6 +30,7 @@ export class PlannerAgent implements Agent {
     'You are a planning assistant. Your job is to create a plan for the given task.';
   readonly model: LlmModel;
   readonly tools?: ToolUnion[];
+  private storage: Storage;
 
   private invocationId?: string;
   private history: AgentEvent[] = [];
@@ -36,6 +39,7 @@ export class PlannerAgent implements Agent {
   constructor(options: PlannerAgentOptions) {
     this.model = options.model;
     this.tools = options.tools;
+    this.storage = options.storage || new DiskStorage();
   }
 
   async *run(userInput: UserInput): AsyncGenerator<AgentEvent, void, unknown> {
@@ -84,7 +88,7 @@ Respond ONLY with the plan.`;
     const tempFilePath = path.join(os.tmpdir(), `plan_${requestId}.md`);
 
     try {
-      await fs.writeFile(tempFilePath, planContent, 'utf-8');
+      await this.storage.writeFile(tempFilePath, planContent);
       yield this.createEvent(AgentEventType.MESSAGE, {
         role: ContentRole.AGENT,
         parts: [{type: 'text', text: `\nPlan written to ${tempFilePath}`}],

@@ -16,12 +16,17 @@ import {resolveLlmModel} from './model/registry.js';
 import {UtilLlm} from './model/util_llm.js';
 import {projectService} from './project/project_service.js';
 import {SessionFileService} from './session/session_file_service.js';
+import {SessionManager} from './session/session_manager.js';
 import type {UserInput} from './user_input.js';
 import {Run} from './utils/run.js';
 import {
   ToolExecutionPolicyType,
   type ToolExecutionPolicy,
 } from './tools/tool_execution_policy.js';
+import {BUILD_IN_TOOLS} from './tools/build_in/index.js';
+import {SkillToolset} from './tools/skills/skill_toolset.js';
+import {ToolRegistry} from './tools/tool_registry.js';
+import {UnsafeLocalCodeExecutor} from './code_executor/unsafe_local_code_executor.js';
 
 export enum AgentRunType {
   AGENT_EVENT = 'AGENT_EVENT',
@@ -34,15 +39,16 @@ export class AgentRun extends EventEmitter {
   private currentRun?: Run;
   private config: Config;
   private sessionService: SessionFileService;
+  private sessionManager: SessionManager;
   private sessionId?: string;
   private utilLlm?: UtilLlm;
-  private sessionTitleGenerated = false;
 
   constructor(config: Config, sessionId?: string) {
     super();
     this.config = config;
     this.sessionId = sessionId;
     this.sessionService = new SessionFileService();
+    this.sessionManager = new SessionManager(this.sessionService);
   }
 
   public getSessionId(): string | undefined {
@@ -55,7 +61,9 @@ export class AgentRun extends EventEmitter {
     }
 
     let history: AgentEvent[] = [];
-    let toolExecutionPolicy: ToolExecutionPolicy = { type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION };
+    let toolExecutionPolicy: ToolExecutionPolicy = {
+      type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION,
+    };
     if (this.sessionId) {
       const session = await this.sessionService.getSession(this.sessionId);
       history = session.events;
@@ -72,6 +80,15 @@ export class AgentRun extends EventEmitter {
       instructions += `\n\nProject Constants and Conventions:\n${constantsStr}`;
     }
 
+    const toolRegistry = new ToolRegistry([
+      ...BUILD_IN_TOOLS,
+      new SkillToolset([], {
+        codeExecutor: new UnsafeLocalCodeExecutor({
+          timeoutSeconds: 5 * 60 * 1000, // 5 minutes
+        }),
+      }),
+    ]);
+
     this.agent = new LlmAgent({
       id: 'coding_agent',
       name: 'Coding Agent',
@@ -81,6 +98,7 @@ export class AgentRun extends EventEmitter {
       history,
       instructions,
       toolExecutionPolicy,
+      toolRegistry,
     });
 
     const utilModelConfig = this.config.models.util;
@@ -90,14 +108,11 @@ export class AgentRun extends EventEmitter {
     const UtilModelClass = resolveLlmModel(utilModelConfig.modelName);
     this.utilLlm = new UtilLlm(new UtilModelClass(utilModelConfig));
 
-    if (!this.sessionId) {
-      const session = await this.sessionService.createSession(
-        this.agent!.name,
-        [],
-        toolExecutionPolicy,
-      );
-      this.sessionId = session.id;
-    }
+    this.sessionId = await this.sessionManager.initSession(
+      this.sessionId,
+      this.agent!.name,
+      toolExecutionPolicy,
+    );
 
     this.initialized = true;
     logger.debug('[CoreAgentRun] initialized');
@@ -120,41 +135,20 @@ export class AgentRun extends EventEmitter {
         invocationId = event.invocationId;
 
         if (this.sessionId) {
-          this.sessionService.appendEvent(this.sessionId, event);
+          await this.sessionManager.appendEvent(this.sessionId, event);
         }
 
         this.emit(AgentRunType.AGENT_EVENT, event);
       }
 
-      if (!this.sessionTitleGenerated && this.sessionId) {
-        const sessionMeta = await this.sessionService.getSessionMetadata(
-          this.sessionId,
-        );
-        if (sessionMeta && !sessionMeta.title) {
-          const session = await this.sessionService.getSession(this.sessionId);
-          const userMessages = session.events.filter(
-            (e) =>
-              e.type === AgentEventType.MESSAGE && e.role === ContentRole.USER,
+      if (this.sessionId) {
+        const updatedMeta =
+          await this.sessionManager.generateSessionTitleIfNeeded(
+            this.sessionId,
+            this.utilLlm!,
           );
-          const agentMessages = session.events.filter(
-            (e) =>
-              e.type === AgentEventType.MESSAGE && e.role === ContentRole.AGENT,
-          );
-
-          if (userMessages.length >= 1 && agentMessages.length >= 1) {
-            const title = await this.utilLlm!.generateSessionTitle(
-              session.events,
-            );
-            await this.sessionService.updateSession(this.sessionId, {
-              title,
-            });
-            const updatedMeta = await this.sessionService.getSessionMetadata(this.sessionId);
-            if (updatedMeta) {
-              this.emit(AgentRunType.SESSION_METADATA_CHANGE, updatedMeta);
-            }
-            this.sessionTitleGenerated = true;
-            logger.debug(`[CoreAgentRun] Generated session title: ${title}`);
-          }
+        if (updatedMeta) {
+          this.emit(AgentRunType.SESSION_METADATA_CHANGE, updatedMeta);
         }
       }
     } catch (e: unknown) {
@@ -172,7 +166,7 @@ export class AgentRun extends EventEmitter {
       };
 
       if (this.sessionId) {
-        this.sessionService.appendEvent(this.sessionId, errorEvent);
+        await this.sessionManager.appendEvent(this.sessionId, errorEvent);
       }
 
       this.emit(AgentRunType.AGENT_EVENT, errorEvent);
@@ -185,10 +179,10 @@ export class AgentRun extends EventEmitter {
   async updateToolExecutionPolicy(policy: ToolExecutionPolicy) {
     this.agent?.updateToolExecutionPolicy(policy);
     if (this.sessionId) {
-      await this.sessionService.updateSession(this.sessionId, {
-        toolExecutionPolicy: policy,
-      });
-      const updatedMeta = await this.sessionService.getSessionMetadata(this.sessionId);
+      const updatedMeta = await this.sessionManager.updateToolExecutionPolicy(
+        this.sessionId,
+        policy,
+      );
       if (updatedMeta) {
         this.emit(AgentRunType.SESSION_METADATA_CHANGE, updatedMeta);
       }
@@ -200,7 +194,7 @@ export class AgentRun extends EventEmitter {
       const abortEvent = await this.agent?.abort();
 
       if (this.sessionId && abortEvent) {
-        this.sessionService.appendEvent(this.sessionId, abortEvent);
+        await this.sessionManager.appendEvent(this.sessionId, abortEvent);
       }
       this.emit(AgentRunType.AGENT_EVENT, abortEvent);
     }

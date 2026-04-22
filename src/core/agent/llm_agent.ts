@@ -1,15 +1,13 @@
 import {randomUUID} from 'node:crypto';
 import * as fs from 'node:fs/promises';
-import {UnsafeLocalCodeExecutor} from '../code_executor/unsafe_local_code_executor.js';
 import type {CompactionConfig} from '../config/config.js';
 import {type Content, type ContentPart, ContentRole} from '../content.js';
 import {logger} from '../logger.js';
 import type {LlmModel} from '../model/model.js';
 import type {LlmRequest, ThinkingConfig} from '../model/request.js';
 import type {Skill} from '../skills/skill.js';
-import {BUILD_IN_TOOLS} from '../tools/build_in/index.js';
-import {SkillToolset} from '../tools/skills/skill_toolset.js';
 import type {Tool, ToolUnion} from '../tools/tool.js';
+import {ToolRegistry} from '../tools/tool_registry.js';
 import {
   type ToolExecutionPolicy,
   ToolExecutionPolicyType,
@@ -52,7 +50,7 @@ export interface LlmAgentOptions {
   thinkingConfig?: ThinkingConfig;
   compactionConfig?: CompactionConfig;
   toolExecutionPolicy?: ToolExecutionPolicy;
-  tools?: ToolUnion[];
+  toolRegistry: ToolRegistry;
   instructions?: string;
 }
 
@@ -71,6 +69,7 @@ export class LlmAgent implements Agent {
   private toolExecutionPolicy: ToolExecutionPolicy;
   private compactionConfig?: CompactionConfig;
   private abortController?: AbortController;
+  private toolRegistry: ToolRegistry;
 
   constructor(options: LlmAgentOptions) {
     this.id = options.id;
@@ -85,14 +84,8 @@ export class LlmAgent implements Agent {
     this.toolExecutionPolicy = options.toolExecutionPolicy || {
       type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION,
     };
-    this.tools = options.tools || [
-      ...BUILD_IN_TOOLS,
-      new SkillToolset(options.skills || [], {
-        codeExecutor: new UnsafeLocalCodeExecutor({
-          timeoutSeconds: 5 * 60 * 1000, // 5 minutes
-        }),
-      }),
-    ];
+    this.toolRegistry = options.toolRegistry;
+    this.tools = options.toolRegistry.getTools();
     this.compactionConfig = options.compactionConfig;
     this.instructions = options.instructions || CLI_AGENT_SYSTEM_PROMPT;
   }
@@ -249,6 +242,9 @@ export class LlmAgent implements Agent {
   }
 
   private async findTool(name: string): Promise<Tool | undefined> {
+    if (this.toolRegistry) {
+      return this.toolRegistry.resolve(name);
+    }
     for (const possibleTool of this.tools) {
       if (isToolset(possibleTool)) {
         const tools = await possibleTool.getTools();
