@@ -144,4 +144,34 @@ describe('AgentRun', () => {
       expect.objectContaining({type: AgentEventType.END}),
     );
   });
+
+  it('should emit SESSION_METADATA_CHANGE on updateToolExecutionPolicy', async () => {
+    const loop = new AgentRun({
+      models: {
+        main: {modelName: 'gemini-3.1-pro-preview', apiKey: 'dummy'},
+        util: {modelName: 'gemini-3-flash-preview', apiKey: 'dummy'},
+      },
+    } as any, 'test-session-id');
+
+    const events: any[] = [];
+    loop.on(AgentRunType.SESSION_METADATA_CHANGE, (metadata) => {
+      events.push(metadata);
+    });
+
+    const mockSessionService = (loop as any).sessionService;
+    mockSessionService.getSessionMetadata.mockResolvedValue({
+      id: 'test-session-id',
+      toolExecutionPolicy: {type: 'never_request_confirmation'},
+    });
+
+    await loop.updateToolExecutionPolicy({type: 'never_request_confirmation'} as any);
+
+    expect(mockSessionService.updateSession).toHaveBeenCalledWith(
+      'test-session-id',
+      {toolExecutionPolicy: {type: 'never_request_confirmation'}},
+    );
+    expect(events.length).toBe(1);
+    expect(events[0].id).toBe('test-session-id');
+    expect(events[0].toolExecutionPolicy.type).toBe('never_request_confirmation');
+  });
 });

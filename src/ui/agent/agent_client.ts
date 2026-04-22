@@ -53,6 +53,7 @@ declare global {
         policy: ToolExecutionPolicy,
       ) => Promise<{success: boolean; error?: string}>;
       onAgentEvent: (callback: (event: AgentEvent) => void) => void;
+      onSessionMetadataChange: (callback: (metadata: SessionMetadata) => void) => void;
     };
   }
 }
@@ -66,6 +67,14 @@ export class AgentClient {
   onAgentEvent(callback: (event: AgentEvent) => void) {
     if (this.api) {
       this.api.onAgentEvent(callback);
+    } else {
+      console.error('electronAPI is not available');
+    }
+  }
+
+  onSessionMetadataChange(callback: (metadata: SessionMetadata) => void) {
+    if (this.api) {
+      this.api.onSessionMetadataChange(callback);
     } else {
       console.error('electronAPI is not available');
     }

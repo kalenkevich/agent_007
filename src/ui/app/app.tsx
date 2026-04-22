@@ -30,15 +30,12 @@ export default function App() {
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+
   const handleToolPolicyChange = async (policyType: string) => {
     try {
       await agentClient.updateToolExecutionPolicy({
         type: policyType as ToolExecutionPolicyType,
       });
-      const sessionRes = await agentClient.getSessions();
-      if (sessionRes.success && sessionRes.sessions) {
-        setSessions(sessionRes.sessions);
-      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       appendMessage(`IPC Error: ${errorMessage}`, false);
@@ -190,6 +187,12 @@ export default function App() {
       setIsLoading(newState.isLoading);
       setIsThinking(newState.isThinking);
       activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
+    });
+
+    agentClient.onSessionMetadataChange((metadata: SessionMetadata) => {
+      setSessions((prevSessions) =>
+        prevSessions.map((s) => (s.id === metadata.id ? metadata : s)),
+      );
     });
 
     agentClient.initSession().then((res) => {

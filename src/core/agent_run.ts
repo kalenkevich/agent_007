@@ -25,6 +25,7 @@ import {
 
 export enum AgentRunType {
   AGENT_EVENT = 'AGENT_EVENT',
+  SESSION_METADATA_CHANGE = 'session metadata change',
 }
 
 export class AgentRun extends EventEmitter {
@@ -147,6 +148,10 @@ export class AgentRun extends EventEmitter {
             await this.sessionService.updateSession(this.sessionId, {
               title,
             });
+            const updatedMeta = await this.sessionService.getSessionMetadata(this.sessionId);
+            if (updatedMeta) {
+              this.emit(AgentRunType.SESSION_METADATA_CHANGE, updatedMeta);
+            }
             this.sessionTitleGenerated = true;
             logger.debug(`[CoreAgentRun] Generated session title: ${title}`);
           }
@@ -177,12 +182,16 @@ export class AgentRun extends EventEmitter {
     }
   }
 
-  updateToolExecutionPolicy(policy: ToolExecutionPolicy) {
+  async updateToolExecutionPolicy(policy: ToolExecutionPolicy) {
     this.agent?.updateToolExecutionPolicy(policy);
     if (this.sessionId) {
-      this.sessionService.updateSession(this.sessionId, {
+      await this.sessionService.updateSession(this.sessionId, {
         toolExecutionPolicy: policy,
       });
+      const updatedMeta = await this.sessionService.getSessionMetadata(this.sessionId);
+      if (updatedMeta) {
+        this.emit(AgentRunType.SESSION_METADATA_CHANGE, updatedMeta);
+      }
     }
   }
 

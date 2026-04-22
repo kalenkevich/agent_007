@@ -21,6 +21,7 @@ enum IpcEvents {
   GET_CURRENT_SESSION = 'get-current-session',
   DELETE_SESSION = 'delete-session',
   UPDATE_TOOL_EXECUTION_POLICY = 'update-tool-execution-policy',
+  SESSION_METADATA_CHANGE = 'session-metadata-change',
 }
 
 export class AgentBackend {
@@ -72,6 +73,11 @@ export class AgentBackend {
     loop.on(AgentRunType.AGENT_EVENT, (event) => {
       if (this.mainWindow) {
         this.mainWindow.webContents.send(IpcEvents.AGENT_EVENT, event);
+      }
+    });
+    loop.on(AgentRunType.SESSION_METADATA_CHANGE, (metadata) => {
+      if (this.mainWindow) {
+        this.mainWindow.webContents.send(IpcEvents.SESSION_METADATA_CHANGE, metadata);
       }
     });
     this.agentRuns.set(sessionId, loop);
@@ -226,7 +232,7 @@ export class AgentBackend {
           if (!this.currentAgentRun) {
             return {success: false, error: 'No active session'};
           }
-          this.currentAgentRun.updateToolExecutionPolicy(policy);
+          await this.currentAgentRun.updateToolExecutionPolicy(policy);
           return {success: true};
         } catch (err: unknown) {
           return {
