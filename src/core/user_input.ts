@@ -1,8 +1,16 @@
-import type {UserInputResponseEvent} from './agent/agent_event.js';
 import type {ModelConfig} from './config/config.js';
 import type {Content, ContentPart} from './content.js';
 
 export type UserCommand = SetModelCommand | PlanCommand;
+
+export enum UserInputType {
+  TEXT = 'text',
+  CONTENT = 'content',
+  CONTENT_PART = 'content_part',
+  CONTENT_PARTS = 'content_parts',
+  USER_COMMAND = 'user_command',
+  USER_INPUT_RESPONSE = 'user_input_response',
+}
 
 export enum UserInputAction {
   ACCEPT = 'accept',
@@ -26,16 +34,31 @@ export interface PlanCommand {
   task: string;
 }
 
+export interface UserInputResponse {
+  type: UserInputType.USER_INPUT_RESPONSE;
+  requestId: string;
+  data?: Record<string, unknown>;
+  action?: UserInputAction;
+}
+
 export type UserInput =
   | string
   | Content
   | ContentPart
   | ContentPart[]
   | UserCommand
-  | UserInputResponseEvent;
+  | UserInputResponse;
 
 export function isUserCommand(userInput: UserInput): userInput is UserCommand {
   return (userInput as UserCommand).command !== undefined;
+}
+
+export function isUserInputResponse(
+  userInput: UserInput,
+): userInput is UserInputResponse {
+  return (
+    (userInput as UserInputResponse).type === UserInputType.USER_INPUT_RESPONSE
+  );
 }
 
 export function toContentParts(

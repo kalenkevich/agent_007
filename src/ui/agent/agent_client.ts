@@ -1,8 +1,7 @@
 import {
-  AgentEventType,
-  ContentRole,
   UserCommandType,
   UserInputAction,
+  UserInputType,
   type AgentEvent,
   type Session,
   type SessionMetadata,
@@ -95,11 +94,7 @@ export class AgentClient {
   async sendUserInputResponse(requestId: string, action: UserInputAction) {
     if (this.api) {
       return await this.api.sendUserInput({
-        id: crypto.randomUUID(),
-        invocationId: '',
-        timestamp: new Date().toISOString(),
-        role: ContentRole.USER,
-        type: AgentEventType.USER_INPUT_RESPONSE,
+        type: UserInputType.USER_INPUT_RESPONSE,
         requestId,
         action,
       });

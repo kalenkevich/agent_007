@@ -14,6 +14,7 @@ export {type Session, type SessionMetadata} from './session/session.js';
 export {
   UserCommandType,
   UserInputAction,
+  UserInputType,
   type UserCommand,
   type UserInput,
 } from './user_input.js';

@@ -2,15 +2,16 @@ import {
   AgentEventType,
   AgentRun,
   AgentRunType,
+  configStore,
   ContentRole,
   InitProjectCommandHandler,
-  SessionFileService,
-  UserCommandType,
-  configStore,
   isYes,
   loadConfig,
   parseUserAction,
   projectService,
+  SessionFileService,
+  UserCommandType,
+  UserInputType,
   type AgentEvent,
   type CompactionEvent,
   type Session,
@@ -18,7 +19,6 @@ import {
   type ThinkingConfig,
   type UserInputRequestEvent,
 } from '@agent007/core/node';
-import {randomUUID} from 'node:crypto';
 import {stdin as input, stdout as output} from 'node:process';
 import * as readline from 'node:readline';
 import {createInterface} from 'node:readline/promises';
@@ -237,11 +237,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         const action = parseUserAction(answer);
 
         await loop.run({
-          type: AgentEventType.USER_INPUT_RESPONSE,
-          id: randomUUID(),
-          invocationId: (request as UserInputRequestEvent).invocationId,
-          timestamp: new Date().toISOString(),
-          role: ContentRole.USER,
+          type: UserInputType.USER_INPUT_RESPONSE,
           requestId: (request as UserInputRequestEvent).requestId,
           action,
         });
@@ -277,11 +273,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
           const action = parseUserAction(answer);
 
           await loop.run({
-            type: AgentEventType.USER_INPUT_RESPONSE,
-            id: randomUUID(),
-            invocationId: (request as UserInputRequestEvent).invocationId,
-            timestamp: new Date().toISOString(),
-            role: ContentRole.USER,
+            type: UserInputType.USER_INPUT_RESPONSE,
             requestId: (request as UserInputRequestEvent).requestId,
             action,
           });
@@ -306,11 +298,7 @@ export async function runInteractiveCommand(options: RunCommandOptions) {
         const action = parseUserAction(answer);
 
         await loop.run({
-          type: AgentEventType.USER_INPUT_RESPONSE,
-          id: randomUUID(),
-          invocationId: (request as UserInputRequestEvent).invocationId,
-          timestamp: new Date().toISOString(),
-          role: ContentRole.USER,
+          type: UserInputType.USER_INPUT_RESPONSE,
           requestId: (request as UserInputRequestEvent).requestId,
           action,
         });

@@ -118,4 +118,30 @@ describe('event_processor', () => {
       '⚠️ [Error]: Something went wrong',
     );
   });
+
+  it('should handle USER_INPUT_RESPONSE event', () => {
+    const stateWithPendingInput: ChatState = {
+      ...initialState,
+      messages: [
+        {
+          id: '1',
+          invocationId: 'inv-1',
+          author: 'agent' as any,
+          type: 'tool_confirmation' as any,
+          content: '❓ [User Input Required]: Testing user input',
+          requestId: '123',
+          isPending: true,
+          final: true,
+        } as any,
+      ],
+    };
+    const event: AgentEvent = {
+      type: 'USER_INPUT_RESPONSE',
+      requestId: '123',
+      action: 'accept' as any,
+    } as AgentEvent;
+    const newState = processEvent(stateWithPendingInput, event);
+    expect(newState.messages[0].isPending).toBe(false);
+    expect((newState.messages[0] as any).action).toBe('accept');
+  });
 });

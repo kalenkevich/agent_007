@@ -1,7 +1,10 @@
 import {app, BrowserWindow} from 'electron';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {loadEnv} from '../common/env.js';
 import {AgentBackend} from './agent/agent_backend.js';
+
+loadEnv();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

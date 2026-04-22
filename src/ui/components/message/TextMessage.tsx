@@ -1,23 +1,23 @@
 import {ContentRole} from '@agent007/core';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import {type ChatMessage} from '../chat/chat_message';
+import type {ChatMessage} from '../../chat/chat_message';
 
-interface MessageItemProps {
-  msg: ChatMessage;
+interface TextMessageProps {
+  messsage: ChatMessage;
 }
 
-export function MessageItem({msg}: MessageItemProps) {
+export function TextMessage({messsage}: TextMessageProps) {
   return (
     <div
-      className={`message ${msg.author === ContentRole.USER ? 'user-msg' : 'system-msg'}`}>
+      className={`message ${messsage.author === ContentRole.USER ? 'user-messsage' : 'system-messsage'}`}>
       <div className="avatar">
-        {msg.author === ContentRole.USER ? '👤' : '🤖'}
+        {messsage.author === ContentRole.USER ? '👤' : '🤖'}
       </div>
-      <div className="msg-content">
-        {msg.thinkingText && msg.thinkingText.length > 0 && (
+      <div className="messsage-content">
+        {messsage.thinkingText && messsage.thinkingText.length > 0 && (
           <details
-            open={!msg.final}
+            open={!messsage.final}
             style={{
               fontStyle: 'italic',
               opacity: 0.7,
@@ -31,20 +31,20 @@ export function MessageItem({msg}: MessageItemProps) {
               style={{
                 outline: 'none',
                 userSelect: 'none',
-                marginBottom: !msg.final ? '8px' : '0px',
+                marginBottom: !messsage.final ? '8px' : '0px',
               }}>
               💭 Thinking Process{' '}
-              {msg.final ? '(Finished - click to expand)' : '...'}
+              {messsage.final ? '(Finished - click to expand)' : '...'}
             </summary>
             <div style={{whiteSpace: 'pre-wrap'}}>
-              {msg.thinkingText.join('\n')}
+              {messsage.thinkingText.join('\n')}
             </div>
           </details>
         )}
-        {msg.content && (
+        {messsage.content && (
           <div className="markdown-content">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {msg.content}
+              {messsage.content}
             </ReactMarkdown>
           </div>
         )}
@@ -52,4 +52,3 @@ export function MessageItem({msg}: MessageItemProps) {
     </div>
   );
 }
-

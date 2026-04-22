@@ -1,5 +1,8 @@
 import {describe, expect, it} from 'vitest';
-import {AgentEventType, type AgentEvent} from '../../src/core/agent/agent_event.js';
+import {
+  AgentEventType,
+  type AgentEvent,
+} from '../../src/core/agent/agent_event.js';
 import {loadConfig} from '../../src/core/config/config_loader.js';
 import {AdaptiveLlmModel} from '../../src/core/model/adaptive_model.js';
 import {UtilLlm} from '../../src/core/model/util_llm.js';

@@ -1,3 +1,4 @@
+import {assumeExhaustiveAllowing} from '../../common/index.js';
 import type {Content} from '../content.js';
 import {ContentRole} from '../content.js';
 import type {LlmResponse} from '../model/response.js';
@@ -7,8 +8,9 @@ import {
   isAgentEndEvent,
   isAgentStartEvent,
   isUsageEvent,
+  isUserInputRequestEvent,
+  isUserInputResponseEvent,
 } from './agent_event.js';
-import {assumeExhaustiveAllowing} from '../../common/index.js';
 
 export function getContentFromAgentEvent(
   agentEvent: AgentEvent,
@@ -17,6 +19,8 @@ export function getContentFromAgentEvent(
     isUsageEvent(agentEvent) ||
     isAgentStartEvent(agentEvent) ||
     isAgentEndEvent(agentEvent) ||
+    isUserInputRequestEvent(agentEvent) ||
+    isUserInputResponseEvent(agentEvent) ||
     agentEvent.partial
   ) {
     return undefined;

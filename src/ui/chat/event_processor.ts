@@ -263,7 +263,6 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
 
     case AgentEventType.USER_INPUT_REQUEST: {
       newState.isLoading = false;
-      newState.pendingUserInput = event;
       newState.messages = [
         ...newState.messages,
         {
@@ -274,15 +273,31 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
           content: `❓ [User Input Required]: ${event.message}`,
           requestId: event.requestId,
           final: true,
+          isPending: true,
         },
       ];
       break;
     }
 
+    case AgentEventType.USER_INPUT_RESPONSE: {
+      newState.messages = newState.messages.map((msg) => {
+        if (
+          msg.type === ChatMessageType.TOOL_CONFIRMATION &&
+          msg.requestId === event.requestId
+        ) {
+          return {
+            ...msg,
+            isPending: false,
+            action: event.action,
+          };
+        }
+        return msg;
+      });
+      break;
+    }
+
     default: {
-      assumeExhaustiveAllowing<
-        AgentEventType.USER_INPUT_RESPONSE | AgentEventType.USAGE
-      >(event.type);
+      assumeExhaustiveAllowing<AgentEventType.USAGE>(event.type);
       break;
     }
   }

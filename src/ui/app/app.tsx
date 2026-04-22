@@ -1,8 +1,8 @@
 import {
   ContentRole,
-  isUserInputRequestEvent,
   type AgentEvent,
   type SessionMetadata,
+  UserInputAction,
 } from '@agent007/core';
 import {useEffect, useRef, useState} from 'react';
 import {agentClient} from '../agent/agent_client';
@@ -21,9 +21,7 @@ export default function App() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [pendingUserInput, setPendingUserInput] = useState<AgentEvent | null>(
-    null,
-  );
+
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(
     undefined,
   );
@@ -38,7 +36,6 @@ export default function App() {
     messages,
     isLoading,
     isThinking,
-    pendingUserInput,
     activeStreamMessageId: activeStreamMessageIdRef.current || undefined,
   });
 
@@ -46,7 +43,6 @@ export default function App() {
     messages,
     isLoading,
     isThinking,
-    pendingUserInput,
     activeStreamMessageId: activeStreamMessageIdRef.current || undefined,
   };
 
@@ -94,18 +90,13 @@ export default function App() {
     }
   };
 
-  const handleUserInputResponse = async (action: string) => {
-    if (!pendingUserInput || !isUserInputRequestEvent(pendingUserInput)) return;
-
-    const req = pendingUserInput;
-    setPendingUserInput(null);
-
+  const handleUserInputResponse = async (requestId: string, action: UserInputAction) => {
     appendMessage(`User answered: ${action}`, true);
 
     try {
       await agentClient.sendUserInputResponse(
-        req.requestId,
-        action as 'accept' | 'decline' | 'cancel',
+        requestId,
+        action,
       );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -147,7 +138,6 @@ export default function App() {
           messages: [],
           isLoading: false,
           isThinking: false,
-          pendingUserInput: null,
           activeStreamMessageId: undefined,
         };
 
@@ -158,7 +148,6 @@ export default function App() {
         setMessages(state.messages);
         setIsLoading(state.isLoading);
         setIsThinking(state.isThinking);
-        setPendingUserInput(state.pendingUserInput);
         activeStreamMessageIdRef.current = state.activeStreamMessageId || null;
       }
     } catch (err) {
@@ -176,7 +165,6 @@ export default function App() {
       setMessages(newState.messages);
       setIsLoading(newState.isLoading);
       setIsThinking(newState.isThinking);
-      setPendingUserInput(newState.pendingUserInput);
       activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
     });
 
@@ -211,7 +199,6 @@ export default function App() {
         if (sessionId === activeSessionId) {
           setActiveSessionId(undefined);
           setMessages([]);
-          setPendingUserInput(null);
           setIsThinking(false);
           setIsLoading(false);
         } else {
@@ -278,6 +265,7 @@ export default function App() {
             messages={messages}
             isLoading={isLoading}
             messageStreamRef={messageStreamRef}
+            onUserInputResponse={handleUserInputResponse}
           />
 
           <ChatInput
@@ -288,8 +276,6 @@ export default function App() {
             apiKeyInput={apiKeyInput}
             setApiKeyInput={setApiKeyInput}
             handleSubmitApiKey={handleSubmitApiKey}
-            pendingUserInput={pendingUserInput}
-            handleUserInputResponse={handleUserInputResponse}
           />
         </main>
       </div>

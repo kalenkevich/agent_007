@@ -18,18 +18,18 @@ import {isToolset} from '../tools/toolset.js';
 import {
   type UserInput,
   isUserCommand,
+  isUserInputResponse,
   toContentParts,
   UserCommandType,
+  UserInputAction,
 } from '../user_input.js';
 import type {Agent} from './agent.js';
 import {
   type AgentEvent,
   type ToolCallEvent,
-  type UserInputResponseEvent,
   AgentEndReason,
   AgentEventType,
   isUserInputRequestEvent,
-  isUserInputResponseEvent,
 } from './agent_event.js';
 import {
   getContentFromAgentEvent,
@@ -295,14 +295,28 @@ export class LlmAgent implements Agent {
     }
 
     const requestId = lastEvent.requestId;
+
+    if (isUserInputResponse(userInput)) {
+      yield this.createEvent(AgentEventType.USER_INPUT_RESPONSE, {
+        role: ContentRole.USER,
+        requestId: userInput.requestId,
+        action: userInput.action,
+        data: userInput.data,
+        partial: false,
+        final: true,
+      });
+    }
+
     if (lastEvent.requestSchema?.['type'] === 'plan_approval') {
       const isAccepted =
-        isUserInputResponseEvent(userInput) && userInput.action === 'accept';
+        isUserInputResponse(userInput) &&
+        userInput.action === UserInputAction.ACCEPT;
 
       if (isAccepted) {
         const planFilePath = lastEvent.requestSchema?.[
           'planFilePath'
         ] as string;
+
         try {
           const planContent = await fs.readFile(planFilePath, 'utf-8');
           yield this.createEvent(AgentEventType.MESSAGE, {
@@ -326,63 +340,67 @@ export class LlmAgent implements Agent {
             ],
           });
         }
-      } else {
-        yield this.createEvent(AgentEventType.MESSAGE, {
-          role: ContentRole.USER,
-          parts: [{type: 'text', text: 'Plan declined.'}],
-        });
+
+        return;
       }
-    } else {
-      const toolCall = this.history.find(
-        (e) => e.type === AgentEventType.TOOL_CALL && e.requestId === requestId,
-      ) as ToolCallEvent;
 
-      if (toolCall) {
-        const isAccepted =
-          isUserInputResponseEvent(userInput) &&
-          (userInput as UserInputResponseEvent).action === 'accept';
+      yield this.createEvent(AgentEventType.MESSAGE, {
+        role: ContentRole.USER,
+        parts: [{type: 'text', text: 'Plan declined.'}],
+      });
 
-        if (isAccepted) {
-          const tool = await this.findTool(toolCall.name);
-          if (tool) {
-            try {
-              logger.debug(
-                `[CliAgent] Executing tool ${toolCall.name} after confirmation`,
-              );
-              const result = await tool.execute(toolCall.args);
-              yield this.createToolResponseEvent(
-                toolCall.requestId,
-                toolCall.name,
-                result as Record<string, unknown> | string,
-              );
-            } catch (error: unknown) {
-              logger.error(
-                `[CliAgent] Tool execution failed: ${(error as Error).message}`,
-              );
-              yield this.createToolResponseEvent(
-                toolCall.requestId,
-                toolCall.name,
-                {},
-                (error as Error).message,
-              );
-            }
+      return;
+    }
+
+    const toolCall = this.history.find(
+      (e) => e.type === AgentEventType.TOOL_CALL && e.requestId === requestId,
+    ) as ToolCallEvent;
+
+    if (toolCall) {
+      const isAccepted =
+        isUserInputResponse(userInput) &&
+        userInput.action === UserInputAction.ACCEPT;
+
+      if (isAccepted) {
+        const tool = await this.findTool(toolCall.name);
+        if (tool) {
+          try {
+            logger.debug(
+              `[CliAgent] Executing tool ${toolCall.name} after confirmation`,
+            );
+            const result = await tool.execute(toolCall.args);
+            yield this.createToolResponseEvent(
+              toolCall.requestId,
+              toolCall.name,
+              result as Record<string, unknown> | string,
+            );
+          } catch (error: unknown) {
+            logger.error(
+              `[CliAgent] Tool execution failed: ${(error as Error).message}`,
+            );
+            yield this.createToolResponseEvent(
+              toolCall.requestId,
+              toolCall.name,
+              {},
+              (error as Error).message,
+            );
           }
-        } else {
-          logger.debug(
-            `[CliAgent] Tool ${toolCall.name} execution declined by user`,
-          );
-          yield this.createToolResponseEvent(
-            toolCall.requestId,
-            toolCall.name,
-            {},
-            'User declined tool execution',
-          );
         }
-      } else {
-        if (isUserInputResponseEvent(userInput)) {
-          yield this.createEvent(userInput.type, userInput);
-        }
+
+        return;
       }
+
+      logger.debug(
+        `[CliAgent] Tool ${toolCall.name} execution declined by user`,
+      );
+      yield this.createToolResponseEvent(
+        toolCall.requestId,
+        toolCall.name,
+        {},
+        'User declined tool execution',
+      );
+
+      return;
     }
   }
 

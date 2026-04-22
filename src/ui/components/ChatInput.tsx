@@ -1,5 +1,3 @@
-import {isUserInputRequestEvent, type AgentEvent} from '@agent007/core';
-
 interface ChatInputProps {
   inputValue: string;
   setInputValue: (val: string) => void;
@@ -8,8 +6,6 @@ interface ChatInputProps {
   apiKeyInput: string;
   setApiKeyInput: (val: string) => void;
   handleSubmitApiKey: () => void;
-  pendingUserInput: AgentEvent | null;
-  handleUserInputResponse: (action: string) => void;
 }
 
 export function ChatInput({
@@ -20,8 +16,6 @@ export function ChatInput({
   apiKeyInput,
   setApiKeyInput,
   handleSubmitApiKey,
-  pendingUserInput,
-  handleUserInputResponse,
 }: ChatInputProps) {
   return (
     <footer className="chat-footer glass-panel">
@@ -57,47 +51,6 @@ export function ChatInput({
               style={{background: '#00ff88', color: '#000'}}
               onClick={handleSubmitApiKey}>
               Submit
-            </button>
-          </div>
-        </div>
-      ) : pendingUserInput ? (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
-            background: 'rgba(0,0,0,0.4)',
-            padding: '1rem',
-            borderRadius: '16px',
-          }}>
-          <p style={{fontWeight: 600, color: '#00f2fe'}}>
-            ❓{' '}
-            {isUserInputRequestEvent(pendingUserInput)
-              ? pendingUserInput.message
-              : ''}
-          </p>
-          <div style={{display: 'flex', gap: '1rem'}}>
-            <button
-              className="btn btn-action"
-              style={{
-                flex: 1,
-                textAlign: 'center',
-                background: '#00ff88',
-                color: '#000',
-              }}
-              onClick={() => handleUserInputResponse('accept')}>
-              Yes
-            </button>
-            <button
-              className="btn btn-action"
-              style={{
-                flex: 1,
-                textAlign: 'center',
-                background: '#ff4444',
-                color: '#fff',
-              }}
-              onClick={() => handleUserInputResponse('decline')}>
-              No
             </button>
           </div>
         </div>

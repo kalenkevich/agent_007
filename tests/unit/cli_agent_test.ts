@@ -138,7 +138,7 @@ describe('CliAgent - Tool Confirmation', () => {
 
     const events: any[] = [];
     for await (const event of agent.run({
-      type: AgentEventType.USER_INPUT_RESPONSE,
+      type: 'user_input_response',
       id: 'resp_123',
       invocationId,
       timestamp: new Date().toISOString(),
@@ -150,11 +150,12 @@ describe('CliAgent - Tool Confirmation', () => {
       events.push(event);
     }
 
-    expect(events.length).toBe(3);
-    expect(events[0].type).toBe(AgentEventType.TOOL_RESPONSE);
-    expect(events[2].type).toBe(AgentEventType.END);
-    expect(events[0].requestId).toBe('call_123');
-    expect(events[0].result).toEqual({result: 'ok'});
+    expect(events.length).toBe(4);
+    expect(events[0].type).toBe(AgentEventType.USER_INPUT_RESPONSE);
+    expect(events[1].type).toBe(AgentEventType.TOOL_RESPONSE);
+    expect(events[3].type).toBe(AgentEventType.END);
+    expect(events[1].requestId).toBe('call_123');
+    expect(events[1].result).toEqual({result: 'ok'});
 
     expect(mockTool.execute).toHaveBeenCalled();
   });
@@ -232,7 +233,7 @@ describe('CliAgent - Tool Confirmation', () => {
 
     const events: any[] = [];
     for await (const event of agent.run({
-      type: AgentEventType.USER_INPUT_RESPONSE,
+      type: 'user_input_response',
       id: 'resp_456',
       invocationId,
       timestamp: new Date().toISOString(),
@@ -244,11 +245,12 @@ describe('CliAgent - Tool Confirmation', () => {
       events.push(event);
     }
 
-    expect(events.length).toBe(3);
-    expect(events[0].type).toBe(AgentEventType.TOOL_RESPONSE);
-    expect(events[2].type).toBe(AgentEventType.END);
-    expect(events[0].requestId).toBe('call_123');
-    expect(events[0].error).toBe('User declined tool execution');
+    expect(events.length).toBe(4);
+    expect(events[0].type).toBe(AgentEventType.USER_INPUT_RESPONSE);
+    expect(events[1].type).toBe(AgentEventType.TOOL_RESPONSE);
+    expect(events[3].type).toBe(AgentEventType.END);
+    expect(events[1].requestId).toBe('call_123');
+    expect(events[1].error).toBe('User declined tool execution');
 
     expect(mockTool.execute).not.toHaveBeenCalled();
   });
@@ -456,7 +458,7 @@ describe('CliAgent - Plan Execution', () => {
 
     const events: any[] = [];
     for await (const event of agent.run({
-      type: AgentEventType.USER_INPUT_RESPONSE,
+      type: 'user_input_response',
       id: 'resp_123',
       invocationId,
       timestamp: new Date().toISOString(),

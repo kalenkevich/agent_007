@@ -47,7 +47,7 @@ export class AgentBackend {
       if (sessions.length > 0) {
         sessions.sort(
           (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
         );
         sessionId = sessions[0].id;
       } else {
@@ -196,24 +196,25 @@ export class AgentBackend {
       }
     });
 
-    ipcMain.handle(IpcEvents.DELETE_SESSION, async (event, sessionId: string) => {
-      try {
-        await this.sessionService.deleteSession(sessionId);
-        if (this.agentRuns.has(sessionId)) {
-          this.agentRuns.delete(sessionId);
+    ipcMain.handle(
+      IpcEvents.DELETE_SESSION,
+      async (event, sessionId: string) => {
+        try {
+          await this.sessionService.deleteSession(sessionId);
+          if (this.agentRuns.has(sessionId)) {
+            this.agentRuns.delete(sessionId);
+          }
+          if (this.currentAgentRun?.getSessionId() === sessionId) {
+            this.currentAgentRun = undefined;
+          }
+          return {success: true};
+        } catch (err: unknown) {
+          return {
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          };
         }
-        if (this.currentAgentRun?.getSessionId() === sessionId) {
-          this.currentAgentRun = undefined;
-        }
-        return {success: true};
-      } catch (err: unknown) {
-        return {
-          success: false,
-          error: err instanceof Error ? err.message : String(err),
-        };
-      }
-    });
+      },
+    );
   }
 }
-
-

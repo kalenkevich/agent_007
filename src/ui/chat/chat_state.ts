@@ -1,4 +1,3 @@
-import {type AgentEvent} from '@agent007/core';
 import {type ChatMessage} from './chat_message.js';
 
 /**
@@ -9,6 +8,5 @@ export interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   isThinking: boolean;
-  pendingUserInput?: AgentEvent;
   activeStreamMessageId?: string;
 }

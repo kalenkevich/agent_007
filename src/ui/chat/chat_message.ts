@@ -1,4 +1,4 @@
-import {ContentRole} from '@agent007/core';
+import {ContentRole, UserInputAction} from '@agent007/core';
 
 /**
  * Chat message interface.
@@ -57,8 +57,8 @@ export interface ToolConfirmationChatMessage extends BaseChatMessage {
   type: ChatMessageType.TOOL_CONFIRMATION;
   content: string;
   requestId: string;
-  onConfirm?: () => void;
-  onReject?: () => void;
+  isPending?: boolean;
+  action?: UserInputAction;
 }
 
 /**

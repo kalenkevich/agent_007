@@ -1,5 +1,8 @@
 import {describe, expect, it, vi} from 'vitest';
-import {AgentEventType, type AgentEvent} from '../../src/core/agent/agent_event.js';
+import {
+  AgentEventType,
+  type AgentEvent,
+} from '../../src/core/agent/agent_event.js';
 import {UtilLlm} from '../../src/core/model/util_llm.js';
 
 describe('UtilLlm', () => {

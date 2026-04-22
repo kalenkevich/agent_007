@@ -3,10 +3,13 @@
 import {stdin as input, stdout as output} from 'node:process';
 import {createInterface} from 'node:readline/promises';
 import {parseArgs} from 'node:util';
+import {loadEnv} from '../common/env.js';
 import {InitProjectCommandHandler} from '../core/command/init_project_command_handler.js';
 import {configStore} from '../core/config/config_store.js';
 import {runInteractiveCommand} from './run_interactive_command.js';
 import {runNoninteractiveCommand} from './run_noninteractive_command.js';
+
+loadEnv();
 
 const options = {
   prompt: {
