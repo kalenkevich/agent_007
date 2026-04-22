@@ -107,8 +107,6 @@ export default function App() {
   };
 
   const handleUserInputResponse = async (requestId: string, action: UserInputAction) => {
-    appendMessage(`User answered: ${action}`, true);
-
     try {
       await agentRunClient.sendUserInputResponse(
         requestId,

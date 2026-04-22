@@ -8,6 +8,7 @@ export default defineConfig({
   base: './',
   resolve: {
     alias: {
+      '@/components': resolve(__dirname, './src/ui/components'),
       '@': resolve(__dirname, './src'),
       '@agent007/core': resolve(__dirname, './src/core/index.ts'),
       '@agent007/core/node': resolve(__dirname, './src/core/node.ts'),
