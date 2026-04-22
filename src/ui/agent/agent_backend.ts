@@ -41,11 +41,24 @@ export class AgentBackend {
 
     try {
       this.config = await loadConfig();
-      const session = await this.sessionService.createSession(
-        'Coding Agent',
-        [],
-      );
-      this.currentAgentRun = this.createLoop(session.id);
+      const sessions = await this.sessionService.listSessions();
+      let sessionId: string;
+
+      if (sessions.length > 0) {
+        sessions.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        sessionId = sessions[0].id;
+      } else {
+        const session = await this.sessionService.createSession(
+          'Coding Agent',
+          [],
+        );
+        sessionId = session.id;
+      }
+
+      this.currentAgentRun = this.createLoop(sessionId);
       this.initialized = true;
     } catch (error) {
       console.error('Failed to initialize agent loop in AppBackend:', error);

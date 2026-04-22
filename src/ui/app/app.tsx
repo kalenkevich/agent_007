@@ -60,31 +60,7 @@ export default function App() {
     }
   }, [messages]);
 
-  useEffect(() => {
-    // Set up event listener for agent responses
-    agentClient.onAgentEvent((event: AgentEvent) => {
-      const newState = processEvent(chatStateRef.current, event);
 
-      setMessages(newState.messages);
-      setIsLoading(newState.isLoading);
-      setIsThinking(newState.isThinking);
-      setPendingUserInput(newState.pendingUserInput);
-      activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
-    });
-
-    agentClient.initSession().then((res) => {
-      if (res && !res.success && res.needApiKey) {
-        setShowApiKeyPrompt(true);
-      } else if (res && res.success && res.sessionId) {
-        setActiveSessionId(res.sessionId);
-        agentClient.getSessions().then((sessionRes) => {
-          if (sessionRes.success && sessionRes.sessions) {
-            setSessions(sessionRes.sessions);
-          }
-        });
-      }
-    });
-  }, []);
 
   const appendMessage = (content: string, isUser: boolean) => {
     setMessages((prev) => [
@@ -148,6 +124,13 @@ export default function App() {
         const initRes = await agentClient.initSession();
         if (!initRes.success) {
           appendMessage(`Error initializing session: ${initRes.error}`, false);
+        } else if (initRes.sessionId) {
+          handleSelectSession(initRes.sessionId);
+          agentClient.getSessions().then((sessionRes) => {
+            if (sessionRes.success && sessionRes.sessions) {
+              setSessions(sessionRes.sessions);
+            }
+          });
         }
       } else {
         appendMessage(`Error saving API key: ${res.error}`, false);
@@ -185,6 +168,32 @@ export default function App() {
       appendMessage(`IPC Error: ${errorMessage}`, false);
     }
   };
+
+  useEffect(() => {
+    // Set up event listener for agent responses
+    agentClient.onAgentEvent((event: AgentEvent) => {
+      const newState = processEvent(chatStateRef.current, event);
+
+      setMessages(newState.messages);
+      setIsLoading(newState.isLoading);
+      setIsThinking(newState.isThinking);
+      setPendingUserInput(newState.pendingUserInput);
+      activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
+    });
+
+    agentClient.initSession().then((res) => {
+      if (res && !res.success && res.needApiKey) {
+        setShowApiKeyPrompt(true);
+      } else if (res && res.success && res.sessionId) {
+        handleSelectSession(res.sessionId);
+        agentClient.getSessions().then((sessionRes) => {
+          if (sessionRes.success && sessionRes.sessions) {
+            setSessions(sessionRes.sessions);
+          }
+        });
+      }
+    });
+  }, []);
 
   const handleDeleteSession = (sessionId: string) => {
     setDeleteSessionId(sessionId);
