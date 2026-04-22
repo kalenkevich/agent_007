@@ -8,7 +8,11 @@ import {buildLlmRequest} from '../../model/request_builder_utils.js';
 import type {ToolUnion} from '../../tools/tool.js';
 import {type UserInput} from '../../user_input.js';
 import type {Agent} from '../agent.js';
-import {type AgentEvent, AgentEventType} from '../agent_event.js';
+import {
+  type AgentEvent,
+  AgentEventType,
+  AgentEndReason,
+} from '../agent_event.js';
 import {llmResponseToAgentEvents} from '../agent_event_utils.js';
 
 export interface PlannerAgentOptions {
@@ -126,8 +130,22 @@ Respond ONLY with the plan.`;
     return [...this.history];
   }
 
-  async abort(): Promise<void> {
+  async abort(): Promise<AgentEvent | undefined> {
     this.abortController?.abort();
+
+    if (this.abortController) {
+      const event = this.createEvent(AgentEventType.END, {
+        role: ContentRole.AGENT,
+        type: AgentEventType.END,
+        reason: AgentEndReason.ABORTED,
+        final: true,
+      });
+      this.history.push(event);
+
+      return event;
+    }
+
+    return undefined;
   }
 
   updateToolExecutionPolicy(): void {}

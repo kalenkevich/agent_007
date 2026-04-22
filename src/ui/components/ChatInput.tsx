@@ -6,6 +6,8 @@ interface ChatInputProps {
   apiKeyInput: string;
   setApiKeyInput: (val: string) => void;
   handleSubmitApiKey: () => void;
+  isLoading: boolean;
+  onAbort: () => void;
 }
 
 export function ChatInput({
@@ -16,6 +18,8 @@ export function ChatInput({
   apiKeyInput,
   setApiKeyInput,
   handleSubmitApiKey,
+  isLoading,
+  onAbort,
 }: ChatInputProps) {
   return (
     <footer className="chat-footer glass-panel">
@@ -69,6 +73,24 @@ export function ChatInput({
               }
             }}
           />
+          {isLoading && (
+            <button
+              id="btn-abort"
+              className="btn-danger"
+              style={{
+                padding: '0 1rem',
+                borderRadius: '12px',
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(255, 77, 79, 0.3)',
+                cursor: 'pointer',
+                height: '44px',
+                border: 'none',
+              }}
+              onClick={onAbort}
+            >
+              Abort
+            </button>
+          )}
           <button
             className="btn-send"
             id="btn-send"

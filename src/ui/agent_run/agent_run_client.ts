@@ -2,10 +2,10 @@ import {
   UserCommandType,
   UserInputAction,
   UserInputType,
-  type ToolExecutionPolicy,
   type AgentEvent,
   type Session,
   type SessionMetadata,
+  type ToolExecutionPolicy,
   type UserInput,
 } from '@agent007/core';
 
@@ -52,16 +52,26 @@ declare global {
       updateToolExecutionPolicy: (
         policy: ToolExecutionPolicy,
       ) => Promise<{success: boolean; error?: string}>;
+      abortExecution: () => Promise<{success: boolean; error?: string}>;
       onAgentEvent: (callback: (event: AgentEvent) => void) => void;
-      onSessionMetadataChange: (callback: (metadata: SessionMetadata) => void) => void;
+      onSessionMetadataChange: (
+        callback: (metadata: SessionMetadata) => void,
+      ) => void;
     };
   }
 }
 
-export class AgentClient {
+export class AgentRunClient {
   private get api() {
     // eslint-disable-next-line
     return window.electronAPI;
+  }
+
+  async abortExecution() {
+    if (this.api) {
+      return await this.api.abortExecution();
+    }
+    return {success: false, error: 'electronAPI not available'};
   }
 
   onAgentEvent(callback: (event: AgentEvent) => void) {
@@ -172,4 +182,4 @@ export class AgentClient {
   }
 }
 
-export const agentClient = new AgentClient();
+export const agentRunClient = new AgentRunClient();

@@ -22,11 +22,13 @@ enum IpcEvents {
   DELETE_SESSION = 'delete-session',
   UPDATE_TOOL_EXECUTION_POLICY = 'update-tool-execution-policy',
   SESSION_METADATA_CHANGE = 'session-metadata-change',
+  ABORT_EXECUTION = 'abort-execution',
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sendUserInput: (message: UserInput) =>
     ipcRenderer.invoke(IpcEvents.SEND_USER_INPUT, message),
+  abortExecution: () => ipcRenderer.invoke(IpcEvents.ABORT_EXECUTION),
   initSession: () => ipcRenderer.invoke(IpcEvents.INIT_SESSION),
   submitApiKey: (key: string) =>
     ipcRenderer.invoke(IpcEvents.SUBMIT_API_KEY, key),

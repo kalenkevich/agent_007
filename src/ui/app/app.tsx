@@ -7,7 +7,7 @@ import {
   ToolExecutionPolicyType,
 } from '@agent007/core';
 import {useEffect, useRef, useState} from 'react';
-import {agentClient} from '../agent/agent_client';
+import {agentRunClient} from '../agent_run/agent_run_client';
 import {ChatMessageType, type ChatMessage} from '../chat/chat_message';
 import {type ChatState} from '../chat/chat_state';
 import {processEvent} from '../chat/event_processor';
@@ -33,7 +33,7 @@ export default function App() {
 
   const handleToolPolicyChange = async (policyType: string) => {
     try {
-      await agentClient.updateToolExecutionPolicy({
+      await agentRunClient.updateToolExecutionPolicy({
         type: policyType as ToolExecutionPolicyType,
       });
     } catch (err) {
@@ -93,9 +93,9 @@ export default function App() {
     try {
       if (trimmed.startsWith('/plan')) {
         const task = trimmed.substring(5).trim();
-        await agentClient.sendPlan(task);
+        await agentRunClient.sendPlan(task);
       } else {
-        await agentClient.sendUserInput(trimmed);
+        await agentRunClient.sendUserInput(trimmed);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -107,7 +107,7 @@ export default function App() {
     appendMessage(`User answered: ${action}`, true);
 
     try {
-      await agentClient.sendUserInputResponse(
+      await agentRunClient.sendUserInputResponse(
         requestId,
         action,
       );
@@ -121,10 +121,10 @@ export default function App() {
     if (!apiKeyInput.trim()) return;
     try {
       setIsLoading(true);
-      const res = await agentClient.submitApiKey(apiKeyInput.trim());
+      const res = await agentRunClient.submitApiKey(apiKeyInput.trim());
       if (res.success) {
         setShowApiKeyPrompt(false);
-        const initRes = await agentClient.initSession();
+        const initRes = await agentRunClient.initSession();
         if (!initRes.success) {
           appendMessage(`Error initializing session: ${initRes.error}`, false);
           setIsLoading(false);
@@ -145,7 +145,7 @@ export default function App() {
     setIsLoading(true);
     setActiveSessionId(sessionId);
     try {
-      const res = await agentClient.selectSession(sessionId);
+      const res = await agentRunClient.selectSession(sessionId);
       if (res.success && res.session) {
         let state: ChatState = {
           messages: [],
@@ -172,9 +172,9 @@ export default function App() {
 
   useEffect(() => {
     // Set up event listener for agent responses
-    agentClient.onAgentEvent((event: AgentEvent) => {
+    agentRunClient.onAgentEvent((event: AgentEvent) => {
       if (event.type === AgentEventType.UPDATE_TOOL_EXECUTION_POLICY) {
-        agentClient.getSessions().then((sessionRes) => {
+        agentRunClient.getSessions().then((sessionRes) => {
           if (sessionRes.success && sessionRes.sessions) {
             setSessions(sessionRes.sessions);
           }
@@ -189,18 +189,18 @@ export default function App() {
       activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
     });
 
-    agentClient.onSessionMetadataChange((metadata: SessionMetadata) => {
+    agentRunClient.onSessionMetadataChange((metadata: SessionMetadata) => {
       setSessions((prevSessions) =>
         prevSessions.map((s) => (s.id === metadata.id ? metadata : s)),
       );
     });
 
-    agentClient.initSession().then((res) => {
+    agentRunClient.initSession().then((res) => {
       if (res && !res.success && res.needApiKey) {
         setShowApiKeyPrompt(true);
       } else if (res && res.success && res.sessionId) {
         handleSelectSession(res.sessionId);
-        agentClient.getSessions().then((sessionRes) => {
+        agentRunClient.getSessions().then((sessionRes) => {
           if (sessionRes.success && sessionRes.sessions) {
             setSessions(sessionRes.sessions);
           }
@@ -216,9 +216,9 @@ export default function App() {
   const handleConfirmDelete = async (sessionId: string) => {
     try {
       setIsLoading(true);
-      const res = await agentClient.deleteSession(sessionId);
+      const res = await agentRunClient.deleteSession(sessionId);
       if (res.success) {
-        const sessionRes = await agentClient.getSessions();
+        const sessionRes = await agentRunClient.getSessions();
         if (sessionRes.success && sessionRes.sessions) {
           setSessions(sessionRes.sessions);
         }
@@ -246,13 +246,13 @@ export default function App() {
     setActiveSessionId(undefined);
     setMessages([]);
     try {
-      const res = await agentClient.startNewSession();
+      const res = await agentRunClient.startNewSession();
       if (res.success) {
-        const currentRes = await agentClient.getCurrentSession();
+        const currentRes = await agentRunClient.getCurrentSession();
         if (currentRes.success && currentRes.session) {
           handleSelectSession(currentRes.session.id);
         }
-        const sessionRes = await agentClient.getSessions();
+        const sessionRes = await agentRunClient.getSessions();
         if (sessionRes.success && sessionRes.sessions) {
           setSessions(sessionRes.sessions);
         }
@@ -269,6 +269,15 @@ export default function App() {
   const toolPolicy =
     activeSession?.toolExecutionPolicy?.type ??
     ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION;
+
+  const handleAbort = async () => {
+    try {
+      await agentRunClient.abortExecution();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      appendMessage(`IPC Error: ${errorMessage}`, false);
+    }
+  };
 
   return (
     <>
@@ -314,6 +323,8 @@ export default function App() {
             apiKeyInput={apiKeyInput}
             setApiKeyInput={setApiKeyInput}
             handleSubmitApiKey={handleSubmitApiKey}
+            isLoading={isLoading}
+            onAbort={handleAbort}
           />
         </main>
       </div>

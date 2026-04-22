@@ -2,7 +2,7 @@ import {app, BrowserWindow} from 'electron';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadEnv} from '../common/env.js';
-import {AgentBackend} from './agent/agent_backend.js';
+import {AgentRunBackend} from './agent_run/agent_run_backend.js';
 
 loadEnv();
 
@@ -36,7 +36,7 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
   const window = await createWindow();
-  const backend = new AgentBackend(window);
+  const backend = new AgentRunBackend(window);
   await backend.initialize();
 
   app.on('activate', () => {

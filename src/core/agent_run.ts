@@ -197,7 +197,12 @@ export class AgentRun extends EventEmitter {
 
   async abort() {
     if (this.currentRun) {
-      this.agent?.abort();
+      const abortEvent = await this.agent?.abort();
+
+      if (this.sessionId && abortEvent) {
+        this.sessionService.appendEvent(this.sessionId, abortEvent);
+      }
+      this.emit(AgentRunType.AGENT_EVENT, abortEvent);
     }
   }
 }

@@ -489,7 +489,20 @@ export class LlmAgent implements Agent {
     this.history.push(event);
   }
 
-  async abort(): Promise<void> {
-    this.abortController?.abort();
+  async abort(): Promise<AgentEvent | undefined> {
+    if (!this.abortController) {
+      return undefined;
+    }
+
+    this.abortController.abort();
+    const event = this.createEvent(AgentEventType.END, {
+      role: ContentRole.AGENT,
+      type: AgentEventType.END,
+      reason: AgentEndReason.ABORTED,
+      final: true,
+    });
+    this.history.push(event);
+
+    return event;
   }
 }

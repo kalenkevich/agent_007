@@ -12,7 +12,7 @@ export interface Agent {
   model: LlmModel;
   tools?: ToolUnion[];
   run(input: UserInput): AsyncGenerator<AgentEvent, void, unknown>;
-  abort(): Promise<void>;
+  abort(): Promise<AgentEvent | undefined>;
   getHistory(): AgentEvent[];
   updateToolExecutionPolicy(policy: ToolExecutionPolicy): void;
 }

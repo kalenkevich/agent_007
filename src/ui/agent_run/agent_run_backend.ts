@@ -5,8 +5,8 @@ import {
   SessionFileService,
   configStore,
   loadConfig,
-  type ToolExecutionPolicy,
   type Config,
+  type ToolExecutionPolicy,
 } from '../../core/node.js';
 
 enum IpcEvents {
@@ -22,9 +22,10 @@ enum IpcEvents {
   DELETE_SESSION = 'delete-session',
   UPDATE_TOOL_EXECUTION_POLICY = 'update-tool-execution-policy',
   SESSION_METADATA_CHANGE = 'session-metadata-change',
+  ABORT_EXECUTION = 'abort-execution',
 }
 
-export class AgentBackend {
+export class AgentRunBackend {
   private mainWindow?: BrowserWindow;
   private currentAgentRun?: AgentRun;
   private agentRuns = new Map<string, AgentRun>();
@@ -77,7 +78,10 @@ export class AgentBackend {
     });
     loop.on(AgentRunType.SESSION_METADATA_CHANGE, (metadata) => {
       if (this.mainWindow) {
-        this.mainWindow.webContents.send(IpcEvents.SESSION_METADATA_CHANGE, metadata);
+        this.mainWindow.webContents.send(
+          IpcEvents.SESSION_METADATA_CHANGE,
+          metadata,
+        );
       }
     });
     this.agentRuns.set(sessionId, loop);
@@ -208,13 +212,16 @@ export class AgentBackend {
       IpcEvents.DELETE_SESSION,
       async (event, sessionId: string) => {
         try {
-          await this.sessionService.deleteSession(sessionId);
           if (this.agentRuns.has(sessionId)) {
+            const run = this.agentRuns.get(sessionId);
+            await run?.abort();
             this.agentRuns.delete(sessionId);
           }
           if (this.currentAgentRun?.getSessionId() === sessionId) {
+            await this.currentAgentRun.abort();
             this.currentAgentRun = undefined;
           }
+          await this.sessionService.deleteSession(sessionId);
           return {success: true};
         } catch (err: unknown) {
           return {
@@ -242,6 +249,20 @@ export class AgentBackend {
         }
       },
     );
+
+    ipcMain.handle(IpcEvents.ABORT_EXECUTION, async () => {
+      try {
+        if (this.currentAgentRun) {
+          await this.currentAgentRun.abort();
+          return {success: true};
+        }
+        return {success: false, error: 'No active session'};
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    });
   }
 }
-

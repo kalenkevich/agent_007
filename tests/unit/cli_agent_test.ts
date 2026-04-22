@@ -3,7 +3,8 @@ import {AgentEventType} from '../../src/core/agent/agent_event.js';
 import {LlmAgent as CliAgent} from '../../src/core/agent/llm_agent.js';
 import type {Tool} from '../../src/core/tools/tool.js';
 import {
-  ToolExecutionPolicies,
+  ToolExecutionPolicyType,
+  type ToolExecutionPolicy,
 } from '../../src/core/tools/tool_execution_policy.js';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -43,9 +44,17 @@ describe('CliAgent - Tool Confirmation', () => {
       toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy = ToolExecutionPolicies.perTool({
-      test_tool: ToolExecutionPolicies.alwaysRequestConfirmation(),
-    });
+    const policy: ToolExecutionPolicy = {
+      type: ToolExecutionPolicyType.PER_TOOL,
+      perToolPolicies: {
+        test_tool: {
+          type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION,
+        },
+      },
+      defaultPolicy: {
+        type: ToolExecutionPolicyType.ALWAYS_ALLOW_EXECUTION,
+      },
+    };
 
     const agent = new CliAgent({
       model: mockModel as any,
@@ -55,7 +64,6 @@ describe('CliAgent - Tool Confirmation', () => {
 
     const events: any[] = [];
     for await (const event of agent.run('hello')) {
-      console.log('Event yielded:', event.type);
       events.push(event);
     }
 
@@ -90,9 +98,17 @@ describe('CliAgent - Tool Confirmation', () => {
       toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy = ToolExecutionPolicies.perTool({
-      test_tool: ToolExecutionPolicies.alwaysRequestConfirmation(),
-    });
+    const policy: ToolExecutionPolicy = {
+      type: ToolExecutionPolicyType.PER_TOOL,
+      perToolPolicies: {
+        test_tool: {
+          type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION,
+        },
+      },
+      defaultPolicy: {
+        type: ToolExecutionPolicyType.ALWAYS_ALLOW_EXECUTION,
+      },
+    };
 
     const agent = new CliAgent({
       model: mockModel as any,
@@ -187,9 +203,17 @@ describe('CliAgent - Tool Confirmation', () => {
       toFunctionDeclaration: () => ({name: 'test_tool', description: 'test'}),
     };
 
-    const policy = ToolExecutionPolicies.perTool({
-      test_tool: ToolExecutionPolicies.alwaysRequestConfirmation(),
-    });
+    const policy: ToolExecutionPolicy = {
+      type: ToolExecutionPolicyType.PER_TOOL,
+      perToolPolicies: {
+        test_tool: {
+          type: ToolExecutionPolicyType.ALWAYS_REQUEST_CONFIRMATION,
+        },
+      },
+      defaultPolicy: {
+        type: ToolExecutionPolicyType.ALWAYS_ALLOW_EXECUTION,
+      },
+    };
 
     const agent = new CliAgent({
       model: mockModel as any,
