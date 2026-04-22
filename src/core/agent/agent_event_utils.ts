@@ -36,9 +36,10 @@ export function getContentFromAgentEvent(
 
 export function llmResponseToAgentEvents(
   response: LlmResponse,
+  modelName?: string,
 ): Partial<AgentEvent>[] {
   if (response.errorCode || response.errorMessage) {
-    return [
+    const errorEvents: Partial<AgentEvent>[] = [
       {
         type: AgentEventType.ERROR,
         role: ContentRole.AGENT,
@@ -48,6 +49,20 @@ export function llmResponseToAgentEvents(
         final: response.final,
       },
     ];
+    if (response.usageMetadata) {
+      errorEvents.push({
+        type: AgentEventType.USAGE,
+        role: ContentRole.AGENT,
+        model: modelName ?? (response.customMetadata?.model as string) ?? '',
+        inputTokens: response.usageMetadata.inputTokens,
+        outputTokens: response.usageMetadata.outputTokens,
+        cachedTokens: response.usageMetadata.cachedTokens,
+        cost: response.usageMetadata.cost,
+        partial: response.partial,
+        final: response.final,
+      });
+    }
+    return errorEvents;
   }
 
   const events: Partial<AgentEvent>[] = [];
@@ -132,5 +147,20 @@ export function llmResponseToAgentEvents(
     }
   }
 
+  if (response.usageMetadata) {
+    events.push({
+      type: AgentEventType.USAGE,
+      role: ContentRole.AGENT,
+      model: modelName ?? (response.customMetadata?.model as string) ?? '',
+      inputTokens: response.usageMetadata.inputTokens,
+      outputTokens: response.usageMetadata.outputTokens,
+      cachedTokens: response.usageMetadata.cachedTokens,
+      cost: response.usageMetadata.cost,
+      partial: response.partial,
+      final: response.final,
+    });
+  }
+
   return events;
 }
+

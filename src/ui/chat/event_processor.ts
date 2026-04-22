@@ -296,10 +296,21 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
       break;
     }
 
+    case AgentEventType.USAGE: {
+      newState.usage = {
+        model: event.model,
+        inputTokens: event.inputTokens,
+        outputTokens: event.outputTokens,
+        cachedTokens: event.cachedTokens,
+        cost: event.cost,
+      };
+      break;
+    }
+
     default: {
-      assumeExhaustiveAllowing<
-        AgentEventType.USAGE | AgentEventType.UPDATE_TOOL_EXECUTION_POLICY
-      >(event.type);
+      assumeExhaustiveAllowing<AgentEventType.UPDATE_TOOL_EXECUTION_POLICY>(
+        event.type,
+      );
       break;
     }
   }

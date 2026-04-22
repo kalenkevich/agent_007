@@ -9,4 +9,12 @@ export interface ChatState {
   isLoading: boolean;
   isThinking: boolean;
   activeStreamMessageId?: string;
+  usage?: {
+    model: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    cachedTokens?: number;
+    cost?: {amount: number; currency?: string};
+  };
 }
+

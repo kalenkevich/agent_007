@@ -68,7 +68,7 @@ Respond ONLY with the plan.`;
       stream: true,
       abortSignal: this.abortController?.signal,
     })) {
-      for (const agentEvent of llmResponseToAgentEvents(modelResponse)) {
+      for (const agentEvent of llmResponseToAgentEvents(modelResponse, this.model.modelName)) {
         yield this.createEvent(agentEvent.type!, agentEvent);
         if (agentEvent.type === AgentEventType.MESSAGE && agentEvent.parts) {
           for (const part of agentEvent.parts) {

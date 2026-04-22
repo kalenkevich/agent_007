@@ -27,3 +27,4 @@ To do:
 - [ ] Conenct to Telegram
 - [ ] Voice support
 - [ ] i18n (en, russian)
+- [ ] Http Server for Web UI

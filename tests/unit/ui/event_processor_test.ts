@@ -144,4 +144,22 @@ describe('event_processor', () => {
     expect(newState.messages[0].isPending).toBe(false);
     expect((newState.messages[0] as any).action).toBe('accept');
   });
+  it('should handle USAGE event', () => {
+    const event: AgentEvent = {
+      type: 'USAGE',
+      model: 'gemini-1.5-pro',
+      inputTokens: 100,
+      outputTokens: 50,
+      cachedTokens: 25,
+      cost: {amount: 0.001, currency: 'USD'},
+    } as any;
+    const newState = processEvent(initialState, event);
+    expect(newState.usage).toEqual({
+      model: 'gemini-1.5-pro',
+      inputTokens: 100,
+      outputTokens: 50,
+      cachedTokens: 25,
+      cost: {amount: 0.001, currency: 'USD'},
+    });
+  });
 });

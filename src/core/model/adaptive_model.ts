@@ -8,7 +8,10 @@ import type {LlmResponse} from './response.js';
 export class AdaptiveLlmModel implements LlmModel {
   private currentModel!: LlmModel;
   private fallbackConfigs?: ModelConfig[];
-  readonly modelName: string = 'adaptive';
+
+  get modelName() {
+    return this.currentModel.modelName;
+  }
 
   constructor(config: {main: ModelConfig; fallback?: ModelConfig[]}) {
     this.setModel(config.main);

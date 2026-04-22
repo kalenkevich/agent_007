@@ -332,6 +332,12 @@ body {
   font-size: 0.85rem;
   color: var(--text-muted);
 }
+.usage-info {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem !important;
+  color: var(--accent) !important;
+}
 
 .message-stream {
   flex: 1;

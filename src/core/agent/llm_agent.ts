@@ -211,7 +211,10 @@ export class LlmAgent implements Agent {
         stream: true,
         abortSignal: this.abortController?.signal,
       })) {
-        for (const agentEvent of llmResponseToAgentEvents(modelResponse)) {
+        for (const agentEvent of llmResponseToAgentEvents(
+          modelResponse,
+          this.model.modelName,
+        )) {
           logger.debug('[CliAgent] yielding event:', agentEvent.type);
           yield this.createEvent(agentEvent.type!, agentEvent);
 

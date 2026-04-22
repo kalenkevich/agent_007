@@ -23,6 +23,7 @@ export default function App() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [usage, setUsage] = useState<ChatState['usage']>(undefined);
 
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(
     undefined,
@@ -50,6 +51,7 @@ export default function App() {
     isLoading,
     isThinking,
     activeStreamMessageId: activeStreamMessageIdRef.current || undefined,
+    usage,
   });
 
   chatStateRef.current = {
@@ -57,6 +59,7 @@ export default function App() {
     isLoading,
     isThinking,
     activeStreamMessageId: activeStreamMessageIdRef.current || undefined,
+    usage,
   };
 
   useEffect(() => {
@@ -161,6 +164,7 @@ export default function App() {
         setMessages(state.messages);
         setIsLoading(state.isLoading);
         setIsThinking(state.isThinking);
+        setUsage(state.usage);
         activeStreamMessageIdRef.current = state.activeStreamMessageId || null;
       }
     } catch (err) {
@@ -186,6 +190,7 @@ export default function App() {
       setMessages(newState.messages);
       setIsLoading(newState.isLoading);
       setIsThinking(newState.isThinking);
+      setUsage(newState.usage);
       activeStreamMessageIdRef.current = newState.activeStreamMessageId || null;
     });
 
@@ -245,6 +250,7 @@ export default function App() {
     setIsLoading(true);
     setActiveSessionId(undefined);
     setMessages([]);
+    setUsage(undefined);
     try {
       const res = await agentRunClient.startNewSession();
       if (res.success) {
@@ -306,6 +312,7 @@ export default function App() {
             session={activeSession}
             toolPolicy={toolPolicy}
             onToolPolicyChange={handleToolPolicyChange}
+            usage={usage}
           />
 
           <MessageList
