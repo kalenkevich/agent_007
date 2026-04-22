@@ -1,27 +1,27 @@
+import {
+  AgentEventType,
+  AgentLoop,
+  AgentLoopType,
+  ContentRole,
+  InitProjectCommandHandler,
+  SessionFileService,
+  UserCommandType,
+  configStore,
+  isYes,
+  loadConfig,
+  parseUserAction,
+  projectService,
+  type AgentEvent,
+  type CompactionEvent,
+  type Session,
+  type SessionMetadata,
+  type ThinkingConfig,
+  type UserInputRequestEvent,
+} from '@agent007/core/node';
 import {randomUUID} from 'node:crypto';
 import {stdin as input, stdout as output} from 'node:process';
 import * as readline from 'node:readline';
 import {createInterface} from 'node:readline/promises';
-import {
-  AgentEventType,
-  type AgentEvent,
-  type CompactionEvent,
-  type UserInputRequestEvent,
-  InitProjectCommandHandler,
-  loadConfig,
-  configStore,
-  AgentLoopType,
-  AgentLoop,
-  projectService,
-  type ThinkingConfig,
-  type Session,
-  type SessionMetadata,
-  SessionFileService,
-  UserCommandType,
-  isYes,
-  parseUserAction,
-  ContentRole,
-} from '@agent007/core/node';
 import {TerminalLoader} from './loader.js';
 import {checkAndPromptVersion} from './version_check.js';
 

@@ -1,10 +1,10 @@
+import {isYes} from '@agent007/core';
 import {spawnSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {stdin as input, stdout as output} from 'node:process';
 import {createInterface} from 'node:readline/promises';
 import {fileURLToPath} from 'node:url';
-import {isYes} from '@agent007/core';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

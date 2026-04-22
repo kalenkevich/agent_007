@@ -1,15 +1,15 @@
 import {
   GoogleGenAI,
-  type GenerateContentParameters,
   ThinkingLevel,
-} from "@google/genai";
-import type { LlmRequest } from "../request.js";
-import type { LlmResponse } from "../response.js";
-import type { ModelConfig } from "../../config/config.js";
-import { contentToGenAIContent } from "./gen_ai_convert_utils.js";
-import { StreamingResponseAggregator } from "./gemini_streaming_utils.js";
-import { createLlmResponse } from "./gemini_response_utils.js";
-import { logger } from "../../logger.js";
+  type GenerateContentParameters,
+} from '@google/genai';
+import type {ModelConfig} from '../../config/config.js';
+import {logger} from '../../logger.js';
+import type {LlmRequest} from '../request.js';
+import type {LlmResponse} from '../response.js';
+import {createLlmResponse} from './gemini_response_utils.js';
+import {StreamingResponseAggregator} from './gemini_streaming_utils.js';
+import {contentToGenAIContent} from './gen_ai_convert_utils.js';
 
 export interface RunConfig {
   stream?: boolean;
@@ -30,7 +30,7 @@ export class Gemini {
     config?: RunConfig,
   ): AsyncGenerator<LlmResponse, void, unknown> {
     logger.debug(
-      "[Gemini Model] Running model with request:",
+      '[Gemini Model] Running model with request:',
       JSON.stringify(request, null, 2),
     );
 
@@ -49,15 +49,15 @@ export class Gemini {
       );
 
       logger.debug(
-        "[Gemini Model] response received:",
+        '[Gemini Model] response received:',
         JSON.stringify(response, null, 2),
       );
 
       yield createLlmResponse(response);
     } catch (e: unknown) {
-      logger.error("[Gemini Model] error:", e);
+      logger.error('[Gemini Model] error:', e);
       yield {
-        errorCode: "GEMINI_ERROR",
+        errorCode: 'GEMINI_ERROR',
         errorMessage: extractErrorMessage(e),
       };
     }
@@ -69,13 +69,13 @@ export class Gemini {
       contents: request.contents.map((c) => contentToGenAIContent(c)),
       config: {
         tools: request.tools
-          ? [{ functionDeclarations: request.tools }]
+          ? [{functionDeclarations: request.tools}]
           : undefined,
         systemInstruction: request.systemInstructions,
       },
     });
 
-    logger.debug("[Gemini Model] token count:", response.totalTokens);
+    logger.debug('[Gemini Model] token count:', response.totalTokens);
 
     return response.totalTokens || 0;
   }
@@ -97,7 +97,7 @@ export class Gemini {
       for await (const response of stream) {
         for await (const llmResponse of aggregator.processResponse(response)) {
           logger.debug(
-            "[Gemini Model] yielding streaming response",
+            '[Gemini Model] yielding streaming response',
             JSON.stringify(llmResponse, null, 2),
           );
 
@@ -108,21 +108,21 @@ export class Gemini {
       const finalResponse = aggregator.close();
       if (finalResponse) {
         logger.debug(
-          "[Gemini Model] yielding final streaming response",
+          '[Gemini Model] yielding final streaming response',
           JSON.stringify(finalResponse, null, 2),
         );
 
         yield finalResponse;
       }
     } catch (e: unknown) {
-      logger.error("[Gemini Model] stream error:", e);
+      logger.error('[Gemini Model] stream error:', e);
       yield {
-        errorCode: "GEMINI_STREAM_ERROR",
+        errorCode: 'GEMINI_STREAM_ERROR',
         errorMessage: extractErrorMessage(e),
       };
     }
 
-    logger.debug("[Gemini Model] stream finished");
+    logger.debug('[Gemini Model] stream finished');
   }
 }
 
@@ -142,14 +142,16 @@ function toGenAiRequest({
     config: {
       ...(config || {}),
       tools: request.tools
-        ? [{ functionDeclarations: request.tools }]
+        ? [{functionDeclarations: request.tools}]
         : undefined,
-      thinkingConfig: request.thinkingConfig?.enabled ? {
-        includeThoughts: request.thinkingConfig.enabled,
-        thinkingLevel: toThinkingLevelConfig(
-          request.thinkingConfig.level || "auto",
-        ),
-      } : undefined,
+      thinkingConfig: request.thinkingConfig?.enabled
+        ? {
+            includeThoughts: request.thinkingConfig.enabled,
+            thinkingLevel: toThinkingLevelConfig(
+              request.thinkingConfig.level || 'auto',
+            ),
+          }
+        : undefined,
       systemInstruction: request.systemInstructions,
     },
   };
@@ -179,16 +181,16 @@ function extractErrorMessage(e: unknown): string {
 }
 
 function toThinkingLevelConfig(
-  thinkingLevel: "low" | "medium" | "high" | "auto",
+  thinkingLevel: 'low' | 'medium' | 'high' | 'auto',
 ): ThinkingLevel {
   switch (thinkingLevel) {
-    case "low":
+    case 'low':
       return ThinkingLevel.LOW;
-    case "medium":
+    case 'medium':
       return ThinkingLevel.MEDIUM;
-    case "high":
+    case 'high':
       return ThinkingLevel.HIGH;
-    case "auto":
+    case 'auto':
       return ThinkingLevel.HIGH;
   }
 }

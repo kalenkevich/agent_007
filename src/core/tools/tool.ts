@@ -1,13 +1,13 @@
-import { z as z3 } from "zod/v3";
-import { z as z4 } from "zod/v4";
-import type { Schema } from "./schema.js";
+import {z as z3} from 'zod/v3';
+import {z as z4} from 'zod/v4';
 import type {LlmRequest} from '../model/request.js';
+import type {Schema} from './schema.js';
 import type {Toolset} from './toolset.js';
 
 export enum Behavior {
-  UNSPECIFIED = "UNSPECIFIED",
-  BLOCKING = "BLOCKING",
-  NON_BLOCKING = "NON_BLOCKING",
+  UNSPECIFIED = 'UNSPECIFIED',
+  BLOCKING = 'BLOCKING',
+  NON_BLOCKING = 'NON_BLOCKING',
 }
 
 export interface FunctionDeclaration {

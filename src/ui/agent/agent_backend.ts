@@ -1,9 +1,9 @@
 import {BrowserWindow, ipcMain} from 'electron';
 import {
-  loadConfig,
-  configStore,
-  AgentLoopType,
   AgentLoop,
+  AgentLoopType,
+  configStore,
+  loadConfig,
   type Config,
 } from '../../core/node.js';
 

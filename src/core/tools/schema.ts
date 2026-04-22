@@ -3,35 +3,35 @@ export enum Type {
   /**
    * Not specified, should not be used.
    */
-  TYPE_UNSPECIFIED = "TYPE_UNSPECIFIED",
+  TYPE_UNSPECIFIED = 'TYPE_UNSPECIFIED',
   /**
    * OpenAPI string type
    */
-  STRING = "STRING",
+  STRING = 'STRING',
   /**
    * OpenAPI number type
    */
-  NUMBER = "NUMBER",
+  NUMBER = 'NUMBER',
   /**
    * OpenAPI integer type
    */
-  INTEGER = "INTEGER",
+  INTEGER = 'INTEGER',
   /**
    * OpenAPI boolean type
    */
-  BOOLEAN = "BOOLEAN",
+  BOOLEAN = 'BOOLEAN',
   /**
    * OpenAPI array type
    */
-  ARRAY = "ARRAY",
+  ARRAY = 'ARRAY',
   /**
    * OpenAPI object type
    */
-  OBJECT = "OBJECT",
+  OBJECT = 'OBJECT',
   /**
    * Null type
    */
-  NULL = "NULL",
+  NULL = 'NULL',
 }
 
 /** Schema is used to define the format of input/output data.

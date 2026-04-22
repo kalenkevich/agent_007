@@ -1,13 +1,13 @@
-import type {
-  Tool,
-  FunctionDeclaration,
-  ToolInputSchema,
-  ToolOutputSchema,
-  ToolInput,
-  ToolOutput,
-} from './tool.js';
-import {type Schema, Type} from './schema.js';
 import type {LlmRequest} from '../model/request.js';
+import {type Schema, Type} from './schema.js';
+import type {
+  FunctionDeclaration,
+  Tool,
+  ToolInput,
+  ToolInputSchema,
+  ToolOutput,
+  ToolOutputSchema,
+} from './tool.js';
 
 export interface FunctionalToolParams<
   TInputParameters extends ToolInputSchema = ToolInputSchema,

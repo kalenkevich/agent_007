@@ -1,14 +1,14 @@
-import { formatSkillsAsXml } from "../../skills/prompt.js";
-import { FunctionalTool } from "../functional_tool.js";
-import { SkillToolset } from "./skill_toolset.js";
-import { Type } from "../schema.js";
+import {formatSkillsAsXml} from '../../skills/prompt.js';
+import {FunctionalTool} from '../functional_tool.js';
+import {Type} from '../schema.js';
+import {SkillToolset} from './skill_toolset.js';
 
 export class ListSkillsTool extends FunctionalTool {
   constructor(private toolset: SkillToolset) {
     super({
-      name: "list_skills",
+      name: 'list_skills',
       description:
-        "Lists all available skills with their names and descriptions.",
+        'Lists all available skills with their names and descriptions.',
       params: {
         type: Type.OBJECT,
         properties: {},
