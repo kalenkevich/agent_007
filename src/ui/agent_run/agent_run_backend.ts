@@ -23,6 +23,7 @@ enum IpcEvents {
   UPDATE_TOOL_EXECUTION_POLICY = 'update-tool-execution-policy',
   SESSION_METADATA_CHANGE = 'session-metadata-change',
   ABORT_EXECUTION = 'abort-execution',
+  GET_WORKSPACE_FILES = 'get-workspace-files',
 }
 
 export class AgentRunBackend {
@@ -264,5 +265,51 @@ export class AgentRunBackend {
         };
       }
     });
+
+    ipcMain.handle(IpcEvents.GET_WORKSPACE_FILES, async () => {
+      try {
+        const files = await this.getWorkspaceFiles(process.cwd());
+        return {success: true, files};
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    });
+  }
+
+  private async getWorkspaceFiles(dir: string): Promise<string[]> {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+
+    const files: string[] = [];
+    const maxFiles = 200;
+
+    async function scan(currentDir: string) {
+      if (files.length >= maxFiles) return;
+      const entries = await fs.readdir(currentDir, {withFileTypes: true});
+      for (const entry of entries) {
+        if (files.length >= maxFiles) break;
+        const fullPath = path.join(currentDir, entry.name);
+
+        if (entry.isDirectory()) {
+          if (
+            entry.name === '.git' ||
+            entry.name === 'node_modules' ||
+            entry.name === 'dist' ||
+            entry.name === '.husky'
+          ) {
+            continue;
+          }
+          await scan(fullPath);
+        } else {
+          files.push(path.relative(process.cwd(), fullPath));
+        }
+      }
+    }
+
+    await scan(dir);
+    return files;
   }
 }

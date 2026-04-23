@@ -23,9 +23,11 @@ enum IpcEvents {
   UPDATE_TOOL_EXECUTION_POLICY = 'update-tool-execution-policy',
   SESSION_METADATA_CHANGE = 'session-metadata-change',
   ABORT_EXECUTION = 'abort-execution',
+  GET_WORKSPACE_FILES = 'get-workspace-files',
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  getWorkspaceFiles: () => ipcRenderer.invoke(IpcEvents.GET_WORKSPACE_FILES),
   sendUserInput: (message: UserInput) =>
     ipcRenderer.invoke(IpcEvents.SEND_USER_INPUT, message),
   abortExecution: () => ipcRenderer.invoke(IpcEvents.ABORT_EXECUTION),

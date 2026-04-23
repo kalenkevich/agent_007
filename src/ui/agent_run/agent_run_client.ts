@@ -49,6 +49,11 @@ declare global {
         success: boolean;
         error?: string;
       }>;
+      getWorkspaceFiles: () => Promise<{
+        success: boolean;
+        files?: string[];
+        error?: string;
+      }>;
       updateToolExecutionPolicy: (
         policy: ToolExecutionPolicy,
       ) => Promise<{success: boolean; error?: string}>;
@@ -170,6 +175,13 @@ export class AgentRunClient {
   async deleteSession(sessionId: string) {
     if (this.api) {
       return await this.api.deleteSession(sessionId);
+    }
+    return {success: false, error: 'electronAPI not available'};
+  }
+
+  async getWorkspaceFiles() {
+    if (this.api) {
+      return await this.api.getWorkspaceFiles();
     }
     return {success: false, error: 'electronAPI not available'};
   }

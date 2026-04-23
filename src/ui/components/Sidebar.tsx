@@ -10,7 +10,8 @@ import {
 } from '@/components/ai-elements/sidebar';
 import {Tooltip} from '@/components/ai-elements/tooltip';
 import {type SessionMetadata} from '@agent007/core';
-import {Folder, Plus, Trash2} from 'lucide-react';
+import {Folder, Plus, Trash2, File} from 'lucide-react';
+import {FileTree, FolderItem, FileItem} from './ai-elements/file-tree';
 
 function formatSessionTimestamp(timestamp: string): string {
   const now = new Date();
@@ -66,6 +67,45 @@ interface SidebarProps {
   onNewSession: () => void;
   onDeleteSession: (sessionId: string) => void;
   activeSessionId?: string;
+  workspaceFiles?: string[];
+}
+
+interface TreeNode {
+  name: string;
+  children?: Map<string, TreeNode>;
+}
+
+function buildTree(paths: string[]) {
+  const root: TreeNode = {name: '', children: new Map()};
+
+  for (const p of paths) {
+    const parts = p.split('/');
+    let current = root;
+    for (const part of parts) {
+      if (!current.children) {
+        current.children = new Map();
+      }
+      if (!current.children.has(part)) {
+        current.children.set(part, {name: part});
+      }
+      current = current.children.get(part)!;
+    }
+  }
+  return root;
+}
+
+function renderTreeNode(node: TreeNode, keyPrefix = ''): React.ReactNode {
+  if (!node.children || node.children.size === 0) {
+    return <FileItem key={keyPrefix + node.name} name={node.name} />;
+  }
+
+  return (
+    <FolderItem key={keyPrefix + node.name} name={node.name}>
+      {Array.from(node.children.values()).map((child) =>
+        renderTreeNode(child, keyPrefix + node.name + '/'),
+      )}
+    </FolderItem>
+  );
 }
 
 export function Sidebar({
@@ -74,6 +114,7 @@ export function Sidebar({
   onNewSession,
   onDeleteSession,
   activeSessionId,
+  workspaceFiles = [],
 }: SidebarProps) {
   return (
     <SidebarContainer>
@@ -164,6 +205,15 @@ export function Sidebar({
                 </SidebarMenuItem>
               ))}
           </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Workspace Files</SidebarGroupLabel>
+          <FileTree>
+            {workspaceFiles.length > 0 &&
+              Array.from(
+                buildTree(workspaceFiles).children?.values() || [],
+              ).map((node) => renderTreeNode(node))}
+          </FileTree>
         </SidebarGroup>
       </SidebarContent>
     </SidebarContainer>

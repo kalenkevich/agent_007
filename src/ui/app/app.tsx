@@ -31,6 +31,7 @@ export default function App() {
   );
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [workspaceFiles, setWorkspaceFiles] = useState<string[]>([]);
 
 
   const handleToolPolicyChange = async (policyType: string) => {
@@ -211,6 +212,12 @@ export default function App() {
         });
       }
     });
+
+    agentRunClient.getWorkspaceFiles().then((res) => {
+      if (res.success && res.files) {
+        setWorkspaceFiles(res.files);
+      }
+    });
   }, []);
 
   const handleDeleteSession = (sessionId: string) => {
@@ -311,6 +318,7 @@ export default function App() {
           onNewSession={handleNewSession}
           onDeleteSession={handleDeleteSession}
           activeSessionId={activeSessionId}
+          workspaceFiles={workspaceFiles}
         />
 
         <main className="chat-area">
