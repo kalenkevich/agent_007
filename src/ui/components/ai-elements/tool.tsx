@@ -30,12 +30,14 @@ export interface ToolContentProps {
 export interface ToolInputProps {
   input?: Record<string, unknown>;
   className?: string;
+  defaultOpen?: boolean;
 }
 
 export interface ToolOutputProps {
   output?: React.ReactNode;
   errorText?: string;
   className?: string;
+  defaultOpen?: boolean;
 }
 
 import {Badge} from './badge';
@@ -136,11 +138,11 @@ export function ToolContent({children, className}: ToolContentProps) {
   );
 }
 
-export function ToolInput({input, className}: ToolInputProps) {
+export function ToolInput({input, defaultOpen = false}: ToolInputProps) {
   if (!input || Object.keys(input).length === 0) return null;
 
   return (
-    <Collapsible defaultOpen={true}>
+    <Collapsible defaultOpen={defaultOpen}>
       <CollapsibleTrigger>Parameters</CollapsibleTrigger>
       <CollapsibleContent>
         <pre
@@ -165,11 +167,15 @@ export function ToolInput({input, className}: ToolInputProps) {
   );
 }
 
-export function ToolOutput({output, errorText, className}: ToolOutputProps) {
+export function ToolOutput({
+  output,
+  errorText,
+  defaultOpen = false,
+}: ToolOutputProps) {
   if (!output && !errorText) return null;
 
   return (
-    <Collapsible defaultOpen={true}>
+    <Collapsible defaultOpen={defaultOpen}>
       <CollapsibleTrigger>Response</CollapsibleTrigger>
       <CollapsibleContent>
         {errorText ? (
