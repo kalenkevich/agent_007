@@ -14,6 +14,7 @@ export enum AgentEventType {
   USAGE = 'USAGE',
   COMPACTION = 'COMPACTION',
   UPDATE_TOOL_EXECUTION_POLICY = 'UPDATE_TOOL_EXECUTION_POLICY',
+  ARTIFACT = 'ARTIFACT',
 }
 
 export enum AgentEndReason {
@@ -27,6 +28,14 @@ export enum AgentEndReason {
   USER_RESPONSE_PENDING = 'user_response_pending',
 }
 
+export interface ArtifactItem {
+  title: string;
+  description?: string;
+  content: string;
+  mimeType?: string;
+  filePath?: string;
+}
+
 export type AgentEvent =
   | AgentStartEvent
   | AgentEndEvent
@@ -38,7 +47,8 @@ export type AgentEvent =
   | ErrorEvent
   | UsageEvent
   | CompactionEvent
-  | UpdateToolExecutionPolicyEvent;
+  | UpdateToolExecutionPolicyEvent
+  | ArtifactEvent;
 
 export interface BaseAgentEvent {
   // Event unique id
@@ -183,4 +193,13 @@ export function isUpdateToolExecutionPolicyEvent(
   event: AgentEvent,
 ): event is UpdateToolExecutionPolicyEvent {
   return event.type === AgentEventType.UPDATE_TOOL_EXECUTION_POLICY;
+}
+
+export interface ArtifactEvent extends BaseAgentEvent {
+  type: AgentEventType.ARTIFACT;
+  items: ArtifactItem[];
+}
+
+export function isArtifactEvent(event: AgentEvent): event is ArtifactEvent {
+  return event.type === AgentEventType.ARTIFACT;
 }

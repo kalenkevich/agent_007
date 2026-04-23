@@ -25,7 +25,10 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
             const idx = newState.messages.length - 1 - userInvIdx;
             newState.messages = newState.messages.map((msg, i) => {
               if (i === idx) {
-                const text = event.parts?.map(p => p.type === 'text' ? p.text : '').join('') || '';
+                const text =
+                  event.parts
+                    ?.map((p) => (p.type === 'text' ? p.text : ''))
+                    .join('') || '';
                 return {
                   ...msg,
                   invocationId: event.invocationId,
@@ -41,7 +44,11 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
 
         for (const part of event.parts) {
           const isThought = part.type === 'thought';
-          const partContent = isThought ? part.thought : (part.type === 'text' ? part.text : '');
+          const partContent = isThought
+            ? part.thought
+            : part.type === 'text'
+              ? part.text
+              : '';
           if (!partContent) continue;
 
           if (isThought) {
@@ -54,11 +61,20 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
             (m) => m.id === newState.activeStreamMessageId,
           );
 
-          const targetType = isThought ? ChatMessageType.THINKING : ChatMessageType.TEXT;
+          const targetType = isThought
+            ? ChatMessageType.THINKING
+            : ChatMessageType.TEXT;
 
-          if (activeMsg && activeMsg.type === targetType && activeMsg.author === targetRole) {
+          if (
+            activeMsg &&
+            activeMsg.type === targetType &&
+            activeMsg.author === targetRole
+          ) {
             newState.messages = newState.messages.map((msg) => {
-              if (msg.id === newState.activeStreamMessageId && msg.type === targetType) {
+              if (
+                msg.id === newState.activeStreamMessageId &&
+                msg.type === targetType
+              ) {
                 if (!event.partial) {
                   return {
                     ...msg,
@@ -300,6 +316,21 @@ export function processEvent(state: ChatState, event: AgentEvent): ChatState {
         cachedTokens: event.cachedTokens,
         cost: event.cost,
       };
+      break;
+    }
+
+    case AgentEventType.ARTIFACT: {
+      newState.messages = [
+        ...newState.messages,
+        {
+          id: crypto.randomUUID(),
+          invocationId: event.invocationId,
+          author: event.role ?? ContentRole.AGENT,
+          type: ChatMessageType.ARTIFACT,
+          items: event.items,
+          final: true,
+        },
+      ];
       break;
     }
 

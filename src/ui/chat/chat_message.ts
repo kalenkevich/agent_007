@@ -7,7 +7,8 @@ export type ChatMessage =
   | TextChatMessage
   | ToolExecutionChatMessage
   | ToolConfirmationChatMessage
-  | ThinkingChatMessage;
+  | ThinkingChatMessage
+  | ArtifactChatMessage;
 
 /**
  * Chat message type enum.
@@ -17,6 +18,7 @@ export enum ChatMessageType {
   TOOL_CONFIRMATION = 'tool_confirmation',
   TOOL_EXECUTION = 'tool_execution',
   THINKING = 'thinking',
+  ARTIFACT = 'artifact',
 }
 
 /**
@@ -104,4 +106,23 @@ export interface ToolExecutionChatMessage extends BaseChatMessage {
 export interface ThinkingChatMessage extends BaseChatMessage {
   type: ChatMessageType.THINKING;
   content: string;
+}
+
+/**
+ * Artifact item interface.
+ */
+export interface ArtifactItem {
+  title: string;
+  description?: string;
+  content: string;
+  mimeType?: string;
+  filePath?: string;
+}
+
+/**
+ * Artifact chat message interface.
+ */
+export interface ArtifactChatMessage extends BaseChatMessage {
+  type: ChatMessageType.ARTIFACT;
+  items: ArtifactItem[];
 }

@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import {FunctionalTool} from '../functional_tool.js';
 import {type Schema, Type} from '../schema.js';
+import {getMimeTypeAndEncoding} from '../../utils/file_extension_utils.js';
 
 export const VIEW_FILE_TOOL = new FunctionalTool({
   name: 'view_file',
@@ -39,7 +40,21 @@ export const VIEW_FILE_TOOL = new FunctionalTool({
 
     try {
       const content = await fs.readFile(resolvedPath, 'utf-8');
-      return {content};
+      const extension = path.extname(resolvedPath);
+      const {mimeType} = getMimeTypeAndEncoding(extension);
+      
+      return {
+        content,
+        artifacts: [
+          {
+            title: path.basename(resolvedPath),
+            description: `File content from ${filePath}`,
+            content,
+            filePath: resolvedPath,
+            mimeType,
+          },
+        ],
+      };
     } catch (_e: unknown) {
       if (_e instanceof Error) {
         throw new Error(`Failed to read file: ${_e.message}`);

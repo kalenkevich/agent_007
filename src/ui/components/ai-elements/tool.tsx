@@ -154,6 +154,9 @@ export function ToolInput({input, className}: ToolInputProps) {
             overflowX: 'auto',
             color: '#e5e5e5',
             lineHeight: 1.6,
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
           }}>
           {JSON.stringify(input, null, 2)}
         </pre>
@@ -181,6 +184,9 @@ export function ToolOutput({output, errorText, className}: ToolOutputProps) {
               overflowX: 'auto',
               color: '#fca5a5',
               lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
             }}>
             {errorText}
           </pre>
@@ -196,6 +202,9 @@ export function ToolOutput({output, errorText, className}: ToolOutputProps) {
               overflowX: 'auto',
               color: '#e5e5e5',
               lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
             }}>
             {output}
           </div>

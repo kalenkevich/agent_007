@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import {FunctionalTool} from '../functional_tool.js';
 import {type Schema, Type} from '../schema.js';
+import {getMimeTypeAndEncoding} from '../../utils/file_extension_utils.js';
 
 export const WRITE_FILE_TOOL = new FunctionalTool({
   name: 'write_file',
@@ -45,7 +46,21 @@ export const WRITE_FILE_TOOL = new FunctionalTool({
     try {
       await fs.mkdir(path.dirname(resolvedPath), {recursive: true});
       await fs.writeFile(resolvedPath, content, 'utf-8');
-      return {success: true};
+      const extension = path.extname(resolvedPath);
+      const {mimeType} = getMimeTypeAndEncoding(extension);
+
+      return {
+        success: true,
+        artifacts: [
+          {
+            title: path.basename(resolvedPath),
+            description: `File saved to ${filePath}`,
+            content,
+            filePath: resolvedPath,
+            mimeType,
+          },
+        ],
+      };
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new Error(`Failed to write file: ${error.message}`);

@@ -5,11 +5,13 @@ import {
   type ToolConfirmationChatMessage,
   type ToolExecutionChatMessage,
   type ThinkingChatMessage,
+  type ArtifactChatMessage,
 } from '../../chat/chat_message';
 import {TextMessage} from './TextMessage';
 import {ToolConfirmationMessage} from './ToolConfirmationMessage';
 import {ToolExecutionMessage} from './ToolExecutionMessage';
 import {ThinkingMessage} from './ThinkingMessage';
+import {ArtifactMessage} from './ArtifactMessage';
 
 interface MessageItemProps {
   msg: ChatMessage;
@@ -35,6 +37,9 @@ export function MessageItem({msg, onUserInputResponse}: MessageItemProps) {
     }
     case ChatMessageType.THINKING: {
       return <ThinkingMessage msg={msg as ThinkingChatMessage} />;
+    }
+    case ChatMessageType.ARTIFACT: {
+      return <ArtifactMessage msg={msg as ArtifactChatMessage} />;
     }
     default: {
       // assumeExhaustive(msg.type);

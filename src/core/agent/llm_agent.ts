@@ -382,6 +382,17 @@ export class LlmAgent implements Agent {
               toolCall.name,
               result as Record<string, unknown> | string,
             );
+
+            if (typeof result === 'object' && result !== null && ('artifacts' in result || '_artifacts' in result)) {
+              const artifacts = (result as any).artifacts || (result as any)._artifacts;
+              if (Array.isArray(artifacts) && artifacts.length > 0) {
+                yield this.createEvent(AgentEventType.ARTIFACT, {
+                  role: ContentRole.AGENT,
+                  items: artifacts,
+                  final: true,
+                });
+              }
+            }
           } catch (error: unknown) {
             logger.error(
               `[CliAgent] Tool execution failed: ${(error as Error).message}`,
@@ -451,6 +462,17 @@ export class LlmAgent implements Agent {
         toolCall.name,
         result as Record<string, unknown> | string,
       );
+
+      if (typeof result === 'object' && result !== null && ('artifacts' in result || '_artifacts' in result)) {
+        const artifacts = (result as any).artifacts || (result as any)._artifacts;
+        if (Array.isArray(artifacts) && artifacts.length > 0) {
+          yield this.createEvent(AgentEventType.ARTIFACT, {
+            role: ContentRole.AGENT,
+            items: artifacts,
+            final: true,
+          });
+        }
+      }
     } catch (error: unknown) {
       logger.error(
         `[CliAgent] Tool execution failed: ${(error as Error).message}`,

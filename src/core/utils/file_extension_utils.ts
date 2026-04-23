@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 Google LLC
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import {FileContentEncoding} from '../code_executor/code_execution_utils.js';
 import {CodeExecutionLanguage} from '../content.js';
 
@@ -12,6 +6,13 @@ const MIME_TYPE_MAP: Record<
   {mimeType: string; encoding: FileContentEncoding}
 > = {
   '.js': {mimeType: 'text/javascript', encoding: FileContentEncoding.UTF8},
+  '.jsx': {mimeType: 'text/javascript', encoding: FileContentEncoding.UTF8},
+  '.cjs': {mimeType: 'text/javascript', encoding: FileContentEncoding.UTF8},
+  '.mjs': {mimeType: 'text/javascript', encoding: FileContentEncoding.UTF8},
+  '.ts': {mimeType: 'text/typescript', encoding: FileContentEncoding.UTF8},
+  '.tsx': {mimeType: 'text/typescript', encoding: FileContentEncoding.UTF8},
+  '.cts': {mimeType: 'text/typescript', encoding: FileContentEncoding.UTF8},
+  '.mtsx': {mimeType: 'text/typescript', encoding: FileContentEncoding.UTF8},
   '.py': {mimeType: 'text/x-python', encoding: FileContentEncoding.UTF8},
   '.md': {mimeType: 'text/markdown', encoding: FileContentEncoding.UTF8},
   '.txt': {mimeType: 'text/plain', encoding: FileContentEncoding.UTF8},
@@ -68,4 +69,27 @@ export function getScriptLanguageByExtension(
     EXTENSION_TO_LANGUAGE[ext.toLowerCase()] ||
     CodeExecutionLanguage.UNSPECIFIED
   );
+}
+
+/**
+ * Gets the file extension from a file path or name (including the dot, e.g., '.js').
+ * Returns an empty string if no extension is found.
+ * Works on the web and does not use Node's path module.
+ * @param filePath The file path or file name.
+ * @returns The file extension with a leading dot, or an empty string.
+ */
+export function getFileExtension(filePath: string): string {
+  const lastSlashIndex = Math.max(
+    filePath.lastIndexOf('/'),
+    filePath.lastIndexOf('\\'),
+  );
+  const filename =
+    lastSlashIndex === -1 ? filePath : filePath.slice(lastSlashIndex + 1);
+
+  const lastDotIndex = filename.lastIndexOf('.');
+  if (lastDotIndex <= 0) {
+    return '';
+  }
+
+  return filename.slice(lastDotIndex);
 }
